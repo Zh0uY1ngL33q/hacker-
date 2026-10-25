@@ -52,6 +52,7 @@ static constexpr inline int (name) = offset;
 
 #include <future>
 #include <libhat/Scanner.hpp>
+#include <mutex>
 
 class OffsetProvider {
     static hat::scan_result scanSig(hat::signature_view sig, const std::string& name, int offset = 0);
@@ -69,6 +70,12 @@ public:
     /// True when the signature produced no match at all, as opposed to matching
     /// somewhere the offset arithmetic then made meaningless.
     static inline std::unordered_map<std::string, bool> mSigMissing;
+
+    /// initialize() runs the signature initializers under `#pragma omp parallel
+    /// for`, and every initializer writes into the maps above. std::unordered_map
+    /// is not safe for concurrent insertion, so the writes are serialised here
+    /// while the (much more expensive) scanning itself stays parallel.
+    static inline std::mutex mSigMutex;
 
     DEFINE_INDEX_FIELD(ClientInstance_getLocalPlayer, "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 48 85 C0 74 10 48 8B C8 E8 ? ? ? ? 48 8B 0F 48 39 08 74", 3, OffsetType::Index);
     DEFINE_INDEX_FIELD(ClientInstance_getBlockSource, "48 8B ? ? ? ? ? FF 15 ? ? ? ? 48 85 ? 75 ? 48 83 C4 ? 5B C3 48 8B", 3, OffsetType::Index);

@@ -13,7 +13,11 @@
 
 hat::scan_result OffsetProvider::scanSig(hat::signature_view sig, const std::string& name, int offset)
 {
-    mSigScanCount++;
+    // The scan is the expensive part and only reads module memory, so it stays
+    // outside the lock. Only the map updates below need serialising: initialize()
+    // drives these initializers from an OpenMP parallel for, and std::unordered_map
+    // is not safe for concurrent insertion (it corrupts its bucket chains, which
+    // shows up as an unrelated crash later).
 
     // The executable ranges come from the PE section table rather than a
     // hardcoded subspan. The old `subspan(0x1000, 0x7a7baa9)` was a snapshot of
@@ -22,8 +26,10 @@ hat::scan_result OffsetProvider::scanSig(hat::signature_view sig, const std::str
     auto result = CodeSection::find(sig);
 
     if (!result.has_result()) {
-        mSigs[name] = 0;
+        std::lock_guard lock(mSigMutex);
+        mSigs[name]       = 0;
         mSigMissing[name] = true;
+        mSigScanCount++;
         return {};
     }
 
@@ -31,15 +37,16 @@ hat::scan_result OffsetProvider::scanSig(hat::signature_view sig, const std::str
     // failure mode: the scan "succeeds", but the address may not be the function
     // we think it is. Record it so initialize() can report it instead of letting
     // a wrong offset propagate into a crash somewhere else entirely.
-    const int matches = CodeSection::countMatches(sig, 4);
-    mSigMatchCounts[name] = matches;
+    const int    matches  = CodeSection::countMatches(sig, 4);
+    const uintptr_t resolved = reinterpret_cast<uintptr_t>(result.get()) + offset;
 
-    // -1 here means "the PATTERN was found but points somewhere implausible",
-    // which callers detect via the value itself. The offset arithmetic stays
-    // identical to the previous implementation so existing signatures keep
-    // their meaning.
-    mSigs[name] = reinterpret_cast<uintptr_t>(result.get()) + offset;
-    mSigMissing[name] = false;
+    {
+        std::lock_guard lock(mSigMutex);
+        mSigs[name]           = resolved;
+        mSigMatchCounts[name] = matches;
+        mSigMissing[name]     = false;
+        mSigScanCount++;
+    }
     return result;
 }
 
