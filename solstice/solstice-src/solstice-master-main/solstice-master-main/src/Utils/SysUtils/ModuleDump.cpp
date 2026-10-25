@@ -207,7 +207,22 @@ bool ModuleDump::dump(const std::string& moduleName) {
     const uint32_t sizeOfHeaders = nt->OptionalHeader.SizeOfHeaders;
     const std::string version = readImageVersion(base);
 
-    const std::string dir = FileUtils::getSolsticeDir() + "Dump\\";
+    // Output directory. Defaults to the client's own folder, but can be
+    // overridden with SOLSTICE_DUMP_DIR so the image can be written somewhere
+    // easy to find. This build is a Win32 desktop client rather than the UWP
+    // package, so the default RoamingState path may not be where you expect.
+    std::string dir;
+    {
+        char buf[MAX_PATH * 4] = {0};
+        const DWORD n = GetEnvironmentVariableA("SOLSTICE_DUMP_DIR", buf,
+                                                static_cast<DWORD>(sizeof(buf)));
+        if (n > 0 && n < sizeof(buf)) {
+            dir = buf;
+            if (!dir.empty() && dir.back() != '\\' && dir.back() != '/') dir += '\\';
+        } else {
+            dir = FileUtils::getSolsticeDir() + "Dump\\";
+        }
+    }
     std::error_code ec;
     std::filesystem::create_directories(dir, ec);
 

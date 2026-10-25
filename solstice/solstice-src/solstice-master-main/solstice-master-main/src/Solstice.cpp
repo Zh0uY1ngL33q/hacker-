@@ -60,9 +60,31 @@ DEFINE_PATCH_FUNC(patchInHandSlot, SigManager::ItemInHandRenderer_renderItem_byt
 // called using winrt::Windows::ApplicationModel::Core::CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [&]()
 void Solstice::init(HMODULE hModule)
 {
-    // Not doing this could cause crashes if you inject too soon
-    // Honestly, I don't think this helps much but it's not a bad idea to have it here
-    while (ProcUtils::getModuleCount() < 130) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    // Wait for the host to finish loading its modules. The previous threshold
+    // was the literal 130, which is one specific build's module count: on a
+    // build that loads fewer modules this spins forever, which would also stop
+    // the optional dump below from ever running. Wait for the count to stop
+    // changing instead, with a hard timeout so it can never block startup.
+    int moduleCount = 0;
+    {
+        constexpr int kMaxWaitMs    = 30000;
+        constexpr int kStableChecks = 20; // ~200ms without a change
+        int last   = -1;
+        int stable = 0;
+        int waited = 0;
+        while (waited < kMaxWaitMs) {
+            const int count = ProcUtils::getModuleCount();
+            if (count == last) {
+                if (++stable >= kStableChecks) break;
+            } else {
+                last   = count;
+                stable = 0;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            waited += 10;
+        }
+        moduleCount = last;
+    }
 
     int64_t start = NOW;
 
@@ -93,6 +115,7 @@ void Solstice::init(HMODULE hModule)
 );
 
     spdlog::info("Minecraft version: {}", ProcUtils::getVersion());
+    console->info("host loaded {} modules", moduleCount);
 
     ExceptionHandler::init();
 
