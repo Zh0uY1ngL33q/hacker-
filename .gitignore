@@ -4,3 +4,5 @@ out/build/
 Dump/
 *.image
 *.pdb
+__pycache__/
+*.pyc
