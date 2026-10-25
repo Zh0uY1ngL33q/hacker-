@@ -91,15 +91,31 @@ Solstice 是一个基于 C++ / CMake 构建的 Minecraft Windows 版（UWP / Win
    安装后把 `C:/msys64/mingw64/bin` 加入 `PATH`，否则 `ld` 找不到时 CMake 会直接报错退出。
 5. **Windows SDK** 中的 `fxc.exe`（HLSL 编译器），用于把 `src/Utils/Shaders/` 下的
    HLSL 着色器编译成 `.inc`，构建时会自动调用。
-6. **CMakeLists 中 CPM 依赖的本地源码目录**，需要事先准备好：
-   - `D:/dev/deps/spdlog-1.9.2`
-   - `D:/dev/deps/magic_enum-0.9.5`
-   - `D:/dev/deps/glm-1.0.1`
-   - `D:/dev/deps/json-3.11.3`
-   - `D:/dev/deps/DirectXTK-main`
-   - `D:/dev/deps/cryptopp-cmake-master`
+6. **外部依赖（spdlog / magic_enum / glm / nlohmann_json / DirectXTK / cryptopp）**。
+   默认由 CMake 自己用 CPM 通过 git 拉取，**无需手工准备**。
 
-   这些路径是硬编码的，若本机路径不同，直接修改 `CMakeLists.txt` 中对应的 `SOURCE_DIR` 即可。
+   若需要离线构建，或想固定使用某份本地拷贝，可准备一个目录并用
+   `-DSOLSTICE_DEPS_DIR=<目录>` 指过去，目录内需为以下名字：
+    - `spdlog-1.9.2`
+    - `magic_enum-0.9.5`
+    - `glm-1.0.1`
+    - `json-3.11.3`
+    - `DirectXTK-main`
+    - `cryptopp-cmake-master`
+
+   `tools/setup-deps.ps1` 会按上述布局自动下载并解压：
+
+   ```powershell
+   .\tools\setup-deps.ps1 -Dest D:\dev\deps
+   cmake -S . -B out/build/x64-Release -G Ninja -DSOLSTICE_DEPS_DIR=D:/dev/deps
+   ```
+
+   注意 `cryptopp-cmake` 在**配置阶段**还会自己下载一次 Crypto++ 源码，因此第一次
+   配置仍需网络。
+
+   > 历史说明：原始仓库里这六个依赖只有 `SOURCE_DIR "D:/dev/deps/..."` 一个参数，
+   > 即作者本机的私有目录。CPM 的 `SOURCE_DIR` 是**互斥**的 —— 一旦指定就完全不会
+   > 联网下载，目录不存在时是硬错误而非回退。所以除作者本人外没人能完成配置。
 
 ---
 
@@ -217,8 +233,8 @@ Debug 构建会额外启用文件日志（`solstice.log`）、崩溃处理器以
 
 - **`The ld command is not available on your system`**：安装 MSYS2 的
   `mingw-w64-x86_64-binutils`，并把 `C:/msys64/mingw64/bin` 加入 `PATH` 后重启 IDE。
-- **CMake 找不到 CPM 依赖**：确认 `D:/dev/deps/` 下的依赖目录已存在，或修改
-  `CMakeLists.txt` 中的 `SOURCE_DIR`。
+- **CMake 找不到 CPM 依赖**：默认会联网拉取，失败多为网络/git 问题；可改用
+  `tools/setup-deps.ps1` 预置本地副本并传 `-DSOLSTICE_DEPS_DIR=...`。
 - **大量签名/偏移扫描失败**：确认游戏版本与本项目目标版本一致（1.21.44），
   并确保注入时机没有早于代码段解密完成。
 - **不支持 x86**：项目仅支持 64 位目标，CMake 会在配置时直接报错。

@@ -16,8 +16,15 @@ find_program(LD_COMMAND ld)
 
 if (NOT LD_COMMAND)
     find_program(LD_COMMAND ld HINTS "C:/msys64/mingw64/bin")
-elseif (NOT LD_COMMAND)
-    message(STATUS "ld found using find_program")
+endif ()
+
+# execute_process() with a NOTFOUND program aborts with an opaque error before
+# the explanation below can ever be printed, so check first.
+if (NOT LD_COMMAND)
+    message(FATAL_ERROR "The ld command was not found.\n"
+            "Install it with `pacman -S mingw-w64-x86_64-binutils` in MSYS2, then add\n"
+            "the bin directory to PATH. The linker is only used to embed resources\n"
+            "(ld -r -b binary), not for the final link.")
 endif ()
 
 execute_process(COMMAND ${LD_COMMAND} --version OUTPUT_VARIABLE LD_COMMAND_AVAILABLE)
@@ -29,35 +36,56 @@ endif ()
 
 set(CMAKE_UNITY_BUILD TRUE)
 
-CPMAddPackage(
-        NAME spdlog
-        SOURCE_DIR "D:/dev/deps/spdlog-1.9.2"
-)
+# External dependencies.
+#
+# Upstream these were six bare CPMAddPackage calls whose only argument was
+# SOURCE_DIR "D:/dev/deps/<name>", i.e. one developer's private working
+# directory. CPM's SOURCE_DIR is *exclusive*: setting it disables downloading
+# altogether, and a missing directory is a hard error rather than a fallback.
+# A fresh clone therefore could not configure at all.
+#
+# Each dependency is now resolved per-dependency:
+#
+#   * SOLSTICE_DEPS_DIR contains <folder>  -> use that checkout, no network
+#   * otherwise                            -> fetch <repo> at <tag> via git
+#
+# SOLSTICE_DEPS_DIR is optional. tools/setup-deps.ps1 populates it with the
+# exact expected layout for offline or pinned builds.
+set(SOLSTICE_DEPS_DIR "" CACHE PATH
+        "Optional directory holding local checkouts of the external dependencies")
 
-CPMAddPackage(
-        NAME magic_enum
-        SOURCE_DIR "D:/dev/deps/magic_enum-0.9.5"
-)
+# Convenience: machines that already have the original layout keep working
+# without passing a flag.
+if (NOT SOLSTICE_DEPS_DIR AND EXISTS "D:/dev/deps")
+    set(SOLSTICE_DEPS_DIR "D:/dev/deps")
+    message(STATUS "using existing dependency directory D:/dev/deps")
+endif ()
 
-CPMAddPackage(
-        NAME glm
-        SOURCE_DIR "D:/dev/deps/glm-1.0.1"
-)
+# solstice_add_dependency(<cpm-name> <github-repo> <tag-or-branch> <local-folder>)
+function(solstice_add_dependency name repo tag folder)
+    if (SOLSTICE_DEPS_DIR AND EXISTS "${SOLSTICE_DEPS_DIR}/${folder}")
+        message(STATUS "dependency ${name}: local checkout ${SOLSTICE_DEPS_DIR}/${folder}")
+        CPMAddPackage(
+                NAME ${name}
+                SOURCE_DIR "${SOLSTICE_DEPS_DIR}/${folder}"
+        )
+    else ()
+        message(STATUS "dependency ${name}: fetching ${repo}@${tag}")
+        CPMAddPackage(
+                NAME ${name}
+                GITHUB_REPOSITORY ${repo}
+                GIT_TAG ${tag}
+                GIT_SHALLOW TRUE
+        )
+    endif ()
+endfunction()
 
-CPMAddPackage(
-        NAME nlohmann_json
-        SOURCE_DIR "D:/dev/deps/json-3.11.3"
-)
-
-CPMAddPackage(
-        NAME DirectXTK
-        SOURCE_DIR "D:/dev/deps/DirectXTK-main"
-)
-
-CPMAddPackage(
-        NAME cryptopp-cmake
-        SOURCE_DIR "D:/dev/deps/cryptopp-cmake-master"
-)
+solstice_add_dependency(spdlog          gabime/spdlog        v1.9.2      spdlog-1.9.2)
+solstice_add_dependency(magic_enum      Neargye/magic_enum    v0.9.5      magic_enum-0.9.5)
+solstice_add_dependency(glm             g-truc/glm            1.0.1       glm-1.0.1)
+solstice_add_dependency(nlohmann_json   nlohmann/json         v3.11.3     json-3.11.3)
+solstice_add_dependency(DirectXTK       microsoft/DirectXTK   main        DirectXTK-main)
+solstice_add_dependency(cryptopp-cmake  noloader/cryptopp-cmake master    cryptopp-cmake-master)
 
 if(MSVC)
     add_compile_options(/bigobj)
@@ -113,9 +141,13 @@ add_compile_definitions(JM_XORSTR_DISABLE_AVX_INTRINSICS)
 add_compile_definitions(ENTT_SPARSE_PAGE=2048)
 add_compile_definitions(ENTT_PACKED_PAGE=128)
 
-set(IS_DEBUG_BUILD CMAKE_BUILD_TYPE STREQUAL "Debug")
-
-if (${IS_DEBUG_BUILD})
+# The original condition was `if (${IS_DEBUG_BUILD})` with IS_DEBUG_BUILD set
+# to `CMAKE_BUILD_TYPE STREQUAL "Debug"` -- that expands to
+# `if (CMAKE_BUILD_TYPE;STREQUAL;Debug)`, i.e. it tests the *name* of the
+# variable rather than its value and is not a valid if() argument list.
+# __DEBUG__ is already defined unconditionally near the top of this file, so
+# this never changed the actual build, but the condition was simply wrong.
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
         add_compile_definitions(__DEBUG__)
 endif ()
 
