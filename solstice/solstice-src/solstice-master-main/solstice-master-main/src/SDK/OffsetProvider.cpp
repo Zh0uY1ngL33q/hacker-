@@ -3,6 +3,7 @@
 //
 
 #include "OffsetProvider.hpp"
+#include "CodeSection.hpp"
 
 #include <Solstice.hpp>
 #include <Utils/MemUtils.hpp>
@@ -13,19 +14,32 @@
 hat::scan_result OffsetProvider::scanSig(hat::signature_view sig, const std::string& name, int offset)
 {
     mSigScanCount++;
-    auto minecraft = hat::process::get_process_module();
-    // NetEase blanks the .text section name and tampers with e_lfanew, so scan the
-    // first (code) section directly instead of looking it up by name.
-    auto data = minecraft.get_module_data();
-    auto codeSpan = data.subspan(0x1000, 0x7a7baa9);
-    auto result = hat::find_pattern(codeSpan, sig);
+
+    // The executable ranges come from the PE section table rather than a
+    // hardcoded subspan. The old `subspan(0x1000, 0x7a7baa9)` was a snapshot of
+    // one build and skipped everything past its end (on 1.21.120 that is about
+    // 18 MB of code, where every signature silently resolved to 0).
+    auto result = CodeSection::find(sig);
 
     if (!result.has_result()) {
         mSigs[name] = 0;
+        mSigMissing[name] = true;
         return {};
     }
 
+    // A signature that matches in more than one place is the most dangerous
+    // failure mode: the scan "succeeds", but the address may not be the function
+    // we think it is. Record it so initialize() can report it instead of letting
+    // a wrong offset propagate into a crash somewhere else entirely.
+    const int matches = CodeSection::countMatches(sig, 4);
+    mSigMatchCounts[name] = matches;
+
+    // -1 here means "the PATTERN was found but points somewhere implausible",
+    // which callers detect via the value itself. The offset arithmetic stays
+    // identical to the previous implementation so existing signatures keep
+    // their meaning.
     mSigs[name] = reinterpret_cast<uintptr_t>(result.get()) + offset;
+    mSigMissing[name] = false;
     return result;
 }
 
@@ -39,11 +53,24 @@ void OffsetProvider::initialize()
     }
     uint64_t end = NOW;
 
+    int ambiguous = 0;
+
     for (const auto& sig : mSigs)
     {
         if (sig.second != 0)
         {
-            Solstice::console->info("[offsets] found {} @ {}", sig.first, MemUtils::getMbMemoryString(sig.second));
+            const auto it = mSigMatchCounts.find(sig.first);
+            const int  matches = it == mSigMatchCounts.end() ? 1 : it->second;
+
+            if (matches > 1) {
+                // Found, but not uniquely. Report loudly: this is the case that
+                // silently produces a wrong address instead of a missing one.
+                ambiguous++;
+                Solstice::console->warn("[offsets] {} @ {} matched {} places (ambiguous)",
+                                        sig.first, MemUtils::getMbMemoryString(sig.second), matches);
+            } else {
+                Solstice::console->info("[offsets] found {} @ {}", sig.first, MemUtils::getMbMemoryString(sig.second));
+            }
         }
     }
 
@@ -53,6 +80,10 @@ void OffsetProvider::initialize()
         {
             Solstice::console->critical("[offsets] failed to find {}", sig.first);
         }
+    }
+
+    if (ambiguous > 0) {
+        Solstice::console->warn("[offsets] {} of {} signatures are ambiguous", ambiguous, mSigs.size());
     }
 
 #ifndef __DEBUG__
@@ -87,6 +118,8 @@ void OffsetProvider::deinitialize()
 
     mSigInitializers.clear();
     mSigs.clear();
+    mSigMatchCounts.clear();
+    mSigMissing.clear();
 
     mIsInitialized = false;
 }

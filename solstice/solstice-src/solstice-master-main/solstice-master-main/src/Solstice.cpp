@@ -12,6 +12,7 @@
 #include <Hook/Hooks/RenderHooks/D3DHook.hpp>
 
 #include <SDK/OffsetProvider.hpp>
+#include <SDK/CodeSection.hpp>
 
 #include <SDK/SigManager.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
@@ -145,22 +146,19 @@ void Solstice::init(HMODULE hModule)
     console->info("initializing signatures...");
     int64_t sstart = NOW;
 
-    // NetEase decrypts its code lazily after startup. Wait until a deep code-section
-    // signature becomes scannable before running the full signature scan, otherwise
-    // most signatures resolve to 0.
-    {
-        auto mc = hat::process::get_process_module();
-        auto mdata = mc.get_module_data();
-        auto codeSpan = mdata.subspan(0x1000, 0x7a7baa9);
-        auto probe = hat::compile_signature<"48 89 5C 24 ? 57 48 83 EC ? 48 8B F9 48 8B DA 48 ? ? ? ? ? ? E8 ? ? ? ? 48 85 C0 74 ? 48 8B C8 E8 ? ? ?">(); // PythonRuntime_Execute
-        int waitMs = 0;
-        while (!hat::find_pattern(codeSpan, probe).has_result()) {
-            Sleep(100);
-            waitMs += 100;
-            if (waitMs >= 30000) break; // give up after 30s
-        }
-        console->info("code decrypt wait finished after {}ms", waitMs);
-    }
+    // NetEase decrypts its code lazily after startup, so scanning too early
+    // resolves most signatures to 0. Readiness is judged from the bytes
+    // themselves (entropy + x64 prologue density) rather than from a signature:
+    // a probe lifted from one game version can never match another, which made
+    // this loop wait out its full 30s timeout on every update.
+    CodeSection::waitUntilDecrypted(30000, 100);
+
+    // Snapshot the decrypted image *before* the signature scan runs. On an
+    // unsupported game version the scan aborts the process (release) or blocks
+    // on stdin (debug), so a dump placed after it would never be produced --
+    // which is exactly the situation where it is most needed.
+    if (ModuleDump::isEnabled())
+        ModuleDump::dump();
 
     OffsetProvider::initialize();
     SigManager::initialize();
@@ -213,11 +211,6 @@ void Solstice::init(HMODULE hModule)
     }
 
     console->info("initialized signatures in {}ms", send - sstart);
-
-    // Optional offline-analysis aid: snapshot the now-decrypted image to disk so
-    // signatures/offsets can be worked on outside the game. Enabled with SOLSTICE_DUMP=1.
-    if (ModuleDump::isEnabled())
-        ModuleDump::dump();
 
     console->info("clientinstance addr @ 0x{:X}", reinterpret_cast<uintptr_t>(ClientInstance::get()));
     console->info("mcgame from clientinstance addr @ 0x{:X}", reinterpret_cast<uintptr_t>(ClientInstance::get()->getMinecraftGame()));

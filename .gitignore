@@ -1,0 +1,6 @@
+# Local build/analysis artifacts, not part of the source
+_backup/
+out/build/
+Dump/
+*.image
+*.pdb
