@@ -64,6 +64,22 @@ CPMAddPackage(NAME spdlog         SOURCE_DIR "${SPDLOG_DIR}")
 CPMAddPackage(NAME magic_enum     SOURCE_DIR "${MAGIC_ENUM_DIR}")
 CPMAddPackage(NAME glm            SOURCE_DIR "${GLM_DIR}")
 CPMAddPackage(NAME nlohmann_json  SOURCE_DIR "${NLOHMANN_JSON_DIR}")
+
+# DirectXTK optionally builds xwbtool, a command line packer for XWB wave banks.
+# Only DirectXTK's own tests use it, and it cannot survive the project-wide unity
+# build: xwbtool compiles Audio/WAVFileReader.cpp next to xwbtool/CmdLineHelpers.h,
+# so one translation unit ends up with both DirectX::ScopedHandle (from
+# Src/PlatformHelpers.h) and Helpers::ScopedHandle, and every unqualified use
+# becomes ambiguous:
+#
+#     error C2872: 'ScopedHandle': ambiguous symbol
+#     error C2668: 'DirectX::safe_handle': ambiguous call to overloaded function
+#
+# Turning the tool off removes the problem and a target we never link against.
+# The cache variable has to be set before add_subdirectory(), because the option()
+# in DirectXTK's CMakeLists.txt only takes its default when it does not exist yet.
+set(BUILD_TOOLS OFF CACHE BOOL "Disable DirectXTK's command line tools" FORCE)
+
 CPMAddPackage(NAME DirectXTK      SOURCE_DIR "${DIRECTXTK_DIR}")
 
 # CPM's OPTIONS are only honoured when FetchContent performs the build itself.
