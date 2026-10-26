@@ -218,6 +218,8 @@ Get-Item out\build\x64-Release\Solstice.dll | Select-Object Name, Length, LastWr
 | `error C3861: "snprintf_s": 找不到标识符` | 新版 UCRT 头不再提供非标准的 `snprintf_s` 模板（`sprintf_s` 也一并换掉了）。`ModuleDump.cpp` / `ModernDropdown.cpp` 已改用标准 `std::snprintf` 并补 `#include <cstdio>`；顺带消除了旧写法在截断时直接 abort 的隐患 |
 | `error C7685 / C2275 / C2923: "base_type" 不是类型`（`include/entt/entity/view.hpp`） | entt 3.14.0 的 `extended_view_iterator::operator*` 用泛型 lambda + `std::apply` 展开参数包，MSVC 14.5x 无法在 lambda 里推导 `constness_as_t<typename Type::base_type, Type>`。**已按上游 entt 3.15 的写法改成 `index_sequence` 辅助函数**，语义不变 |
 | `error C2672: "hat::find_all_pattern": 未找到匹配的重载函数`（`CodeSection.cpp`，常连带 `C2119` / `C3617` 结构化绑定推导失败） | libhat 的 5 参数 `find_all_pattern` 写出的结果类型是 `hat::scan_result`（约束是 `std::output_iterator<Out, scan_result>`），而代码给的是 `std::byte*[8]` 输出区间，概念不满足，于是所有重载都被排除。**已把缓冲区改成 `std::array<hat::scan_result, 8>`**；这段只用返回的首尾迭代器距离来计数，不读内容 |
+| `error LNK2038: "RuntimeLibrary" 不匹配`（`MD_DynamicRelease` vs `MT_StaticRelease`）/ `LNK2001: __imp_clock` | `cryptopp-static` 只是 `$<TARGET_OBJECTS:cryptopp-object>` 的容器，真正编译出对象的是 `cryptopp-object`；之前只给 static 库设了运行时库属性，对象仍是默认 `/MD`，而 Solstice 用 `/MT`。**现在对所有 cryptopp target 统一设置**；`__imp_clock` 是 `/MD` 对象从 `ucrtbase.dll` 导入 `clock` 的连带症状，同一条修复解决。改完会重编 cryptopp 那 200 多个源文件，属正常 |
+| `LNK2001: 无法解析的外部符号 WINRT_IMPL_RoGetActivationFactory` / `WINRT_IMPL_RoOriginateLanguageException` | C++/WinRT 的 `winrt/base.h` 用 `/alternatename` 把 `WINRT_IMPL_*` 映射到真正的 `Ro*` 函数，但 `Ro*` 自身要从 `runtimeobject.lib` 里来，而它不在 MSVC 的默认库集合里。工程已显式链 `runtimeobject.lib`（`IrcClient` / `VoiceChat` 用到了 `Windows.Networking.Sockets`、`Windows.UI.Notifications`） |
 
 ### 关于「编译器太新」
 

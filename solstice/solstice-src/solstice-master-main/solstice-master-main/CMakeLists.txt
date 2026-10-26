@@ -105,9 +105,24 @@ CPMAddPackage(NAME cryptopp-cmake SOURCE_DIR "${CRYPTOPP_DIR}")
 #
 # for dozens of symbols -- none of which are real defects in our own code.
 # Unity builds are kept for everything else; they are switched off here only.
+
+# Every object in the DLL has to use the same CRT. cryptopp-static only holds
+# $<TARGET_OBJECTS:cryptopp-object>, so setting the property on the library
+# alone leaves the actual objects on CMake's default (/MD) while Solstice builds
+# with /MT, and the link then stops with
+#
+#     error LNK2038: mismatch detected for "RuntimeLibrary": value
+#     "MD_DynamicRelease" doesn't match value "MT_StaticRelease"
+#     error LNK2001: unresolved external symbol __imp_clock
+#
+# (the /MD objects import clock from ucrtbase.dll instead of using the static
+# CRT). The property is shared with the target list further down.
+set(SOLSTICE_MSVC_RUNTIME_LIBRARY "$<$<CONFIG:Debug>:MultiThreadedDLL>$<$<CONFIG:Release>:MultiThreaded>")
+
 foreach (_cryptopp_target cryptopp-object cryptopp-static cryptopp-shared)
     if (TARGET ${_cryptopp_target})
         set_property(TARGET ${_cryptopp_target} PROPERTY UNITY_BUILD FALSE)
+        set_property(TARGET ${_cryptopp_target} PROPERTY MSVC_RUNTIME_LIBRARY "${SOLSTICE_MSVC_RUNTIME_LIBRARY}")
     endif ()
 endforeach ()
 unset(_cryptopp_target)
@@ -387,9 +402,19 @@ endif ()
 
 message(STATUS "linking against ${SOLSTICE_CRYPTOPP_TARGET}")
 
-target_link_libraries(Solstice PRIVATE OpenMP::OpenMP_CXX DirectXTK spdlog version.lib nlohmann_json glm minhook kiero nuvola_event_system libhat dbghelp.lib winmm.lib magic_enum d3d12.lib d3d11.lib d2d1.lib dxgi.lib dxguid.lib dwrite.lib winmm.lib dbghelp.lib comctl32.lib ws2_32.lib ${SOLSTICE_CRYPTOPP_TARGET} ole32.lib Mmdevapi.lib)
+# runtimeobject.lib is not in the default library set, and C++/WinRT needs it:
+# winrt/base.h maps its own WINRT_IMPL_* entry points onto the real Ro*
+# functions with /alternatename, which leaves the Ro* functions themselves to be
+# resolved from a library. Without it the link ends with
+#
+#     error LNK2001: unresolved external symbol WINRT_IMPL_RoGetActivationFactory
+#     error LNK2001: unresolved external symbol WINRT_IMPL_RoOriginateLanguageException
+#
+# src/Features/IRC/IrcClient.cpp, VoiceChat.cpp and the like use
+# Windows.Networking.Sockets / Windows.UI.Notifications through C++/WinRT.
+target_link_libraries(Solstice PRIVATE OpenMP::OpenMP_CXX DirectXTK spdlog version.lib nlohmann_json glm minhook kiero nuvola_event_system libhat dbghelp.lib winmm.lib magic_enum d3d12.lib d3d11.lib d2d1.lib dxgi.lib dxguid.lib dwrite.lib winmm.lib dbghelp.lib comctl32.lib ws2_32.lib ${SOLSTICE_CRYPTOPP_TARGET} ole32.lib Mmdevapi.lib runtimeobject.lib)
 
-set_property(TARGET Solstice nlohmann_json minhook spdlog ${SOLSTICE_CRYPTOPP_TARGET} DirectXTK glm kiero nuvola_event_system magic_enum libhat PROPERTY MSVC_RUNTIME_LIBRARY "$<$<CONFIG:Debug>:MultiThreadedDLL>$<$<CONFIG:Release>:MultiThreaded>")
+set_property(TARGET Solstice nlohmann_json minhook spdlog ${SOLSTICE_CRYPTOPP_TARGET} DirectXTK glm kiero nuvola_event_system magic_enum libhat PROPERTY MSVC_RUNTIME_LIBRARY "${SOLSTICE_MSVC_RUNTIME_LIBRARY}")
 
 
 target_precompile_headers(Solstice PRIVATE
