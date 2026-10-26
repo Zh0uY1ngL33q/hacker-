@@ -92,30 +92,54 @@ Solstice 是一个基于 C++ / CMake 构建的 Minecraft Windows 版（UWP / Win
 5. **Windows SDK** 中的 `fxc.exe`（HLSL 编译器），用于把 `src/Utils/Shaders/` 下的
    HLSL 着色器编译成 `.inc`，构建时会自动调用。
 6. **外部依赖（spdlog / magic_enum / glm / nlohmann_json / DirectXTK / cryptopp）**。
-   默认由 CMake 自己用 CPM 通过 git 拉取，**无需手工准备**。
+   默认由 CMake 自己用 `file(DOWNLOAD)` 通过 HTTPS 拉取，**不需要 git，也不需要手工准备**。
+   首次配置会下载约 20 MB，之后缓存在 `<build>/_deps-local/`。
 
-   若需要离线构建，或想固定使用某份本地拷贝，可准备一个目录并用
-   `-DSOLSTICE_DEPS_DIR=<目录>` 指过去，目录内需为以下名字：
-    - `spdlog-1.9.2`
-    - `magic_enum-0.9.5`
-    - `glm-1.0.1`
-    - `json-3.11.3`
-    - `DirectXTK-main`
-    - `cryptopp-cmake-master`
-
-   `tools/setup-deps.ps1` 会按上述布局自动下载并解压：
+   需要离线构建时，用 `tools/setup-deps.ps1` 预先下载好一份：
 
    ```powershell
    .\tools\setup-deps.ps1 -Dest D:\dev\deps
    cmake -S . -B out/build/x64-Release -G Ninja -DSOLSTICE_DEPS_DIR=D:/dev/deps
    ```
 
-   注意 `cryptopp-cmake` 在**配置阶段**还会自己下载一次 Crypto++ 源码，因此第一次
-   配置仍需网络。
+   目录内需为以下名字（`tools/setup-deps.ps1` 会自动生成）：
+
+    | 目录 | 来源 |
+    | --- | --- |
+    | `spdlog-1.9.2` | `gabime/spdlog` tag `v1.9.2` |
+    | `magic_enum-0.9.5` | `Neargye/magic_enum` tag `v0.9.5` |
+    | `glm-1.0.1` | `g-truc/glm` tag `1.0.1` |
+    | `json-3.11.3` | `nlohmann/json` tag `v3.11.3` |
+    | `DirectXTK-main` | `microsoft/DirectXTK` branch `main` |
+    | `cryptopp-cmake-master` | **组装目录**，见下 |
+
+   > **`cryptopp-cmake-master` 不是 `noloader/cryptopp-cmake` 的原始压缩包。**
+   > 那个仓库只有 7 个文件、15 KB、零个 `.cpp` —— 它只是一个要被放进
+   > Crypto++ 源码目录的 `CMakeLists.txt`。所以这个目录必须是
+   > **Crypto++ 8.7.0 源码 + 包装层的 `CMakeLists.txt` / `cryptopp-config.cmake`**。
+   > 直接用仓库原始压缩包会在配置阶段报 `Cannot find source file`。
+   > `tools/setup-deps.ps1` 和 CMake 的自动下载路径都会按此结构组装。
 
    > 历史说明：原始仓库里这六个依赖只有 `SOURCE_DIR "D:/dev/deps/..."` 一个参数，
    > 即作者本机的私有目录。CPM 的 `SOURCE_DIR` 是**互斥**的 —— 一旦指定就完全不会
    > 联网下载，目录不存在时是硬错误而非回退。所以除作者本人外没人能完成配置。
+
+---
+
+## 在没有 git 的机器上构建
+
+整套构建流程**不依赖 git**：依赖走 HTTPS 下载（`file(DOWNLOAD)`），
+`GenerateBuildInfo.cmake` 在找不到 git 时会写入占位值而不是报错。
+
+源码用 GitHub 的 `Download ZIP` 或直接拷目录过去即可，然后：
+
+```powershell
+cmake -S . -B out/build/x64-Release -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build out/build/x64-Release
+```
+
+如果目标机器完全离线，先在联网机器上跑 `tools/setup-deps.ps1`，
+把整个目录拷过去，再加 `-DSOLSTICE_DEPS_DIR=<那个目录>`。
 
 ---
 

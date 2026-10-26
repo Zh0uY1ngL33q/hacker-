@@ -3,6 +3,19 @@ cmake_minimum_required(VERSION 3.28)
 include(cmake/CPM.cmake)
 project(Solstice)
 
+# CMake 4 removed compatibility with cmake_minimum_required(VERSION < 3.5), and
+# two dependencies still declare an older floor:
+#
+#   nlohmann_json 3.11.3   cmake_minimum_required(VERSION 3.1...3.14)
+#   cryptopp-cmake master  cmake_minimum_required(VERSION 2.8.6)
+#
+# Both otherwise abort configure with "Compatibility with CMake < 3.5 has been
+# removed". This raises the floor for every subdirectory added below. Ignored by
+# CMake 3.x, so it is a no-op on older toolchains.
+if (CMAKE_VERSION VERSION_GREATER_EQUAL 4.0)
+    set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+endif ()
+
 # throw error if building for x86
 if (CMAKE_SIZEOF_VOID_P EQUAL 4)
     message(FATAL_ERROR "Solstice only supports x64 builds.")
@@ -36,56 +49,34 @@ endif ()
 
 set(CMAKE_UNITY_BUILD TRUE)
 
-# External dependencies.
+# External dependencies: see cmake/Dependencies.cmake.
 #
-# Upstream these were six bare CPMAddPackage calls whose only argument was
-# SOURCE_DIR "D:/dev/deps/<name>", i.e. one developer's private working
-# directory. CPM's SOURCE_DIR is *exclusive*: setting it disables downloading
-# altogether, and a missing directory is a hard error rather than a fallback.
-# A fresh clone therefore could not configure at all.
-#
-# Each dependency is now resolved per-dependency:
-#
-#   * SOLSTICE_DEPS_DIR contains <folder>  -> use that checkout, no network
-#   * otherwise                            -> fetch <repo> at <tag> via git
-#
-# SOLSTICE_DEPS_DIR is optional. tools/setup-deps.ps1 populates it with the
-# exact expected layout for offline or pinned builds.
-set(SOLSTICE_DEPS_DIR "" CACHE PATH
-        "Optional directory holding local checkouts of the external dependencies")
+# Upstream this was six bare CPMAddPackage calls pointing at one machine's
+# private directory (SOURCE_DIR "D:/dev/deps/..."). CPM treats SOURCE_DIR as
+# exclusive -- it disables downloading entirely and a missing directory is a
+# hard error -- so no other machine could ever configure. The module downloads
+# the same archives over HTTPS instead (no git required) and then hands CPM a
+# plain SOURCE_DIR, which also makes the resolution testable on its own via
+# `cmake -P cmake/Dependencies.cmake`.
+include(cmake/Dependencies.cmake)
 
-# Convenience: machines that already have the original layout keep working
-# without passing a flag.
-if (NOT SOLSTICE_DEPS_DIR AND EXISTS "D:/dev/deps")
-    set(SOLSTICE_DEPS_DIR "D:/dev/deps")
-    message(STATUS "using existing dependency directory D:/dev/deps")
-endif ()
+CPMAddPackage(NAME spdlog         SOURCE_DIR "${SPDLOG_DIR}")
+CPMAddPackage(NAME magic_enum     SOURCE_DIR "${MAGIC_ENUM_DIR}")
+CPMAddPackage(NAME glm            SOURCE_DIR "${GLM_DIR}")
+CPMAddPackage(NAME nlohmann_json  SOURCE_DIR "${NLOHMANN_JSON_DIR}")
+CPMAddPackage(NAME DirectXTK      SOURCE_DIR "${DIRECTXTK_DIR}")
 
-# solstice_add_dependency(<cpm-name> <github-repo> <tag-or-branch> <local-folder>)
-function(solstice_add_dependency name repo tag folder)
-    if (SOLSTICE_DEPS_DIR AND EXISTS "${SOLSTICE_DEPS_DIR}/${folder}")
-        message(STATUS "dependency ${name}: local checkout ${SOLSTICE_DEPS_DIR}/${folder}")
-        CPMAddPackage(
-                NAME ${name}
-                SOURCE_DIR "${SOLSTICE_DEPS_DIR}/${folder}"
-        )
-    else ()
-        message(STATUS "dependency ${name}: fetching ${repo}@${tag}")
-        CPMAddPackage(
-                NAME ${name}
-                GITHUB_REPOSITORY ${repo}
-                GIT_TAG ${tag}
-                GIT_SHALLOW TRUE
-        )
-    endif ()
-endfunction()
+# CPM's OPTIONS are only honoured when FetchContent performs the build itself.
+# With SOURCE_DIR it add_subdirectory()s the project directly and the options are
+# silently dropped, so they are set as cache variables, which the subproject's
+# option() calls pick up.
+#
+# BUILD_TESTING builds cryptest -- roughly 200 extra translation units that are
+# never used here. BUILD_SHARED builds a cryptopp DLL that is never linked.
+set(BUILD_TESTING OFF CACHE BOOL "Disable dependency test targets" FORCE)
+set(BUILD_SHARED OFF CACHE BOOL "Build dependencies as static libraries" FORCE)
 
-solstice_add_dependency(spdlog          gabime/spdlog        v1.9.2      spdlog-1.9.2)
-solstice_add_dependency(magic_enum      Neargye/magic_enum    v0.9.5      magic_enum-0.9.5)
-solstice_add_dependency(glm             g-truc/glm            1.0.1       glm-1.0.1)
-solstice_add_dependency(nlohmann_json   nlohmann/json         v3.11.3     json-3.11.3)
-solstice_add_dependency(DirectXTK       microsoft/DirectXTK   main        DirectXTK-main)
-solstice_add_dependency(cryptopp-cmake  noloader/cryptopp-cmake master    cryptopp-cmake-master)
+CPMAddPackage(NAME cryptopp-cmake SOURCE_DIR "${CRYPTOPP_DIR}")
 
 if(MSVC)
     add_compile_options(/bigobj)
@@ -317,9 +308,32 @@ set_property(TARGET minhook PROPERTY UNITY_BUILD FALSE)
 target_include_directories(Solstice PRIVATE include/ImGui)
 target_include_directories(Solstice PRIVATE include/Kiero)
 
-target_link_libraries(Solstice PRIVATE OpenMP::OpenMP_CXX DirectXTK spdlog version.lib nlohmann_json glm minhook kiero nuvola_event_system libhat dbghelp.lib winmm.lib magic_enum d3d12.lib d3d11.lib d2d1.lib dxgi.lib dxguid.lib dwrite.lib winmm.lib dbghelp.lib comctl32.lib ws2_32.lib cryptopp ole32.lib Mmdevapi.lib)
+# cryptopp-cmake does not necessarily create a target called "cryptopp".
+#
+# Its current master creates cryptopp-object / cryptopp-static / cryptopp-shared
+# and nothing else, yet the original link line below named "cryptopp". A missing
+# target is fatal for set_property() ("could not find TARGET cryptopp") and
+# silently degrades to `-lcryptopp` for target_link_libraries, which then fails
+# at link time with an unresolved external hunt. Resolve whichever target the
+# wrapper actually produced.
 
-set_property(TARGET Solstice nlohmann_json minhook spdlog cryptopp DirectXTK glm kiero nuvola_event_system magic_enum libhat PROPERTY MSVC_RUNTIME_LIBRARY "$<$<CONFIG:Debug>:MultiThreadedDLL>$<$<CONFIG:Release>:MultiThreaded>")
+if (TARGET cryptopp)
+    set(SOLSTICE_CRYPTOPP_TARGET cryptopp)
+elseif (TARGET cryptopp-static)
+    set(SOLSTICE_CRYPTOPP_TARGET cryptopp-static)
+elseif (TARGET cryptopp-object)
+    set(SOLSTICE_CRYPTOPP_TARGET cryptopp-object)
+else ()
+    message(FATAL_ERROR
+            "cryptopp-cmake did not define any of the expected targets "
+            "(cryptopp / cryptopp-static / cryptopp-object).")
+endif ()
+
+message(STATUS "linking against ${SOLSTICE_CRYPTOPP_TARGET}")
+
+target_link_libraries(Solstice PRIVATE OpenMP::OpenMP_CXX DirectXTK spdlog version.lib nlohmann_json glm minhook kiero nuvola_event_system libhat dbghelp.lib winmm.lib magic_enum d3d12.lib d3d11.lib d2d1.lib dxgi.lib dxguid.lib dwrite.lib winmm.lib dbghelp.lib comctl32.lib ws2_32.lib ${SOLSTICE_CRYPTOPP_TARGET} ole32.lib Mmdevapi.lib)
+
+set_property(TARGET Solstice nlohmann_json minhook spdlog ${SOLSTICE_CRYPTOPP_TARGET} DirectXTK glm kiero nuvola_event_system magic_enum libhat PROPERTY MSVC_RUNTIME_LIBRARY "$<$<CONFIG:Debug>:MultiThreadedDLL>$<$<CONFIG:Release>:MultiThreaded>")
 
 
 target_precompile_headers(Solstice PRIVATE

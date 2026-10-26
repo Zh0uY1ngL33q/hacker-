@@ -6,3 +6,5 @@ Dump/
 *.pdb
 __pycache__/
 *.pyc
+_deps-local/
+_deps-test/
