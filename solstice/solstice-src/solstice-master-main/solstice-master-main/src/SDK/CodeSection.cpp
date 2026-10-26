@@ -231,7 +231,14 @@ int CodeSection::countMatches(const hat::signature_view& sig, int cap) {
         if (total >= cap) break;
         if (chunk.empty()) continue;
 
-        std::array<std::byte*, 8> hits{};
+        // libhat's 5-argument find_all_pattern() writes hat::scan_result
+        // objects, not raw pointers: its constraint is
+        // std::output_iterator<Out, result_type_for<In>>, so a std::byte*[8]
+        // buffer makes the overload set collapse and every candidate fails
+        // ("no matching overload" / "cannot convert scan_result_base<std::byte*>
+        // to std::byte*"). A scan_result buffer satisfies the concept; only the
+        // distance between the returned begin/end iterators is used anyway.
+        std::array<hat::scan_result, 8> hits{};
         const size_t limit =
             std::min<size_t>(static_cast<size_t>(cap - total), hits.size());
 

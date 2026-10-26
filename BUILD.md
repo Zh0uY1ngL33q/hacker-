@@ -217,6 +217,7 @@ Get-Item out\build\x64-Release\Solstice.dll | Select-Object Name, Length, LastWr
 | `fatal error C1083: 无法打开包括文件: "cryptopp/files.h"` | Crypto++ 8.x 把头文件平铺在源码根目录，而工程按安装后的布局写 `#include <cryptopp/xxx.h>`。**配置时已自动把 `*.h` 镜像到 `<build>\cryptopp-include\cryptopp`** 并加进包含路径，`<cryptopp/...>` 和 `<...>` 两种写法都能用 |
 | `error C3861: "snprintf_s": 找不到标识符` | 新版 UCRT 头不再提供非标准的 `snprintf_s` 模板（`sprintf_s` 也一并换掉了）。`ModuleDump.cpp` / `ModernDropdown.cpp` 已改用标准 `std::snprintf` 并补 `#include <cstdio>`；顺带消除了旧写法在截断时直接 abort 的隐患 |
 | `error C7685 / C2275 / C2923: "base_type" 不是类型`（`include/entt/entity/view.hpp`） | entt 3.14.0 的 `extended_view_iterator::operator*` 用泛型 lambda + `std::apply` 展开参数包，MSVC 14.5x 无法在 lambda 里推导 `constness_as_t<typename Type::base_type, Type>`。**已按上游 entt 3.15 的写法改成 `index_sequence` 辅助函数**，语义不变 |
+| `error C2672: "hat::find_all_pattern": 未找到匹配的重载函数`（`CodeSection.cpp`，常连带 `C2119` / `C3617` 结构化绑定推导失败） | libhat 的 5 参数 `find_all_pattern` 写出的结果类型是 `hat::scan_result`（约束是 `std::output_iterator<Out, scan_result>`），而代码给的是 `std::byte*[8]` 输出区间，概念不满足，于是所有重载都被排除。**已把缓冲区改成 `std::array<hat::scan_result, 8>`**；这段只用返回的首尾迭代器距离来计数，不读内容 |
 
 ### 关于「编译器太新」
 
