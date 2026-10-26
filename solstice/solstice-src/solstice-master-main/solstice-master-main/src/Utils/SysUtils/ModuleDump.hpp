@@ -21,7 +21,14 @@ class ModuleDump {
 public:
     /// Dumps the decrypted image + a section manifest + a resolved-offset snapshot.
     /// Safe to call more than once; each call writes a new timestamped set of files.
-    static bool dump(const std::string& moduleName = "Minecraft.Windows.exe");
+    ///
+    /// `force` bypasses the SOLSTICE_DUMP check. The signature-initialisation
+    /// failure path uses it: the environment is captured when the game process
+    /// starts, not when the DLL is injected, so requiring the variable to be set
+    /// there means it is easy to end up with no image at exactly the moment the
+    /// image is the only way to make progress.
+    static bool dump(const std::string& moduleName = "Minecraft.Windows.exe",
+                     bool force = false);
 
     /// True when SOLSTICE_DUMP is set to 1/true/yes (case insensitive).
     static bool isEnabled();

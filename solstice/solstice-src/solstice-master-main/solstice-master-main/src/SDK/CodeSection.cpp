@@ -250,6 +250,98 @@ int CodeSection::countMatches(const hat::signature_view& sig, int cap) {
     return total;
 }
 
+std::vector<CodeSection::FuzzyMatch> CodeSection::fuzzyFind(const hat::signature_view& sig,
+                                                           int maxMismatch, int cap) {
+    std::vector<FuzzyMatch> out;
+
+    const auto& rs = ranges();
+    if (rs.empty() || cap <= 0 || maxMismatch < 0 || sig.empty()) return out;
+
+    // Only the concrete positions are compared; wildcards never contribute a
+    // mismatch, so the loop skips them instead of testing for them.
+    std::vector<size_t> concrete;
+    concrete.reserve(sig.size());
+    for (size_t i = 0; i < sig.size(); ++i) {
+        if (sig[i].has_value()) concrete.push_back(i);
+    }
+    if (concrete.size() < 2) return out;
+
+    const auto& chunks = csReadableChunks(rs.front());
+    const auto  base   = csModuleBase();
+    const size_t n     = sig.size();
+
+    // A pattern with only a handful of concrete bytes cannot tolerate six changes:
+    // at that point almost every offset in the section "matches" and the result is
+    // pure noise. Scale the budget with how specific the pattern actually is.
+    //
+    // Written out rather than with std::min/std::max: Windows.h's min/max macros
+    // are function-like, so `std::min({...})` expands to a syntax error.
+    int specificity = static_cast<int>(concrete.size()) / 4;
+    if (specificity < 1) specificity = 1;
+
+    int budget = maxMismatch;
+    if (budget > specificity) budget = specificity;
+    if (budget > 8) budget = 8;
+
+    // Diffs are collected in a fixed array so the innermost loop never allocates:
+    // a std::vector per candidate made the scan allocate millions of times, since
+    // nearly every offset collects its whole budget before being rejected.
+    //
+    // Three passes, each starting with a different concrete byte required to
+    // match. That single comparison rejects almost every offset, so the pass is
+    // cheap; a pattern whose first byte changed is still found by the second or
+    // third pass, and the last pass (no filter at all) is the fallback.
+    const size_t filterPositions[] = {
+        concrete.front(),
+        concrete[concrete.size() / 2],
+        SIZE_MAX,
+    };
+
+    for (const size_t filterPos : filterPositions) {
+        const bool    filterOn   = filterPos != SIZE_MAX;
+        const uint8_t filterByte = filterOn ? static_cast<uint8_t>(sig[filterPos].value()) : 0;
+
+        for (const auto& chunk : chunks) {
+            if (chunk.size() < n) continue;
+
+            const auto*  bytes = reinterpret_cast<const uint8_t*>(chunk.data());
+            const size_t last  = chunk.size() - n;
+
+            for (size_t p = 0; p <= last; ++p) {
+                if (filterOn && bytes[p + filterPos] != filterByte) continue;
+
+                int  diffPositions[8] = {};
+                int  mismatches       = 0;
+                bool ok               = true;
+
+                for (const size_t idx : concrete) {
+                    if (filterOn && idx == filterPos) continue;
+                    if (bytes[p + idx] == static_cast<uint8_t>(sig[idx].value())) continue;
+
+                    // Reject only once the budget is already exhausted, so
+                    // maxMismatch is a real budget rather than an off-by-one.
+                    if (mismatches >= budget) {
+                        ok = false;
+                        break;
+                    }
+                    diffPositions[mismatches++] = static_cast<int>(idx);
+                }
+                if (!ok) continue;
+
+                FuzzyMatch m;
+                m.rva = reinterpret_cast<uintptr_t>(bytes + p) - base;
+                m.diffPositions.assign(diffPositions, diffPositions + mismatches);
+                m.actual.assign(bytes + p, bytes + p + n);
+                out.push_back(std::move(m));
+                if (static_cast<int>(out.size()) >= cap) return out;
+            }
+        }
+
+        if (!out.empty()) return out;
+    }
+    return out;
+}
+
 bool CodeSection::looksDecrypted(double* entropyOut, double* densityOut) {
     const auto& rs = ranges();
     if (rs.empty()) return false;

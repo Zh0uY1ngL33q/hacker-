@@ -3,6 +3,7 @@
 //
 
 #include "SigManager.hpp"
+#include "CodeSection.hpp"
 
 #include <iostream>
 #include <Solstice.hpp>
@@ -16,21 +17,35 @@
 
 hat::scan_result SigManager::scanSig(hat::signature_view sig, const std::string& name, int offset)
 {
-    mSigScanCount++;
+    // The old code scanned
+    //
+    //     data.subspan(0x1000, 0x7a7baa9)
+    //
+    // which is the first section's RVA plus one specific build's VirtualSize. On
+    // 1.21.120 .text is 0x8b6e8a9 bytes, so everything past 0x7a7baa9 -- about
+    // 18 MB, a fifth of the code -- was never looked at, and every signature
+    // living there failed no matter how correct the pattern was.
+    //
+    // CodeSection derives the executable ranges from the PE section table of the
+    // *running* image instead, which is version independent.
+    auto result = CodeSection::find(sig);
 
-    auto minecraft = hat::process::get_process_module();
-    // NetEase tampers with the in-memory PE header (e_lfanew) and blanks the .text
-    // section name, so get_section_data(".text") fails. Scan the code section directly:
-    // first section (.text) has RVA=0x1000 and VirtualSize=0x7a7baa9 (read from the on-disk
-    // PE, which is stable at runtime). All signatures live inside that first section.
-    auto data = minecraft.get_module_data();
-    auto codeSpan = data.subspan(0x1000, 0x7a7baa9);
-    auto result = hat::find_pattern(codeSpan, sig);
+    // Computed outside the lock: it is a full scan, and holding the mutex across
+    // it would serialise the whole parallel for loop.
+    const int matches = result.has_result() ? CodeSection::countMatches(sig, 4) : 0;
+
+    std::lock_guard lock(mSigMutex);
+    mSigScanCount++;
 
     if (!result.has_result()) {
         mSigs[name] = 0;
         return {};
     }
+
+    // A signature that matches in more than one place resolves to *an* address
+    // rather than *the* address. That failure mode produces a crash far away
+    // from the actual mistake, so record the count and let initialize() report it.
+    mSigMatchCounts[name] = matches;
 
     if (offset == 0) mSigs[name] = reinterpret_cast<uintptr_t>(result.get());
     else mSigs[name] = reinterpret_cast<uintptr_t>(result.rel(offset));
@@ -52,9 +67,25 @@ void SigManager::initialize()
         if (sig.second != 0) Solstice::console->info("[signatures] found {} @ {}", sig.first, MemUtils::getMbMemoryString(sig.second));
     }
 
+    int ambiguous = 0;
+    for (const auto& sig : mSigs) {
+        if (sig.second == 0) continue;
+
+        const auto it = mSigMatchCounts.find(sig.first);
+        if (it == mSigMatchCounts.end() || it->second <= 1) continue;
+
+        ambiguous++;
+        Solstice::console->warn("[signatures] {} @ {} matched {} places (ambiguous)",
+                                sig.first, MemUtils::getMbMemoryString(sig.second), it->second);
+    }
+
     for (const auto& sig : mSigs) {
         if (sig.second == 0) Solstice::console->critical("[signatures] failed to find {}", sig.first);
 
+    }
+
+    if (ambiguous > 0) {
+        Solstice::console->warn("[signatures] {} of {} signatures are ambiguous", ambiguous, mSigs.size());
     }
 
 #ifndef __DEBUG__
@@ -88,6 +119,7 @@ void SigManager::deinitialize()
     spdlog::info("[signatures] deinitializing...");
     mSigInitializers.clear();
     mSigs.clear();
+    mSigMatchCounts.clear();
 
     mIsInitialized = false;
 }

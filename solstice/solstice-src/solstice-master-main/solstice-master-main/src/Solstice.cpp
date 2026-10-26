@@ -13,6 +13,7 @@
 
 #include <SDK/OffsetProvider.hpp>
 #include <SDK/CodeSection.hpp>
+#include <SDK/SigFuzz.hpp>
 
 #include <SDK/SigManager.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
@@ -180,8 +181,9 @@ void Solstice::init(HMODULE hModule)
     // unsupported game version the scan aborts the process (release) or blocks
     // on stdin (debug), so a dump placed after it would never be produced --
     // which is exactly the situation where it is most needed.
+    bool dumpedThisRun = false;
     if (ModuleDump::isEnabled())
-        ModuleDump::dump();
+        dumpedThisRun = ModuleDump::dump();
 
     OffsetProvider::initialize();
     SigManager::initialize();
@@ -211,6 +213,21 @@ void Solstice::init(HMODULE hModule)
     if (failedSigs > 0)
     {
         console->critical("Failed to find {} signatures/offsets!", failedSigs);
+
+        // Both artefacts are produced here rather than left to the operator to
+        // arrange, because this is the one run where they are needed:
+        //
+        //   * the decrypted image, without which no signature can be rewritten
+        //     offline. It used to require SOLSTICE_DUMP=1 to be inherited from
+        //     the launcher, which is easy to miss -- and an empty dump directory
+        //     costs a whole rebuild + reload cycle to discover.
+        //   * sigreport.json, which lists what failed and, for each pattern that
+        //     survived with a few bytes changed, the new bytes.
+        if (!dumpedThisRun)
+            dumpedThisRun = ModuleDump::dump("Minecraft.Windows.exe", /*force=*/true);
+
+        SigFuzz::writeReport();
+
 #ifdef __DEBUG__
         console->critical("Solstice should not be used in this state.");
         console->info("Type 'DEBUG' to continue, or press ENTER to exit.");

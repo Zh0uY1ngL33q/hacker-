@@ -170,6 +170,11 @@ setx SOLSTICE_DUMP 1
 
 然后**重新登录或重启 VS / 启动器**，确保新环境生效。
 
+> **这个变量现在不是必须的。** 从加入 `SigFuzz` 的那一版起，只要签名扫描失败
+> （也就是版本不匹配、最需要镜像的时候），`Solstice.cpp` 会无条件强制 dump 一次，
+> 并额外写出 `Dump\sigreport.json`。环境变量只用于「扫描全部成功、但仍想主动抓一份
+> 镜像」的情况。
+
 验证游戏进程确实拿到了：
 
 ```cmd
@@ -187,6 +192,11 @@ powershell -Command "Get-Process Minecraft.Windows | ForEach-Object { $_.StartIn
    （这一条很重要：熵没降下来 dump 就是废的，见第 6 步）
 5. 如果有需要，可以进一个世界再等一会，确保游戏逻辑代码也已解密
 6. 按 `END` 卸载 DLL
+
+> 版本不匹配时不需要额外操作：扫描一失败就会**自动**写出镜像和 `sigreport.json`，
+> 然后才进入失败处理（Debug 宏开着，会停在 `Type 'DEBUG' to continue`，按回车即可
+> 卸载）。看到 `Failed to find N signatures/offsets!` 之后稍等几秒再按键，镜像有
+> 200 MB 要落盘。
 
 ---
 
@@ -211,6 +221,10 @@ Minecraft.Windows_1.21.120.0_20261018_143052.image    ← 主产物，约 220 MB
 Minecraft.Windows_1.21.120.0_20261018_143052.sections.json
 Minecraft.Windows_1.21.120.0_20261018_143052.offsets.json
 ```
+
+同一目录还会多一个 `sigreport.json`（不是镜像的一部分，可以单独发）：
+签名失败清单、多匹配清单，以及每个「只差几个字节」的签名的实际字节和差异位置。
+修签名时先看它，比截图有用得多。格式见 `tools/DIAGNOSTICS.md`。
 
 ### 第一件事：看熵（这是成败判据）
 

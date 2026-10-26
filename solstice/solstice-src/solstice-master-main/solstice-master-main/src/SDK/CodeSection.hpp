@@ -53,6 +53,26 @@ public:
     /// specific enough and callers should not trust the first hit blindly.
     static int countMatches(const hat::signature_view& sig, int cap = 2);
 
+    /// A near-miss of a signature: where it probably moved to, and which concrete
+    /// bytes there no longer match the pattern.
+    struct FuzzyMatch {
+        uintptr_t            rva = 0;   // offset from the module base
+        std::vector<int>     diffPositions;  // indexes into the pattern
+        std::vector<uint8_t> actual;         // bytes found at `rva`, pattern.size() long
+    };
+
+    /// Exact-match scanning is all or nothing: one changed immediate and the
+    /// signature is reported as missing, with no information about where it went
+    /// or what changed. This searches for the same pattern while tolerating up to
+    /// `maxMismatch` concrete bytes that no longer match, and returns up to `cap`
+    /// candidates in address order.
+    ///
+    /// Used only for diagnosis of an unsupported game version, never on the hot
+    /// path: the relaxed comparison cannot reject a candidate after a single byte,
+    /// so it is several times slower than find().
+    static std::vector<FuzzyMatch> fuzzyFind(const hat::signature_view& sig,
+                                             int maxMismatch, int cap = 4);
+
     /// Heuristic "has the packer decrypted the code yet" check.
     ///
     /// Encrypted bytes have an entropy near 8.0 and contain no x64 function

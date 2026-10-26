@@ -5,9 +5,13 @@
 
 #include <cstdint>
 #include <future>
+#include <mutex>
+#include <unordered_map>
 #include <include/libhat/include/libhat.hpp>
 #include <include/libhat/include/libhat/Scanner.hpp>
 #include <include/libhat/include/libhat/Signature.hpp>
+
+#include <SDK/SigFuzz.hpp>
 
 enum class SigType {
     Sig,
@@ -22,6 +26,7 @@ static void name##_initializer() { \
     auto result = scanSig(hat::compile_signature<str>(), xorstr_(#name), offset); \
     if (!result.has_result()) { \
         name = 0; \
+        SigFuzz::onFailed(xorstr_(#name), hat::compile_signature<str>()); \
         return; \
     } \
     if (sig_type == SigType::Sig) name = reinterpret_cast<uintptr_t>(result.get()); \
@@ -37,9 +42,21 @@ class SigManager {
 
     static inline std::vector<std::function<void()>> mSigInitializers;
     static inline int mSigScanCount;
+
+    /// initialize() runs the initializers under `#pragma omp parallel for` and
+    /// every one of them writes into mSigs. std::unordered_map is not safe for
+    /// concurrent insertion (it corrupts its bucket chains, which shows up as an
+    /// unrelated crash later), so the writes are serialised here while the
+    /// scanning itself stays parallel.
+    static inline std::mutex mSigMutex;
 public:
     static inline bool mIsInitialized = false;
     static inline std::unordered_map<std::string, uintptr_t> mSigs;
+
+    /// Number of places each signature matched, capped. Anything above 1 means
+    /// the signature only identifies a *set* of functions, so the address that
+    /// was kept may not be the intended one.
+    static inline std::unordered_map<std::string, int> mSigMatchCounts;
 
     DEFINE_SIG(Actor_setPosition, "48 89 ? ? ? 57 48 83 EC ? 48 8B ? 48 8B ? 48 8B ? ? ? ? ? 48 85 ? 74 ? 48 8B ? 48 8B ? ? ? ? ? FF 15", SigType::Sig, 0);
     DEFINE_SIG(Actor_getNameTag, "E8 ? ? ? ? 48 83 78 18 ? 76 ? 48 8B ? EB ? 48 8D ? ? ? ? ? 4C 8B ? 4C 8B ? 48 8D ? ? ? ? ? 48 8D ? ? ? E8 ? ? ? ? 48 8B", SigType::RefSig, 1); // TODO: Check this and make sure it works, as a lot of the other references were inlined

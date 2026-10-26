@@ -19,7 +19,7 @@ static void name##_initializer() { \
     if (initialized) return; \
     initialized = true; \
     auto result = scanSig(hat::compile_signature<str>(), xorstr_(#name), index_offset); \
-    if (!result.has_result()) return; \
+    if (!result.has_result()) { SigFuzz::onFailed(xorstr_(#name), hat::compile_signature<str>()); return; } \
     if ((offset_type) == OffsetType::Index) name = *reinterpret_cast<type*>(reinterpret_cast<uintptr_t>(result.get()) + index_offset) / 8; \
     else (name) = *reinterpret_cast<type*>(reinterpret_cast<uintptr_t>(result.get()) + index_offset); \
 } \
@@ -37,7 +37,7 @@ static void name##_initializer() { \
     if (initialized) return; \
     initialized = true; \
     auto result = scanSig(hat::compile_signature<str>(), xorstr_(#name), index_offset); \
-    if (!result.has_result()) return; \
+    if (!result.has_result()) { SigFuzz::onFailed(xorstr_(#name), hat::compile_signature<str>()); return; } \
     if ((offset_type) == OffsetType::Index) (name) = *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(result.get()) + (index_offset)) / 8; \
     else (name) = *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(result.get()) + (index_offset)); \
 } \
@@ -53,6 +53,8 @@ static constexpr inline int (name) = offset;
 #include <future>
 #include <libhat/Scanner.hpp>
 #include <mutex>
+
+#include <SDK/SigFuzz.hpp>
 
 class OffsetProvider {
     static hat::scan_result scanSig(hat::signature_view sig, const std::string& name, int offset = 0);

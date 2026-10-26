@@ -183,8 +183,8 @@ void ModuleDump::writeOffsetSnapshot(const std::string& path, const std::string&
     f << j.dump(2);
 }
 
-bool ModuleDump::dump(const std::string& moduleName) {
-    if (!isEnabled()) return false;
+bool ModuleDump::dump(const std::string& moduleName, bool force) {
+    if (!force && !isEnabled()) return false;
 
     HMODULE base = GetModuleHandleA(moduleName.c_str());
     if (!base) {
