@@ -214,22 +214,29 @@ Get-Item out\build\x64-Release\Solstice.dll | Select-Object Name, Length, LastWr
 | `error C2371: "CryptoPP::Block": 重定义` / `error C2084: 函数已有主体` | Crypto++ 被 unity build 合并了。**已对 cryptopp 关掉 unity**；若还出现，删掉 `out\` 重新配置 |
 | `error C2872: "ScopedHandle": 不明确的符号` / `error C2668: "DirectX::safe_handle"` | DirectXTK 默认还会编 `xwbtool`（XWB 音效包打包工具），它把 `Audio/WAVFileReader.cpp` 和 `xwbtool/CmdLineHelpers.h` 合进同一个 unity 翻译单元，于是 `DirectX::ScopedHandle` 和 `Helpers::ScopedHandle` 撞名。工程已用 `BUILD_TOOLS OFF` 关掉这个工具（我们只链 DirectXTK 库，不用它） |
 | `error C2653: "stdext": 不是类或命名空间名称` | 新版 MSVC 删掉了非标准的 `stdext::make_unchecked_array_iterator` / `make_checked_array_iterator`（`zdeflate.cpp`、`integer.cpp`）。**已自动打补丁**改回裸指针；如果上游还有别的地方用到，配置阶段会直接报出文件名并停下，而不是编到一半才炸 |
+| `fatal error C1083: 无法打开包括文件: "cryptopp/files.h"` | Crypto++ 8.x 把头文件平铺在源码根目录，而工程按安装后的布局写 `#include <cryptopp/xxx.h>`。**配置时已自动把 `*.h` 镜像到 `<build>\cryptopp-include\cryptopp`** 并加进包含路径，`<cryptopp/...>` 和 `<...>` 两种写法都能用 |
+| `error C3861: "snprintf_s": 找不到标识符` | 新版 UCRT 头不再提供非标准的 `snprintf_s` 模板（`sprintf_s` 也一并换掉了）。`ModuleDump.cpp` / `ModernDropdown.cpp` 已改用标准 `std::snprintf` 并补 `#include <cstdio>`；顺带消除了旧写法在截断时直接 abort 的隐患 |
+| `error C7685 / C2275 / C2923: "base_type" 不是类型`（`include/entt/entity/view.hpp`） | entt 3.14.0 的 `extended_view_iterator::operator*` 用泛型 lambda + `std::apply` 展开参数包，MSVC 14.5x 无法在 lambda 里推导 `constness_as_t<typename Type::base_type, Type>`。**已按上游 entt 3.15 的写法改成 `index_sequence` 辅助函数**，语义不变 |
 
 ### 关于「编译器太新」
 
-MSVC 14.4x / 14.5x（VS 2022 17.1x、VS 18）**不需要降级**。上面那三类报错一条都不是
-「编译器不兼容」，而是两个依赖的旧代码/旧 CMake 脚本在新环境里暴露出来的问题：
+MSVC 14.4x / 14.5x（VS 2022 17.1x、VS 18）**不需要降级**。上面那些报错一条都不是
+「编译器不兼容」，而是依赖或老代码在新环境里暴露出来的问题：
 
 1. Crypto++ 的 CMake 包装层（`noloader/cryptopp-cmake`）自 2017 年起就有一行
    `add_compile_options(${CRYPTOPP_COMPILE_DEFINITIONS})`，把宏定义丢掉了 `-D` 前缀；
 2. `zdeflate.cpp` / `integer.cpp` 里用了微软早就标废弃、如今已删除的非标准迭代器辅助函数
    （`stdext::make_unchecked_array_iterator`、`make_checked_array_iterator`）；
 3. 我们自己的 `CMAKE_UNITY_BUILD TRUE` 恰好把 Crypto++ 里那些同名匿名命名空间函数
-   合并到了一起。
+   合并到了一起；
+4. Crypto++ 8.x 把头文件平铺在源码根目录，而工程用的是安装后的 `cryptopp/` 前缀；
+5. 工程自己的代码里还有非标准的 `snprintf_s` / `sprintf_s` 写法，内置的 entt 3.14.0 也没
+   考虑过 MSVC 14.5x 的 lambda 推导。
 
-前两条是上游代码的问题，由 `cmake/Dependencies.cmake` 在每次配置时按文本模式自动打补丁
-（幂等，重复配置不会重复改）；第三条在 `CMakeLists.txt` 里只对 cryptopp 的三个 target
-关掉 unity。换老编译器只会绕开第 3 条里的表象、并不能解决，而且 C++26 的新标准反倒编不过。
+前四条里，依赖相关的由 `cmake/Dependencies.cmake` 在每次配置时按文本模式自动打补丁
+（幂等，重复配置不会重复改），头文件镜像在 `CMakeLists.txt` 里生成；第 5 条直接在
+`src/` 和 `include/entt/` 里按上游较新版本的写法改掉。换老编译器只会绕开第 3 条的表象，
+并不能解决，而且 C++26 的新标准反倒编不过。
 
 配置阶段失败是**快**的（几秒到几十秒），编译阶段失败才慢。所以看清是
 `Configuring done` 之前还是之后报的错。

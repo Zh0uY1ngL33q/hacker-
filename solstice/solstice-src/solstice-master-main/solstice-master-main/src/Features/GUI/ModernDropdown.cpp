@@ -3,6 +3,9 @@
 //
 
 #include "ModernDropdown.hpp"
+
+#include <cstdio>
+
 #include <Features/Modules/ModuleCategory.hpp>
 #include <Features/Modules/Visual/ClickGui.hpp>
 #include <Utils/FontHelper.hpp>
@@ -564,7 +567,7 @@ void ModernGui::render(float animation, float inScale, int& scrollDirection, cha
                                     const float max = numSetting->mMax;
 
                                     char str[10];
-                                    sprintf_s(str, 10, "%.2f", value);
+                                    std::snprintf(str, sizeof(str), "%.2f", value);
                                     std::string rVal = str;
 
                                     std::string setName = lowercase ? StringUtils::toLower(setting->mName) : setting->mName;

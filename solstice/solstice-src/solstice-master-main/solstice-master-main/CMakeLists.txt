@@ -342,6 +342,28 @@ set_property(TARGET minhook PROPERTY UNITY_BUILD FALSE)
 target_include_directories(Solstice PRIVATE include/ImGui)
 target_include_directories(Solstice PRIVATE include/Kiero)
 
+# Crypto++ 8.x keeps its headers flat in the source root, but the documented
+# include form -- and the installed layout -- is <cryptopp/xxx.h>. Linking the
+# cryptopp target only puts the flat directory on the include path, so
+# src/Utils/StringUtils.cpp stops at:
+#
+#     fatal error C1083: cannot open include file: "cryptopp/files.h"
+#
+# Mirror the headers into <build>/cryptopp-include/cryptopp so the documented
+# form works project-wide instead of rewriting every include. Copying the header
+# tree (rather than synthesising one header per include) keeps every header
+# reachable both flat, <files.h>, and prefixed, <cryptopp/files.h>.
+if (CRYPTOPP_DIR)
+    set(SOLSTICE_CRYPTOPP_INCLUDE_DIR "${CMAKE_BINARY_DIR}/cryptopp-include")
+    file(GLOB _solstice_cryptopp_headers "${CRYPTOPP_DIR}/*.h")
+    if (_solstice_cryptopp_headers)
+        file(COPY ${_solstice_cryptopp_headers}
+                DESTINATION "${SOLSTICE_CRYPTOPP_INCLUDE_DIR}/cryptopp")
+    endif ()
+    unset(_solstice_cryptopp_headers)
+    target_include_directories(Solstice PRIVATE "${SOLSTICE_CRYPTOPP_INCLUDE_DIR}")
+endif ()
+
 # cryptopp-cmake does not necessarily create a target called "cryptopp".
 #
 # Its current master creates cryptopp-object / cryptopp-static / cryptopp-shared

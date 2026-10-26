@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -29,7 +30,7 @@ constexpr size_t kEntropySampleStride = 512;
 // does not otherwise depend on.
 std::string hex(uint64_t v) {
     char buf[32];
-    snprintf_s(buf, sizeof(buf), "0x%llX", static_cast<unsigned long long>(v));
+    std::snprintf(buf, sizeof(buf), "0x%llX", static_cast<unsigned long long>(v));
     return buf;
 }
 
@@ -37,7 +38,7 @@ std::string timestamp() {
     SYSTEMTIME st{};
     GetLocalTime(&st);
     char buf[32];
-    snprintf_s(buf, sizeof(buf), "%04d%02d%02d_%02d%02d%02d",
+    std::snprintf(buf, sizeof(buf), "%04d%02d%02d_%02d%02d%02d",
                st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
     return buf;
 }
@@ -64,7 +65,7 @@ std::string readImageVersion(HMODULE base) {
     }
 
     char out[32];
-    snprintf_s(out, sizeof(out), "%u.%u.%u.%u",
+    std::snprintf(out, sizeof(out), "%u.%u.%u.%u",
                HIWORD(ffi->dwFileVersionMS), LOWORD(ffi->dwFileVersionMS),
                HIWORD(ffi->dwFileVersionLS), LOWORD(ffi->dwFileVersionLS));
     return out;
@@ -273,11 +274,11 @@ bool ModuleDump::dump(const std::string& moduleName) {
 
         char secName[32];
         if (sec->Name[0]) {
-            snprintf_s(secName, sizeof(secName), "%s",
+            std::snprintf(secName, sizeof(secName), "%s",
                        reinterpret_cast<const char*>(sec->Name));
         } else {
             // NetEase blanks the code section names.
-            snprintf_s(secName, sizeof(secName), "<blank#%u>", i);
+            std::snprintf(secName, sizeof(secName), "<blank#%u>", i);
         }
 
         const double ent = entropy(data);

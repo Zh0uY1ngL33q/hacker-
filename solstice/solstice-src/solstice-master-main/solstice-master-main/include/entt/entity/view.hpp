@@ -152,7 +152,7 @@ struct extended_view_iterator final {
     }
 
     [[nodiscard]] reference operator*() const noexcept {
-        return std::apply([entt = *it](auto *...curr) { return std::tuple_cat(std::make_tuple(entt), static_cast<Type *>(const_cast<constness_as_t<typename Type::base_type, Type> *>(curr))->get_as_tuple(entt)...); }, it.pools);
+        return dereference(std::index_sequence_for<Type...>{});
     }
 
     [[nodiscard]] pointer operator->() const noexcept {
@@ -167,6 +167,24 @@ struct extended_view_iterator final {
     friend bool constexpr operator==(const extended_view_iterator<Lhs...> &, const extended_view_iterator<Rhs...> &) noexcept;
 
 private:
+    // Local patch (entt 3.14.0): operator*() used to unpack it.pools with
+    //
+    //     std::apply([entt = *it](auto *...curr) { ... }, it.pools);
+    //
+    // MSVC 14.5x cannot expand `constness_as_t<typename Type::base_type, Type>`
+    // over a generic lambda's parameter pack and rejects it with
+    //
+    //     error C7685: no type named "base_type"
+    //     error C2275: 'base_type': illegal use of this type as an expression
+    //
+    // The expression below is the one upstream entt 3.15 uses instead: same
+    // casts and same result, but indexed explicitly so no dependent type has to
+    // be deduced inside a lambda.
+    template<std::size_t... Index>
+    [[nodiscard]] auto dereference(std::index_sequence<Index...>) const noexcept {
+        return std::tuple_cat(std::make_tuple(*it), static_cast<Type *>(const_cast<constness_as_t<typename Type::base_type, Type> *>(std::get<Index>(it.pools)))->get_as_tuple(*it)...);
+    }
+
     It it;
 };
 
