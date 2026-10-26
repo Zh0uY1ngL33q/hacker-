@@ -160,15 +160,17 @@ solstice_resolve_dependency(DIRECTXTK_DIR DirectXTK DirectXTK-main
 #    Removing the second copy is enough; the definitions still arrive through
 #    add_compile_definitions() and target_compile_definitions().
 #
-# 2. zdeflate.cpp has an "#if _MSC_VER >= 1600" branch calling
-#    stdext::make_unchecked_array_iterator(). stdext was a non-standard MSVC
-#    extension, deprecated since VS 2010 and removed in VS 18 (MSVC 14.5x):
+# 2. stdext::make_unchecked_array_iterator() and
+#    stdext::make_checked_array_iterator() are used by zdeflate.cpp and
+#    integer.cpp. stdext was a non-standard MSVC extension, deprecated since
+#    VS 2010 and removed in VS 18 (MSVC 14.5x):
 #
 #        error C2653: 'stdext': is not a class or namespace name
 #
-#    The helper only wraps a pointer so it can be used as an iterator, so
-#    unwrapping the call restores the portable form the #else branch already
-#    uses and compiles on every version.
+#    Both helpers only wrap a pointer (and optionally a length, which is a
+#    debugging hint) into an iterator, so unwrapping the call to the pointer
+#    restores the portable form the #else branches in the same files already
+#    use and compiles on every version.
 
 function(solstice_patch_text_file path old new)
     if (NOT EXISTS "${path}")
@@ -187,6 +189,15 @@ function(solstice_patch_text_file path old new)
     message(STATUS "patched ${filename}")
 endfunction()
 
+# Rewrites the stdext iterator wrappers, which only exist on old MSVC.
+#
+# The checked form takes (pointer, length) and the length is purely a debugging
+# hint -- the value is still the pointer -- so unwrapping must keep the *first*
+# argument and drop the rest. That is not something CMake's regular expression
+# engine can do safely for arbitrary argument lists (it has no non-capturing
+# groups and no lazy quantifiers), and the pinned Crypto++ has exactly one call
+# site, so it is rewritten literally. Anything that slips through is caught by
+# the check at the end of solstice_patch_cryptopp() rather than by cl.exe.
 function(solstice_patch_cryptopp dir)
     # Bracket arguments: these strings contain ${...} which must survive as
     # literal text rather than being expanded here.
@@ -194,17 +205,40 @@ function(solstice_patch_cryptopp dir)
             [[add_compile_options(${CMAKE_CXX_FLAGS} ${CRYPTOPP_COMPILE_DEFINITIONS} ${CRYPTOPP_COMPILE_OPTIONS})]]
             [[add_compile_options(${CRYPTOPP_COMPILE_OPTIONS})]])
 
-    set(zdeflate "${dir}/zdeflate.cpp")
-    if (EXISTS "${zdeflate}")
-        file(READ "${zdeflate}" contents)
+    solstice_patch_text_file("${dir}/integer.cpp"
+            [[stdext::make_checked_array_iterator(block.begin(), block.size())]]
+            [[block.begin()]])
+
+    # The unchecked form is always stdext::make_unchecked_array_iterator(<one
+    # expression>), so a pattern can handle it. Every source file is scanned
+    # rather than only the ones that use it today.
+    file(GLOB _cryptopp_files "${dir}/*.cpp" "${dir}/*.h")
+    foreach (_cryptopp_file IN LISTS _cryptopp_files)
+        file(READ "${_cryptopp_file}" _contents)
         string(REGEX REPLACE
-                "stdext::make_unchecked_array_iterator\\(([A-Za-z_][A-Za-z0-9_]*)\\)"
-                "\\1" patched "${contents}")
-        if (NOT patched STREQUAL "${contents}")
-            file(WRITE "${zdeflate}" "${patched}")
-            message(STATUS "patched zdeflate.cpp")
+                "stdext::make_unchecked_array_iterator\\(([A-Za-z_][A-Za-z0-9_.]*(\\(\\))?)\\)"
+                "\\1" _patched "${_contents}")
+
+        if (NOT _patched STREQUAL _contents)
+            file(WRITE "${_cryptopp_file}" "${_patched}")
+            get_filename_component(_filename "${_cryptopp_file}" NAME)
+            message(STATUS "patched ${_filename}")
         endif ()
-    endif ()
+
+        # Fail here, naming the file, instead of letting cl.exe report C2653
+        # halfway through the build if a different pin adds another call.
+        string(FIND "${_patched}" "stdext::make_" _position)
+        if (NOT _position EQUAL -1)
+            get_filename_component(_filename "${_cryptopp_file}" NAME)
+            message(FATAL_ERROR
+                    "${_filename} still calls a stdext::make_*_array_iterator, which is\n"
+                    "gone from current MSVC. Add a rewrite for it to\n"
+                    "cmake/Dependencies.cmake (solstice_patch_cryptopp).")
+        endif ()
+    endforeach ()
+
+    unset(_cryptopp_files)
+    unset(_cryptopp_file)
 endfunction()
 
 # ---------------------------------------------------------------------------
