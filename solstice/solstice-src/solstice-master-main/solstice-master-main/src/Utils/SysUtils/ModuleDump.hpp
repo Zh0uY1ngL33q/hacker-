@@ -33,6 +33,12 @@ public:
     /// True when SOLSTICE_DUMP is set to 1/true/yes (case insensitive).
     static bool isEnabled();
 
+    /// Where dump artefacts go: SOLSTICE_DUMP_DIR when set, otherwise the
+    /// client's Dump folder. Always ends with a separator. Public so everything
+    /// written on a failing run -- image, manifest, sigreport.json -- lands in
+    /// the same place instead of splitting across two directories.
+    static std::string outputDir();
+
 private:
     /// The actual dump. Wrapped by dump(), which turns any escaping exception into
     /// a log line: this runs on the client's init thread, where an exception that

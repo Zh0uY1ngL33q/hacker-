@@ -116,6 +116,10 @@ bool writeJsonFile(const std::string& path, const nlohmann::json& value) {
     // replace: never throw on a byte sequence JSON cannot represent. Throwing
     // from here took the whole process down mid-dump.
     f << value.dump(2, ' ', false, nlohmann::json::error_handler_t::replace);
+    // good() alone can still be true while the data sits in the stream buffer; a
+    // failing disk only surfaces on the flush. This file is small, so flush now
+    // and report an accurate result.
+    f.flush();
     return f.good();
 }
 
@@ -217,12 +221,20 @@ void ModuleDump::writeOffsetSnapshot(const std::string& path, const std::string&
     for (const auto& [name, addr] : SigManager::mSigs)
         j["signatures"][name] = rel(addr);
 
-    std::ofstream f(path);
-    if (!f.is_open()) {
+    if (!writeJsonFile(path, j))
         Solstice::console->critical("[dump] failed to write offset snapshot: {}", path);
-        return;
+}
+
+std::string ModuleDump::outputDir() {
+    char buf[MAX_PATH * 4] = {0};
+    const DWORD n = GetEnvironmentVariableA("SOLSTICE_DUMP_DIR", buf,
+                                            static_cast<DWORD>(sizeof(buf)));
+    if (n > 0 && n < sizeof(buf)) {
+        std::string dir = buf;
+        if (!dir.empty() && dir.back() != '\\' && dir.back() != '/') dir += '\\';
+        return dir;
     }
-    f << j.dump(2);
+    return FileUtils::getSolsticeDir() + "Dump\\";
 }
 
 bool ModuleDump::dump(const std::string& moduleName, bool force) {
@@ -270,18 +282,7 @@ bool ModuleDump::dumpImage(const std::string& moduleName) {
     // overridden with SOLSTICE_DUMP_DIR so the image can be written somewhere
     // easy to find. This build is a Win32 desktop client rather than the UWP
     // package, so the default RoamingState path may not be where you expect.
-    std::string dir;
-    {
-        char buf[MAX_PATH * 4] = {0};
-        const DWORD n = GetEnvironmentVariableA("SOLSTICE_DUMP_DIR", buf,
-                                                static_cast<DWORD>(sizeof(buf)));
-        if (n > 0 && n < sizeof(buf)) {
-            dir = buf;
-            if (!dir.empty() && dir.back() != '\\' && dir.back() != '/') dir += '\\';
-        } else {
-            dir = FileUtils::getSolsticeDir() + "Dump\\";
-        }
-    }
+    const std::string dir = outputDir();
     std::error_code ec;
     std::filesystem::create_directories(dir, ec);
 

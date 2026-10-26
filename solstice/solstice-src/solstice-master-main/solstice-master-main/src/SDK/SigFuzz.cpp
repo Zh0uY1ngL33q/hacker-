@@ -14,6 +14,7 @@
 #include <SDK/OffsetProvider.hpp>
 #include <SDK/SigManager.hpp>
 #include <Utils/FileUtils.hpp>
+#include <Utils/SysUtils/ModuleDump.hpp>
 
 namespace {
 
@@ -187,20 +188,28 @@ bool SigFuzz::writeReport() {
     root["nearMisses"] = nearMisses;
 
     // Same directory as the image dump, so everything produced by a failing run
-    // is in one place.
-    const std::string dir  = FileUtils::getSolsticeDir() + "Dump\\";
+    // is in one place -- including when SOLSTICE_DUMP_DIR redirects the dump.
+    const std::string dir  = ModuleDump::outputDir();
     const std::string path = dir + "sigreport.json";
 
     std::error_code ec;
     std::filesystem::create_directories(dir, ec);
 
-    std::ofstream file(path);
+    std::ofstream file(path, std::ios::binary | std::ios::trunc);
     if (!file.is_open()) {
         Solstice::console->critical("[fuzz] could not open {} for writing", path);
         return false;
     }
-    file << root.dump(2);
+    // replace: this file must never be the reason the process dies. Names and
+    // patterns are ASCII, but the dump path below is not, so do not rely on it.
+    file << root.dump(2, ' ', false, nlohmann::json::error_handler_t::replace);
+    const bool ok = file.good();
     file.close();
+
+    if (!ok) {
+        Solstice::console->critical("[fuzz] failed while writing {}", path);
+        return false;
+    }
 
     Solstice::console->info(
         "[fuzz] wrote {}: {} near miss(es), {} unresolved offset(s), {} unresolved signature(s)",
