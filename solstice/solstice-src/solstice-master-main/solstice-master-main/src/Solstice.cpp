@@ -217,16 +217,20 @@ void Solstice::init(HMODULE hModule)
         // Both artefacts are produced here rather than left to the operator to
         // arrange, because this is the one run where they are needed:
         //
-        //   * the decrypted image, without which no signature can be rewritten
-        //     offline. It used to require SOLSTICE_DUMP=1 to be inherited from
-        //     the launcher, which is easy to miss -- and an empty dump directory
-        //     costs a whole rebuild + reload cycle to discover.
-        //   * sigreport.json, which lists what failed and, for each pattern that
-        //     survived with a few bytes changed, the new bytes.
+        //   * sigreport.json: what failed, and for each pattern that survived with
+        //     a few bytes changed, the new bytes. Small, and the thing that makes
+        //     the next iteration possible.
+        //   * the decrypted image, without which no pattern can be rewritten
+        //     offline. It used to require SOLSTICE_DUMP=1 to be inherited from the
+        //     launcher, which is easy to miss -- and an empty dump directory costs a
+        //     whole rebuild + reload cycle to discover.
+        //
+        // Report first, deliberately: the image is 200 MB of file I/O on this
+        // thread, and if it dies halfway the report still has to exist.
+        SigFuzz::writeReport();
+
         if (!dumpedThisRun)
             dumpedThisRun = ModuleDump::dump("Minecraft.Windows.exe", /*force=*/true);
-
-        SigFuzz::writeReport();
 
 #ifdef __DEBUG__
         console->critical("Solstice should not be used in this state.");

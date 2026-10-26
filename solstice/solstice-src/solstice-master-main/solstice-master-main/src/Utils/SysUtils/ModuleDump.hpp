@@ -34,6 +34,11 @@ public:
     static bool isEnabled();
 
 private:
+    /// The actual dump. Wrapped by dump(), which turns any escaping exception into
+    /// a log line: this runs on the client's init thread, where an exception that
+    /// gets out terminates the process.
+    static bool dumpImage(const std::string& moduleName);
+
     struct SectionInfo {
         std::string name;
         uint32_t    rva = 0;

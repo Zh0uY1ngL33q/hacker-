@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <system_error>
@@ -75,6 +76,47 @@ bool pageIsReadable(const MEMORY_BASIC_INFORMATION& mbi) {
     if (mbi.State != MEM_COMMIT) return false;
     if (mbi.Protect & (PAGE_GUARD | PAGE_NOACCESS)) return false;
     return true;
+}
+
+// Section names come straight out of the PE header and the packer leaves
+// arbitrary bytes in them -- not valid UTF-8. That matters because
+// nlohmann::json::dump() validates UTF-8 by default and *throws* on anything
+// else, and this string goes into the manifest. Escape everything outside
+// printable ASCII so the name stays informative and the JSON stays valid.
+std::string printableSectionName(const IMAGE_SECTION_HEADER& sec, WORD index) {
+    if (sec.Name[0] == 0) {
+        // NetEase blanks the code section names.
+        char buf[24];
+        std::snprintf(buf, sizeof(buf), "<blank#%u>", static_cast<unsigned>(index));
+        return buf;
+    }
+
+    std::string out;
+    out.reserve(24);
+    for (int i = 0; i < 8 && sec.Name[i] != 0; ++i) {
+        const unsigned char c = sec.Name[i];
+        if (c >= 0x20 && c < 0x7F) {
+            out += static_cast<char>(c);
+        } else {
+            char buf[8];
+            std::snprintf(buf, sizeof(buf), "\\x%02X", static_cast<unsigned>(c));
+            out += buf;
+        }
+    }
+    return out;
+}
+
+// Writes JSON and reports whether it landed. Used for the manifest, which is
+// rewritten after every section so that an interrupted dump still leaves a
+// description of what made it into the image.
+bool writeJsonFile(const std::string& path, const nlohmann::json& value) {
+    std::ofstream f(path, std::ios::binary | std::ios::trunc);
+    if (!f.is_open()) return false;
+
+    // replace: never throw on a byte sequence JSON cannot represent. Throwing
+    // from here took the whole process down mid-dump.
+    f << value.dump(2, ' ', false, nlohmann::json::error_handler_t::replace);
+    return f.good();
 }
 
 } // namespace
@@ -186,6 +228,22 @@ void ModuleDump::writeOffsetSnapshot(const std::string& path, const std::string&
 bool ModuleDump::dump(const std::string& moduleName, bool force) {
     if (!force && !isEnabled()) return false;
 
+    // Nothing thrown in here may reach the caller: this runs on the client's init
+    // thread and an escaping exception terminates the process. That is exactly what
+    // happened when the manifest was serialised -- nlohmann rejects invalid UTF-8
+    // by default, the dump threw after writing the 200 MB image but before writing
+    // the manifest, and the game died leaving a 0-byte .sections.json behind.
+    try {
+        return dumpImage(moduleName);
+    } catch (const std::exception& e) {
+        Solstice::console->critical("[dump] aborted: {}", e.what());
+    } catch (...) {
+        Solstice::console->critical("[dump] aborted: unknown exception");
+    }
+    return false;
+}
+
+bool ModuleDump::dumpImage(const std::string& moduleName) {
     HMODULE base = GetModuleHandleA(moduleName.c_str());
     if (!base) {
         Solstice::console->critical("[dump] could not find module {}", moduleName);
@@ -229,6 +287,7 @@ bool ModuleDump::dump(const std::string& moduleName, bool force) {
 
     const std::string tag = version + "_" + timestamp();
     const std::string imagePath = dir + "Minecraft.Windows_" + tag + ".image";
+    const std::string manifestPath = dir + "Minecraft.Windows_" + tag + ".sections.json";
 
     Solstice::console->info("[dump] writing decrypted image -> {}", imagePath);
 
@@ -245,6 +304,12 @@ bool ModuleDump::dump(const std::string& moduleName, bool force) {
     manifest["sizeOfImage"] = hex(nt->OptionalHeader.SizeOfImage);
     manifest["timestamp"] = tag;
     manifest["sections"] = nlohmann::json::array();
+
+    // Written up front and rewritten after every section. It is a few KB while the
+    // image is 200+ MB, and it is the only thing that makes the image usable
+    // offline, so it must not be the artefact left behind.
+    if (!writeJsonFile(manifestPath, manifest))
+        Solstice::console->critical("[dump] cannot write {} (disk full?)", manifestPath);
 
     // Headers first, so the result parses as a PE offline.
     {
@@ -272,14 +337,17 @@ bool ModuleDump::dump(const std::string& moduleName, bool force) {
         image.write(reinterpret_cast<const char*>(data.data()),
                     static_cast<std::streamsize>(data.size()));
 
-        char secName[32];
-        if (sec->Name[0]) {
-            std::snprintf(secName, sizeof(secName), "%s",
-                       reinterpret_cast<const char*>(sec->Name));
-        } else {
-            // NetEase blanks the code section names.
-            std::snprintf(secName, sizeof(secName), "<blank#%u>", i);
+        // A full disk leaves a short image and no error: ofstream only sets its
+        // fail bit. Say so instead of silently producing a truncated dump that
+        // looks complete.
+        if (!image) {
+            Solstice::console->critical(
+                "[dump] write failed at sec[{}] (disk full?); the image is incomplete", i);
+            manifest["truncatedAt"] = printableSectionName(*sec, i);
+            break;
         }
+
+        const std::string secName = printableSectionName(*sec, i);
 
         const double ent = entropy(data);
 
@@ -297,6 +365,7 @@ bool ModuleDump::dump(const std::string& moduleName, bool force) {
         secJson["dumpedBytes"] = vsize - skipped;
         secJson["skippedBytes"] = skipped;
         manifest["sections"].push_back(secJson);
+        writeJsonFile(manifestPath, manifest);
 
         Solstice::console->info(
             "[dump]   sec[{}] {} RVA=0x{:X} vsize=0x{:X} entropy={:.3} skipped=0x{:X}",
@@ -306,21 +375,20 @@ bool ModuleDump::dump(const std::string& moduleName, bool force) {
     image.flush();
     image.close();
 
-    const std::string manifestPath = dir + "Minecraft.Windows_" + tag + ".sections.json";
-    {
-        std::ofstream mf(manifestPath);
-        mf << manifest.dump(2);
-    }
+    // Logged right after the image is closed: if anything below fails, the log
+    // still says how large the image actually got, which is what distinguishes a
+    // truncated dump from a complete one.
+    std::error_code sizeEc;
+    const auto finalSize = std::filesystem::file_size(imagePath, sizeEc);
+    Solstice::console->info("[dump] image closed: {} ({} MB)",
+                            imagePath, sizeEc ? 0ULL : (finalSize / (1024 * 1024)));
+
+    if (!writeJsonFile(manifestPath, manifest))
+        Solstice::console->critical("[dump] failed to finalise {}", manifestPath);
 
     writeOffsetSnapshot(dir + "Minecraft.Windows_" + tag + ".offsets.json", tag);
 
-    std::error_code sizeEc;
-    const auto finalSize = std::filesystem::file_size(imagePath, sizeEc);
-
-    Solstice::console->info("[dump] done. image={} ({} MB), manifest={}",
-                            imagePath,
-                            sizeEc ? 0ULL : (finalSize / (1024 * 1024)),
-                            manifestPath);
+    Solstice::console->info("[dump] done. manifest={}", manifestPath);
     Solstice::console->info("[dump] send the .image file back for offline signature analysis.");
     return true;
 }
