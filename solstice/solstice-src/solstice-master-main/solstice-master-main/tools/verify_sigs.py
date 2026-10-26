@@ -107,12 +107,8 @@ def parse_pattern(text):
     return out
 
 
-def scan(buf, start, end, pat, limit=64):
-    """All matches of pat within [start, end). Anchored for speed."""
-    n = len(pat)
-    if n == 0 or end - start < n:
-        return []
-
+def longest_run(pat):
+    """Longest stretch of consecutive concrete bytes: (length, offset)."""
     best_len, best_start = 0, 0
     cur, cur_start = 0, 0
     for i, v in enumerate(pat):
@@ -124,24 +120,52 @@ def scan(buf, start, end, pat, limit=64):
             cur += 1
             if cur > best_len:
                 best_len, best_start = cur, cur_start
-    if best_len < 4:
+    return best_len, best_start
+
+
+def scan(buf, start, end, pat, limit=64):
+    """All matches of pat within [start, end).
+
+    Anchored on the longest run of concrete bytes, which lets bytes.find do the
+    work in C. The anchor only has to be *two* bytes long: requiring four (as
+    this did originally) silently returned "no match" for every pattern without
+    such a run, and 78 of the 185 definitions here are like that -- e.g.
+    `48 8B ? ? ? ? ? 48 89 ? ? ?` has no run longer than two. A short anchor just
+    means more candidates to verify, not wrong results.
+    """
+    n = len(pat)
+    if n == 0 or end - start < n:
         return []
 
-    anchor = bytes(pat[best_start:best_start + best_len])
+    best_len, best_start = longest_run(pat)
     hay = buf[start:end]
+    hits = []
 
-    hits, pos = [], 0
-    while True:
-        pos = hay.find(anchor, pos)
-        if pos < 0:
+    if best_len >= 2:
+        anchor = bytes(pat[best_start:best_start + best_len])
+        pos = 0
+        while True:
+            pos = hay.find(anchor, pos)
+            if pos < 0:
+                break
+            base = pos - best_start
+            if base >= 0 and base + n <= len(hay):
+                if all(pat[j] is None or hay[base + j] == pat[j] for j in range(n)):
+                    hits.append(start + base)
+                    if len(hits) >= limit:
+                        break
+            pos += 1
+        return hits
+
+    # Nothing to anchor on (at most one concrete byte, or a lone byte next to
+    # wildcards): one wildcard-aware regex pass. Rare enough that the cost of a
+    # 139 MB regex search here does not matter.
+    parts = [b"." if v is None else re.escape(struct.pack("B", v)) for v in pat]
+    rx = re.compile(b"".join(parts), re.DOTALL)
+    for m in rx.finditer(hay):
+        hits.append(start + m.start())
+        if len(hits) >= limit:
             break
-        base = pos - best_start
-        if base >= 0 and base + n <= len(hay):
-            if all(pat[j] is None or hay[base + j] == pat[j] for j in range(n)):
-                hits.append(start + base)
-                if len(hits) >= limit:
-                    break
-        pos += 1
     return hits
 
 

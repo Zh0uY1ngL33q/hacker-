@@ -9,3 +9,7 @@ __pycache__/
 _deps-local/
 _deps-test/
 out/
+
+# Local diagnostic archives (dump images are large and version specific)
+*.rar
+*.image
