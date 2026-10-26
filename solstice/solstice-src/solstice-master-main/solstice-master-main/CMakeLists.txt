@@ -234,8 +234,13 @@ include_directories(include/ImGui)
 include_directories(include/Kiero)
 include_directories(include/nes)
 
-file(GLOB_RECURSE sourceFiles "src/*.cpp")
-file(GLOB_RECURSE includeFiles "include/*.hpp")
+# CONFIGURE_DEPENDS: a plain glob is evaluated once, at configure time, and
+# `cmake --build` does not re-run it. Adding a .cpp then produced a link failure
+# ("unresolved external symbol" for everything the new file defines) that looks
+# like a missing definition rather than a stale file list. With this, ninja
+# re-checks the globs on every build.
+file(GLOB_RECURSE sourceFiles CONFIGURE_DEPENDS "src/*.cpp")
+file(GLOB_RECURSE includeFiles CONFIGURE_DEPENDS "include/*.hpp")
 set_source_files_properties(${sourceFiles} PROPERTIES CXX_SCAN_FOR_MODULES OFF)
 set_source_files_properties(${includeFiles} PROPERTIES CXX_SCAN_FOR_MODULES OFF)
 
