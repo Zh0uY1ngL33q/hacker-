@@ -134,6 +134,80 @@ solstice_resolve_dependency(DIRECTXTK_DIR DirectXTK DirectXTK-main
         "https://codeload.github.com/microsoft/DirectXTK/zip/refs/heads/main")
 
 # ---------------------------------------------------------------------------
+# Patches applied to files we do not own
+# ---------------------------------------------------------------------------
+# Both are idempotent and run on every configure, so a dependency that has just
+# been downloaded is patched as well as one that has been sitting in the cache
+# for months.
+#
+# 1. cryptopp-cmake's CMakeLists.txt feeds CRYPTOPP_COMPILE_DEFINITIONS to
+#    add_compile_options() as well as to add_compile_definitions():
+#
+#        add_compile_options(${CMAKE_CXX_FLAGS} ${CRYPTOPP_COMPILE_DEFINITIONS} ...)
+#
+#    add_compile_options() passes its arguments through verbatim -- it does not
+#    add the -D prefix that add_compile_definitions() adds -- so cl.exe receives
+#    bare tokens such as
+#
+#        CRYPTOPP_DATA_DIR=C:/.../TestData
+#        _WIN32_WINNT=0x0A00
+#
+#    and tries to compile them as source files:
+#
+#        c1xx: fatal error C1083: cannot open source file
+#        "CRYPTOPP_DATA_DIR=C:/.../TestData"
+#
+#    Removing the second copy is enough; the definitions still arrive through
+#    add_compile_definitions() and target_compile_definitions().
+#
+# 2. zdeflate.cpp has an "#if _MSC_VER >= 1600" branch calling
+#    stdext::make_unchecked_array_iterator(). stdext was a non-standard MSVC
+#    extension, deprecated since VS 2010 and removed in VS 18 (MSVC 14.5x):
+#
+#        error C2653: 'stdext': is not a class or namespace name
+#
+#    The helper only wraps a pointer so it can be used as an iterator, so
+#    unwrapping the call restores the portable form the #else branch already
+#    uses and compiles on every version.
+
+function(solstice_patch_text_file path old new)
+    if (NOT EXISTS "${path}")
+        return()
+    endif ()
+
+    file(READ "${path}" contents)
+    string(FIND "${contents}" "${old}" position)
+    if (position EQUAL -1)
+        return()
+    endif ()
+
+    string(REPLACE "${old}" "${new}" contents "${contents}")
+    file(WRITE "${path}" "${contents}")
+    get_filename_component(filename "${path}" NAME)
+    message(STATUS "patched ${filename}")
+endfunction()
+
+function(solstice_patch_cryptopp dir)
+    # Bracket arguments: these strings contain ${...} which must survive as
+    # literal text rather than being expanded here.
+    solstice_patch_text_file("${dir}/CMakeLists.txt"
+            [[add_compile_options(${CMAKE_CXX_FLAGS} ${CRYPTOPP_COMPILE_DEFINITIONS} ${CRYPTOPP_COMPILE_OPTIONS})]]
+            [[add_compile_options(${CRYPTOPP_COMPILE_OPTIONS})]])
+
+    set(zdeflate "${dir}/zdeflate.cpp")
+    if (EXISTS "${zdeflate}")
+        file(READ "${zdeflate}" contents)
+        string(REGEX REPLACE
+                "stdext::make_unchecked_array_iterator\\(([A-Za-z_][A-Za-z0-9_]*)\\)"
+                "\\1" patched "${contents}")
+        if (NOT patched STREQUAL "${contents}")
+            file(WRITE "${zdeflate}" "${patched}")
+            message(STATUS "patched zdeflate.cpp")
+        endif ()
+    endif ()
+endfunction()
+
+# ---------------------------------------------------------------------------
 # Crypto++
 # ---------------------------------------------------------------------------
 # The folder name is misleading: "cryptopp-cmake-master" is not
@@ -149,6 +223,7 @@ solstice_resolve_dependency(DIRECTXTK_DIR DirectXTK DirectXTK-main
 function(solstice_resolve_cryptopp out_var)
     if (SOLSTICE_DEPS_DIR AND EXISTS "${SOLSTICE_DEPS_DIR}/cryptopp-cmake-master/cryptlib.cpp")
         message(STATUS "dependency cryptopp: pre-staged at ${SOLSTICE_DEPS_DIR}/cryptopp-cmake-master")
+        solstice_patch_cryptopp("${SOLSTICE_DEPS_DIR}/cryptopp-cmake-master")
         set(${out_var} "${SOLSTICE_DEPS_DIR}/cryptopp-cmake-master" PARENT_SCOPE)
         return()
     endif ()
@@ -170,6 +245,8 @@ function(solstice_resolve_cryptopp out_var)
         message(FATAL_ERROR
                 "Could not assemble Crypto++: '${sources_dir}/CMakeLists.txt' is missing.")
     endif ()
+
+    solstice_patch_cryptopp("${sources_dir}")
 
     set(${out_var} "${sources_dir}" PARENT_SCOPE)
 endfunction()

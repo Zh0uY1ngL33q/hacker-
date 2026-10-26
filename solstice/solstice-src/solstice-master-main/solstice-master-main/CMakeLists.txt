@@ -78,6 +78,24 @@ set(BUILD_SHARED OFF CACHE BOOL "Build dependencies as static libraries" FORCE)
 
 CPMAddPackage(NAME cryptopp-cmake SOURCE_DIR "${CRYPTOPP_DIR}")
 
+# Crypto++ is not unity-build safe, and CMAKE_UNITY_BUILD above merges its ~200
+# sources into 22 files. Several of them define the same helpers in anonymous
+# namespaces (lsh256.cpp / lsh256_sse.cpp / lsh256_avx.cpp, lsh512.cpp / ...,
+# hc128.cpp / hc256.cpp) and CryptoPP::Block is declared per file with different
+# base classes, so merging them produces
+#
+#     error C2371: 'CryptoPP::Block': redefinition; different basic types
+#     error C2084: function '...' already has a body
+#
+# for dozens of symbols -- none of which are real defects in our own code.
+# Unity builds are kept for everything else; they are switched off here only.
+foreach (_cryptopp_target cryptopp-object cryptopp-static cryptopp-shared)
+    if (TARGET ${_cryptopp_target})
+        set_property(TARGET ${_cryptopp_target} PROPERTY UNITY_BUILD FALSE)
+    endif ()
+endforeach ()
+unset(_cryptopp_target)
+
 if(MSVC)
     add_compile_options(/bigobj)
 endif()

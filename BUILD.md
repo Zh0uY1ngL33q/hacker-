@@ -170,8 +170,11 @@ cmake -S . -B out/build/x64-Debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
 cmake --build out/build/x64-Release
 ```
 
-Release 开了 `/O2 /GL /LTCG /MT`，全量首次编译会比较久（unity build，但仍需几分钟）。
+Release 开了 `/O2 /GL /LTCG /MT`，全量首次编译会比较久（几分钟）。
 后续增量编译只重编改动的文件。
+
+> 自己的 `src/` 用 unity build（把多个 .cpp 合成一个翻译单元）；Crypto++ 例外，
+> 它是逐文件编译的（见 §7）。所以第一次编译时 cryptopp 那一百多个 `.obj` 是正常的。
 
 想并行快一点可以加 `--parallel`：
 
@@ -207,6 +210,24 @@ Get-Item out\build\x64-Release\Solstice.dll | Select-Object Name, Length, LastWr
 | `The current CMakeCache.txt is different...` | 你复用了别人的 build 目录。删掉 `out\` 重新配置 |
 | `CXX_STANDARD 26 is not supported` | VS 2022 版本太旧，更新到最新 |
 | `error C1001: internal compiler error` | MSVC 版本与 `/GL` 组合的已知问题，先更新 VS 再试 |
+| `c1xx: fatal error C1083: 无法打开源文件 "CRYPTOPP_DATA_DIR=..."` | Crypto++ 的 CMake 包装层把宏定义又当编译选项传了一遍，`cl` 就把 `CRYPTOPP_DATA_DIR=...` 当成源文件。**已由 `cmake/Dependencies.cmake` 自动打补丁**；若还出现，删掉 `out\build\<配置>\_deps-local` 重新配置即可 |
+| `error C2371: "CryptoPP::Block": 重定义` / `error C2084: 函数已有主体` | Crypto++ 被 unity build 合并了。**已对 cryptopp 关掉 unity**；若还出现，删掉 `out\` 重新配置 |
+| `error C2653: "stdext": 不是类或命名空间名称` | 新版 MSVC 删掉了非标准的 `stdext::make_unchecked_array_iterator`。**已自动打补丁**改回裸指针 |
+
+### 关于「编译器太新」
+
+MSVC 14.4x / 14.5x（VS 2022 17.1x、VS 18）**不需要降级**。上面那三类报错一条都不是
+「编译器不兼容」，而是两个依赖的旧代码/旧 CMake 脚本在新环境里暴露出来的问题：
+
+1. Crypto++ 的 CMake 包装层（`noloader/cryptopp-cmake`）自 2017 年起就有一行
+   `add_compile_options(${CRYPTOPP_COMPILE_DEFINITIONS})`，把宏定义丢掉了 `-D` 前缀；
+2. `zdeflate.cpp` 里用了一个微软早就标废弃、如今已删除的非标准迭代器辅助函数；
+3. 我们自己的 `CMAKE_UNITY_BUILD TRUE` 恰好把 Crypto++ 里那些同名匿名命名空间函数
+   合并到了一起。
+
+前两条是上游代码的问题，由 `cmake/Dependencies.cmake` 在每次配置时按文本模式自动打补丁
+（幂等，重复配置不会重复改）；第三条在 `CMakeLists.txt` 里只对 cryptopp 的三个 target
+关掉 unity。换老编译器只会绕开第 3 条里的表象、并不能解决，而且 C++26 的新标准反倒编不过。
 
 配置阶段失败是**快**的（几秒到几十秒），编译阶段失败才慢。所以看清是
 `Configuring done` 之前还是之后报的错。
@@ -227,6 +248,8 @@ Get-Item out\build\x64-Release\Solstice.dll | Select-Object Name, Length, LastWr
 - 缓存位置：`out/build/<配置>/_deps-local/`。想强制重新下载就删掉它。
 - 依赖全部走 HTTPS，**不需要 git**。
 - `tools/setup-deps.ps1` 用于离线预置；CMake 会自动识别其中的目录。
+- 每次配置都会对 Crypto++ 的两处上游缺陷打补丁（包装层 `CMakeLists.txt` 的宏定义、
+  `zdeflate.cpp` 的 `stdext` 调用），补丁按文本匹配、幂等，重复配置无害。
 
 ---
 
