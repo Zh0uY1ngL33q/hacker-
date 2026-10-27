@@ -65,5 +65,13 @@ void SetupAndRenderHook::initVt(void* ctx)
 
 void SetupAndRenderHook::init()
 {
+    // The 1.21.120 candidate for this signature sits in the .boot section of the
+    // WinLicense decryptor, not in game code -- hooking it would crash on load.
+    // Skip the detour; the present hook still renders ImGui/ClickGui without it.
+    if (SigManager::ScreenView_setupAndRender == 0)
+    {
+        spdlog::warn("ScreenView::setupAndRender unresolved -- skipping detour");
+        return;
+    }
     mSetupAndRenderDetour = std::make_unique<Detour>("ScreenView::setupAndRender", reinterpret_cast<void*>(SigManager::ScreenView_setupAndRender), &SetupAndRenderHook::onSetupAndRender);
 }

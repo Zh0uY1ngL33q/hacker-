@@ -37,6 +37,10 @@ std::vector<Actor*> Level::getRuntimeActorList()
 LevelData* Level::getLevelData()
 {
     static auto vIndex = OffsetProvider::Level_getLevelData;
+    // Near-miss candidate in 1.21.120 was a shared_ptr release sequence, so the
+    // offset stays unresolved; a virtual call through slot 0 is a wild jump.
+    if (vIndex < 2 || vIndex >= 4096)
+        return nullptr;
     return MemUtils::callVirtualFunc<LevelData*>(vIndex, this);
 }
 
