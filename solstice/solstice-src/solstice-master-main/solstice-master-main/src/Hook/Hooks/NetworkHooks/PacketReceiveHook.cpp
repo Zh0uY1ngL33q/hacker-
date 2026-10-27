@@ -8,6 +8,7 @@
 #include <SDK/Minecraft/Network/MinecraftPackets.hpp>
 #include <Features/Events/PacketInEvent.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
+#include <SDK/Minecraft/InstanceLocator.hpp>
 #include <SDK/Minecraft/GameSession.hpp>
 #include <SDK/Minecraft/MinecraftSim.hpp>
 #include <Utils/MiscUtils/ColorUtils.hpp>
@@ -21,8 +22,20 @@ void* PacketReceiveHook::onPacketSend(void* _this, void* networkIdentifier, void
 
     NetworkIdentifier = networkIdentifier;
 
-    auto actualEventCallback = ClientInstance::get()->getMinecraftSim()->getGameSession()->getEventCallback();
-    if (actualEventCallback != netEventCallback) {
+    // Every hop below reads members whose offsets may be unresolved; any doubt
+    // means "this callback does nothing", the packet flows through untouched.
+    auto* clientInstance = ClientInstance::get();
+    auto* sim = clientInstance ? clientInstance->getMinecraftSim() : nullptr;
+    if (!InstanceLocator::isPlausibleObject(sim))
+        return ofunc(_this, networkIdentifier, netEventCallback, packet);
+
+    auto* session = sim->getGameSession();
+    if (!InstanceLocator::isPlausibleObject(session))
+        return ofunc(_this, networkIdentifier, netEventCallback, packet);
+
+    auto actualEventCallback = session->getEventCallback();
+    if (!InstanceLocator::isReadableMemory(actualEventCallback, 1) ||
+        actualEventCallback != netEventCallback) {
         return ofunc(_this, networkIdentifier, netEventCallback, packet);
     }
 
@@ -36,7 +49,11 @@ void* PacketReceiveHook::onPacketSend(void* _this, void* networkIdentifier, void
 void PacketReceiveHook::handlePacket(std::shared_ptr<Packet> packet)
 {
     if (!NetworkIdentifier) return;
-    onPacketSend(packet->mDispatcher, NetworkIdentifier, ClientInstance::get()->getMinecraftSim()->getGameSession()->getEventCallback(), packet);
+    auto* sim = ClientInstance::get()->getMinecraftSim();
+    if (!InstanceLocator::isPlausibleObject(sim)) return;
+    auto* session = sim->getGameSession();
+    if (!InstanceLocator::isPlausibleObject(session)) return;
+    onPacketSend(packet->mDispatcher, NetworkIdentifier, session->getEventCallback(), packet);
 }
 
 void PacketReceiveHook::init()

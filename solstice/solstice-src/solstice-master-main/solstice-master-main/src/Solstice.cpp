@@ -339,9 +339,14 @@ void Solstice::shutdownThread()
             }
         }
 
-        if (!isLpValid && ClientInstance::get()->getLocalPlayer())
+        if (!isLpValid)
         {
-            isLpValid = true;
+            auto* lp = ClientInstance::get()
+                ? ClientInstance::get()->getLocalPlayer()
+                : nullptr;
+            if (InstanceLocator::isPlausibleObject(lp))
+            {
+                isLpValid = true;
             HookManager::init(true); // Initialize the base tick hook
 
             auto ircModule = gFeatureManager->mModuleManager->getModule<IRC>();
@@ -365,8 +370,10 @@ void Solstice::shutdownThread()
             }
         }
 
-        patchInHandSlot(ClientInstance::get()->getLocalPlayer() != nullptr);
-
+        {
+            auto* ci = ClientInstance::get();
+            patchInHandSlot(ci && ci->getLocalPlayer() != nullptr);
+        }
         mLastTick = NOW;
         gFeatureManager->mModuleManager->onClientTick();
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -387,8 +394,12 @@ void Solstice::shutdownThread()
     // Shutdown
     console->warn("Shutting down...");
 
-    ClientInstance::get()->getMinecraftGame()->playUi("beacon.deactivate", 1, 1.0f);
-    ClientInstance::get()->getGuiData()->displayClientMessage("§asolstice§7 » §cEjected!");
+    if (auto* ci = ClientInstance::get(); ci) {
+        if (auto* game = ci->getMinecraftGame(); InstanceLocator::isPlausibleObject(game))
+            game->playUi("beacon.deactivate", 1, 1.0f);
+        // Chat feeds through the queued path which already tolerates missing GuiData.
+    }
+    ChatUtils::displayClientMessageRaw("§asolstice§7 » §cEjected!");
 
     mInitialized = false;
     SigManager::deinitialize();
