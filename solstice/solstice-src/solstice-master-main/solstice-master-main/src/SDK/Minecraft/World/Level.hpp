@@ -3,6 +3,8 @@
 // Created by vastrakai on 7/10/2024.
 //
 #include <Utils/MemUtils.hpp>
+#include <libhat/Access.hpp>
+#include <SDK/OffsetProvider.hpp>
 #include <SDK/Minecraft/mce.hpp>
 #include <unordered_map>
 #include <SDK/Minecraft/Network/Packets/PlayerListPacket.hpp>
@@ -28,6 +30,16 @@ class LevelData
 {
 public:
     CLASS_FIELD(uint64_t, mTick, OffsetProvider::LevelData_mTick);
+
+    // LevelData_mTick is SUSPECT in 1.21.120 (-1219654324); CLASS_FIELD would
+    // compute member_at with that value and write to a wild address.
+    void setTick(uint64_t tick)
+    {
+        const int off = OffsetProvider::LevelData_mTick;
+        if (off <= 0 || off >= 0x8000)
+            return;
+        hat::member_at<uint64_t>(this, off) = tick;
+    }
 };
 
 class BlockPalette {

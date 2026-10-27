@@ -15,11 +15,19 @@
 #include "Features/Events/PacketOutEvent.hpp"
 
 class ChatEvent;
+// Trampoline: same signature as the detoured function, no C++ objects, so
+// gating here keeps a wrong vtable slot from crashing inside the real body.
+void* PacketSendHook::onPacketSend(void* _this, Packet* packet) {
+    if (!mDetour || !InstanceLocator::isPlausibleObject(packet))
+        return mDetour ? mDetour->getOriginal<&onPacketSend>()(_this, packet) : nullptr;
+    return onPacketSendImpl(_this, packet);
+}
+
 std::unique_ptr<Detour> PacketSendHook::mDetour = nullptr;
 
-void* PacketSendHook::onPacketSend(void* _this, Packet *packet) {
+void* PacketSendHook::onPacketSendImpl(void* _this, Packet* packet) {
     // Call the original function
-    auto original = mDetour->getOriginal<&onPacketSend>();
+    auto original = mDetour->getOriginal<&onPacketSendImpl>();
 
     if (packet->getId() == PacketID::Text)
     {
@@ -67,7 +75,15 @@ void PacketSendHook::sendPacket(PlayerAuthInputPacket* packet) {
 
     packet->mClientTick = mCurrentTick;
     if (auto player = ClientInstance::get()->getLocalPlayer()) {
-        player->getLevel()->getLevelData()->mTick = mCurrentTick;
+        if (auto* level = player->getLevel();
+            level && InstanceLocator::isPlausibleObject(level))
+        {
+            if (auto* levelData = level->getLevelData();
+                levelData && InstanceLocator::isReadableMemory(levelData, 0x40))
+            {
+                levelData->setTick(mCurrentTick);
+            }
+        }
     }
 
     sender->sendToServer(packet);

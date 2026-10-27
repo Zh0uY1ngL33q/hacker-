@@ -17,6 +17,7 @@ public:
     static inline int mCurrentTick = 0;
 
     static void* onPacketSend(void* _this, class Packet* packet);
+    static void* onPacketSendImpl(void* _this, class Packet* packet);
     static void sendInputPacket(std::shared_ptr<class PlayerAuthInputPacket> packet);
     static void sendPacket(class PlayerAuthInputPacket* packet);
     void init() override;
