@@ -21,10 +21,11 @@ ClientInstance* ClientInstance::get()
     if (InstanceLocator::isPlausibleObject(instance))
         return instance;
 
-    // Normal path: MinecraftGame -> mClientInstances.
+    // Normal path: MinecraftGame -> mClientInstances, revalidated at deref time.
     if (auto* game = MinecraftGame::getInstance(); InstanceLocator::isPlausibleObject(game))
     {
-        auto* fromGame = game->getPrimaryClientInstance();
+        auto* fromGame = InstanceLocator::firstClientFromGame(
+            game, OffsetProvider::MinecraftGame_mClientInstances);
         if (InstanceLocator::isPlausibleObject(fromGame))
         {
             instance = fromGame;

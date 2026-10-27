@@ -450,4 +450,54 @@ namespace InstanceLocator {
         return game;
     }
 
+    ClientInstance* firstClientFromGame(MinecraftGame* game, int mapOffset)
+    {
+        // Re-validate the map at deref time and walk the first node with raw
+        // pointer math (no std::map object, hence no destructor, hence legal
+        // __try) so a page that dies between the big scan and this call is
+        // caught by the handler instead of crashing the game.
+        auto* map = reinterpret_cast<uintptr_t>(game) + static_cast<uintptr_t>(mapOffset);
+        __try {
+            if (!isReadable(reinterpret_cast<const void*>(map), 0x10))
+                return nullptr;
+
+            const uintptr_t head = *reinterpret_cast<const uintptr_t*>(map);
+            if (!isReadable(reinterpret_cast<const void*>(head), 0x20))
+                return nullptr;
+            if (*reinterpret_cast<const unsigned char*>(head + 0x19) != 1) // sentinel isnil
+                return nullptr;
+
+            const uintptr_t root = *reinterpret_cast<const uintptr_t*>(head + 0x08);
+            if (!isReadable(reinterpret_cast<const void*>(root), 0x20))
+                return nullptr;
+            if (*reinterpret_cast<const uintptr_t*>(root + 0x08) != head)
+                return nullptr;
+
+            const uintptr_t first = *reinterpret_cast<const uintptr_t*>(head);
+            if (!isReadable(reinterpret_cast<const void*>(first), 0x40))
+                return nullptr;
+            if (*reinterpret_cast<const unsigned char*>(first + 0x19) == 1)
+                return nullptr; // empty map
+            if (*reinterpret_cast<const uintptr_t*>(first) != 0)
+                return nullptr; // not the leftmost node
+
+            const size_t valueOffsets[2] = { 0x28, 0x20 };
+            for (size_t k = 0; k < 2; ++k) {
+                const uintptr_t candidate =
+                    *reinterpret_cast<const uintptr_t*>(first + valueOffsets[k]);
+                if (!isReadable(reinterpret_cast<const void*>(candidate), 0x10))
+                    continue;
+                const uintptr_t control =
+                    *reinterpret_cast<const uintptr_t*>(first + valueOffsets[k] + 8);
+                if (!isReadable(reinterpret_cast<const void*>(control), 0x10))
+                    continue;
+                return reinterpret_cast<ClientInstance*>(candidate);
+            }
+            return nullptr;
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER) {
+            return nullptr;
+        }
+    }
+
 } // namespace InstanceLocator

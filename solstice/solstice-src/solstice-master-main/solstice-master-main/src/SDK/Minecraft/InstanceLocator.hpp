@@ -29,4 +29,9 @@ namespace InstanceLocator {
 
     /// Same scan, MinecraftGame only.
     MinecraftGame* locateGame();
+
+    /// Read the first client out of MinecraftGame's client-instance map, with
+    /// live readability checks and SEH. Returns null on any doubt. Safe to call
+    /// with a game whose map is empty.
+    ClientInstance* firstClientFromGame(MinecraftGame* game, int mapOffset);
 }
