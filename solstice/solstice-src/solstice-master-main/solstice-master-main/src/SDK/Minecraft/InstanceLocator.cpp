@@ -456,7 +456,7 @@ namespace InstanceLocator {
         // pointer math (no std::map object, hence no destructor, hence legal
         // __try) so a page that dies between the big scan and this call is
         // caught by the handler instead of crashing the game.
-        auto* map = reinterpret_cast<uintptr_t>(game) + static_cast<uintptr_t>(mapOffset);
+        const uintptr_t map = reinterpret_cast<uintptr_t>(game) + static_cast<uintptr_t>(mapOffset);
         __try {
             if (!isReadable(reinterpret_cast<const void*>(map), 0x10))
                 return nullptr;
