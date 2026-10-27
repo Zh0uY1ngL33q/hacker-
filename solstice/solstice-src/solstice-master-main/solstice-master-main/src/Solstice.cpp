@@ -17,6 +17,7 @@
 
 #include <SDK/SigManager.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
+#include <SDK/Minecraft/InstanceLocator.hpp>
 #include <SDK/Minecraft/MinecraftGame.hpp>
 #include <SDK/Minecraft/Actor/Actor.hpp>
 
@@ -347,26 +348,27 @@ void Solstice::shutdownThread()
             if (InstanceLocator::isPlausibleObject(lp))
             {
                 isLpValid = true;
-            HookManager::init(true); // Initialize the base tick hook
+                HookManager::init(true); // Initialize the base tick hook
 
-            auto ircModule = gFeatureManager->mModuleManager->getModule<IRC>();
-            if (ircModule && !ircModule->mEnabled) ircModule->toggle();
+                auto ircModule = gFeatureManager->mModuleManager->getModule<IRC>();
+                if (ircModule && !ircModule->mEnabled) ircModule->toggle();
 
-            if (!Prefs->mDefaultConfigName.empty())
-            {
-                if (ConfigManager::configExists(Prefs->mDefaultConfigName))
+                if (!Prefs->mDefaultConfigName.empty())
                 {
-                    ConfigManager::loadConfig(Prefs->mDefaultConfigName);
+                    if (ConfigManager::configExists(Prefs->mDefaultConfigName))
+                    {
+                        ConfigManager::loadConfig(Prefs->mDefaultConfigName);
+                    }
+                    else
+                    {
+                        console->warn("Default config does not exist! Clearing default config...");
+                        NotifyUtils::notify("Default config does not exist! Clearing default config...", 10.0f, Notification::Type::Warning);
+                        Prefs->mDefaultConfigName = "";
+                        PreferenceManager::save(Prefs);
+                    }
+                } else {
+                    console->warn("No default config set!");
                 }
-                else
-                {
-                    console->warn("Default config does not exist! Clearing default config...");
-                    NotifyUtils::notify("Default config does not exist! Clearing default config...", 10.0f, Notification::Type::Warning);
-                    Prefs->mDefaultConfigName = "";
-                    PreferenceManager::save(Prefs);
-                }
-            } else {
-                console->warn("No default config set!");
             }
         }
 
