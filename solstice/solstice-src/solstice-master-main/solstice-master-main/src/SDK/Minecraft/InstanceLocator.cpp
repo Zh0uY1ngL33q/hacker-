@@ -88,6 +88,7 @@ namespace {
         bool simValidated;
         uint32_t treesSeen;    // maps whose sentinel/size invariants held
         uint32_t clientsSeen;  // candidates whose value looked like a ClientInstance
+        uint32_t gamesSeen;    // MinecraftGame candidates (incl. empty-map at menu)
     };
 
     struct Candidate {
@@ -140,7 +141,7 @@ namespace {
                         continue;
 
                     const uint64_t size = *reinterpret_cast<const uint64_t*>(map + 0x08);
-                    if (size < 1 || size > 0x2000)
+                    if (size > 0x2000)
                         continue;
                     ++found.treesSeen;
 
@@ -149,6 +150,21 @@ namespace {
                         continue;
                     if (*reinterpret_cast<const uintptr_t*>(root + 0x08) != head)
                         continue;
+                    if (size == 0) {
+                        // Empty map: still tells us where the game is (the sentinel
+                        // exists as soon as the ctor runs). Record it, because the
+                        // title screen is a legitimate place to inject.
+                        auto* game = reinterpret_cast<MinecraftGame*>(map - mapOffset);
+                        if (!readableIn(regs, count, reinterpret_cast<uintptr_t>(game), 0x10))
+                            continue;
+                        const uintptr_t gameVtable = *reinterpret_cast<const uintptr_t*>(game);
+                        if (!isMainModulePointer(reinterpret_cast<const void*>(gameVtable)))
+                            continue;
+                        ++found.gamesSeen;
+                        found.game = game;
+                        found.mapAddress = map;
+                        continue;
+                    }
 
                     const uintptr_t first = *reinterpret_cast<const uintptr_t*>(head);
                     if (!readableIn(regs, count, first, 0x40))
@@ -397,11 +413,16 @@ namespace InstanceLocator {
         if (!found.client) {
             if (Solstice::console) {
                 Solstice::console->warn(
-                    "heap scan: no MinecraftGame found ({} regions, {} MB, {} ms) "
-                    "trees={} clients={}",
+                    "heap scan: no ClientInstance yet ({} regions, {} MB, {} ms) "
+                    "trees={} clients={} games={} game@{}",
                     regions.size(), found.scannedMb, elapsedMs,
-                    found.treesSeen, found.clientsSeen);
+                    found.treesSeen, found.clientsSeen, found.gamesSeen,
+                    reinterpret_cast<uintptr_t>(found.game));
             }
+            // The game itself can be resolved even when the map is still empty
+            // (title screen); hand it back without caching a client.
+            if (outGame && found.game)
+                *outGame = found.game;
             return nullptr;
         }
 
