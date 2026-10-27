@@ -16,6 +16,8 @@
 #include <Hook/Hooks/RenderHooks/ActorRenderDispatcherHook.hpp>
 #include <Hook/Hooks/RenderHooks/HoverTextRendererHook.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
+#include <SDK/Minecraft/InstanceLocator.hpp>
+#include <SDK/OffsetProvider.hpp>
 #include <SDK/Minecraft/mce.hpp>
 #include <SDK/Minecraft/Options.hpp>
 #include <SDK/Minecraft/Network/Packets/Packet.hpp>
@@ -177,10 +179,18 @@ void Interface::onModuleStateChange(ModuleStateChangeEvent& event)
 void Interface::onPregameCheckEvent(PreGameCheckEvent& event)
 {
 #ifdef __DEBUG__
-    auto player = ClientInstance::get()->getLocalPlayer();
-    if (!player || ! mForcePackSwitching.mValue) return;
+    // This listener also runs at the menu, before a client/player exists.
+    // Do not touch game objects at all when the optional override is disabled.
+    if (!mForcePackSwitching.mValue) return;
 
-    std::string screenName = ClientInstance::get()->getScreenName();
+    auto* client = ClientInstance::get();
+    if (!InstanceLocator::isPlausibleObject(client)) return;
+    const int playerIndex = OffsetProvider::ClientInstance_getLocalPlayer;
+    if (playerIndex < 2 || playerIndex >= 4096) return;
+    auto* player = client->getLocalPlayer();
+    if (!InstanceLocator::isPlausibleObject(player)) return;
+
+    std::string screenName = client->getScreenName();
 
     // prevent other screens from breaking
     if (screenName.contains("screen_world_controls_and_settings") && !screenName.contains("global_texture_pack_tab")) return;
