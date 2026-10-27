@@ -59,7 +59,7 @@ def main():
     args = ap.parse_args()
 
     img = vs.Image(args.image)
-    start, end, _ = img.code_span()
+    spans = img.exec_spans()
 
     defs, _hardcoded = vs.load_definitions(args.src)
     by_name = {d["name"]: d for d in defs}
@@ -86,7 +86,7 @@ def main():
             continue
 
         new_pattern = apply_diffs(d["pattern"], miss.get("diffs", []))
-        hits = vs.scan(img.data, start, end, vs.parse_pattern(new_pattern))
+        hits = vs.scan_spans(img.data, spans, vs.parse_pattern(new_pattern))
 
         entry["old_pattern"] = d["pattern"]
         entry["new_pattern"] = new_pattern

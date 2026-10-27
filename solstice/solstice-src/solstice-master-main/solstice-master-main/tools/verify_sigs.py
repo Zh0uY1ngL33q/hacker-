@@ -71,12 +71,29 @@ class Image:
                 "characteristics": chars,
             })
 
-    def code_span(self):
-        """Span used for scanning: the largest executable section.
+    def exec_spans(self):
+        """Every executable section, as (start, end) in image offsets.
 
-        Mirrors what the game actually keeps decrypted, and avoids scanning
-        data/zero-filled regions where patterns match spuriously.
+        The runtime scans all of them (CodeSection::ranges), and so must this:
+        scanning only the largest misses .winlice, a 15 MB executable section the
+        packer adds, and reports a handful of signatures as MISSING that the game
+        resolves fine.
         """
+        spans = []
+        for s in self.sections:
+            if s["vsize"] == 0:
+                continue
+            if not (s["characteristics"] & 0x20000000):  # IMAGE_SCN_MEM_EXECUTE
+                continue
+            end = min(len(self.data), s["rva"] + s["vsize"])
+            if end > s["rva"]:
+                spans.append((s["rva"], end))
+        if not spans:
+            spans.append((0, len(self.data)))
+        return spans
+
+    def code_span(self):
+        """Largest executable section, as (start, end, name)."""
         best = None
         for s in self.sections:
             if s["vsize"] == 0:
@@ -169,6 +186,22 @@ def scan(buf, start, end, pat, limit=64):
     return hits
 
 
+def scan_spans(buf, spans, pat, limit=64):
+    """scan() over every executable span, merging the hit lists.
+
+    The runtime searches all executable sections; matching that exactly is what
+    keeps the offline verdict and the runtime `Failed to find` count aligned.
+    A pattern may legitimately match in more than one span, so the merged list
+    is what decides OK / AMBIGUOUS.
+    """
+    hits = []
+    for start, end in spans:
+        hits.extend(scan(buf, start, end, pat, limit=limit))
+        if len(hits) >= limit:
+            break
+    return hits
+
+
 # --------------------------------------------------------------------------
 # Extract definitions straight from the Solstice headers
 # --------------------------------------------------------------------------
@@ -231,6 +264,7 @@ def main():
     args = ap.parse_args()
 
     img = Image(args.image)
+    spans = img.exec_spans()
     start, end, sec_name = img.code_span()
 
     print("image        : %s" % args.image)
@@ -238,6 +272,8 @@ def main():
     print("file size    : 0x%X (%d MB)" % (len(img.data), len(img.data) // (1024 * 1024)))
     print("code section : %s  [0x%X, 0x%X)  %d MB"
           % (sec_name, start, end, (end - start) // (1024 * 1024)))
+    print("scan spans   : %d executable section(s), %d MB total"
+          % (len(spans), sum(e - s for s, e in spans) // (1024 * 1024)))
     print("sections     :")
     for s in img.sections:
         print("   [%-12s] RVA=0x%08X vsize=0x%08X raw=0x%08X flags=0x%08X"
@@ -251,7 +287,7 @@ def main():
 
     for d in defs:
         pat = parse_pattern(d["pattern"])
-        hits = scan(img.data, start, end, pat)
+        hits = scan_spans(img.data, spans, pat)
         n = len(hits)
         if n == 0:
             status = "MISSING"
@@ -284,7 +320,7 @@ def main():
                     entry["note"] = "implausible field offset 0x%X" % (val & 0xFFFFFFFF)
 
         results.append(entry)
-        counts[status] += 1
+        counts[entry["status"]] += 1
 
     print("=" * 78)
     print("%-14s %-10s %-6s %s" % ("KIND", "STATUS", "HITS", "NAME / NOTES"))

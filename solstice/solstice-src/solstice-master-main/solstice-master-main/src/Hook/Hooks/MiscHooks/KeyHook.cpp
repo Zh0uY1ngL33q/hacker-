@@ -183,11 +183,14 @@ void KeyHook::onKey(uint32_t key, bool isDown)
 
     // Look for modules
     const auto* clickGui = gFeatureManager->mModuleManager->getModule<ClickGui>();
+    auto* clientInstance = ClientInstance::get();
 
     for (auto& module : gFeatureManager->mModuleManager->getModules())
     {
-        if (ClientInstance::get()->getMouseGrabbed() && module.get() != clickGui) continue;
-        if (ClientInstance::get()->getScreenName() == "chat_screen") continue;
+        // The entry point can still be unresolvable on a build whose signature set
+        // is incomplete; keep the keybinds working instead of crashing on null.
+        if (clientInstance && clientInstance->getMouseGrabbed() && module.get() != clickGui) continue;
+        if (clientInstance && clientInstance->getScreenName() == "chat_screen") continue;
 
         if (module->mKey == key)
         {

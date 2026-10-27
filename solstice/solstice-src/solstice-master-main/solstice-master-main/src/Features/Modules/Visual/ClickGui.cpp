@@ -17,9 +17,17 @@ static ModernGui modernGui = ModernGui();
 void ClickGui::onEnable()
 {
     auto ci = ClientInstance::get();
-    lastMouseState = !ci->getMouseGrabbed();
-
-    ci->releaseMouse();
+    if (ci)
+    {
+        lastMouseState = !ci->getMouseGrabbed();
+        ci->releaseMouse();
+    }
+    else
+    {
+        // The entry point is still missing; open the GUI anyway so the render path
+        // can be checked, just do not touch the mouse.
+        lastMouseState = false;
+    }
 
     gFeatureManager->mDispatcher->listen<MouseEvent, &ClickGui::onMouseEvent>(this);
     gFeatureManager->mDispatcher->listen<KeyEvent, &ClickGui::onKeyEvent, nes::event_priority::FIRST>(this);
@@ -30,7 +38,7 @@ void ClickGui::onDisable()
     gFeatureManager->mDispatcher->deafen<MouseEvent, &ClickGui::onMouseEvent>(this);
     gFeatureManager->mDispatcher->deafen<KeyEvent, &ClickGui::onKeyEvent>(this);
 
-    if (lastMouseState) {
+    if (lastMouseState && ClientInstance::get()) {
         ClientInstance::get()->grabMouse();
     }
 }

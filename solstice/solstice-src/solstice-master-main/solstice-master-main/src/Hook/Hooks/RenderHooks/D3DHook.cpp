@@ -12,6 +12,7 @@
 #include <Features/Events/WindowResizeEvent.hpp>
 #include <SDK/Minecraft/Rendering/bgfx_context.hpp>
 #include <SDK/Minecraft/Rendering/GuiData.hpp>
+#include <SDK/Minecraft/InstanceLocator.hpp>
 #include <Utils/FontHelper.hpp>
 #include <Utils/ProcUtils.hpp>
 #include <Utils/Resource.hpp>
@@ -390,7 +391,10 @@ HRESULT D3DHook::present(IDXGISwapChain3* swapChain, UINT syncInterval, UINT fla
     D2D::init(swapChain, gDevice11.get());
 
     static ImVec2 lastWindowSize = ImGui::GetIO().DisplaySize;
-    ImVec2 windowSize = ImVec2(ClientInstance::get()->getGuiData()->mResolution.x, ClientInstance::get()->getGuiData()->mResolution.y);
+    ImVec2 windowSize = lastWindowSize;
+    if (auto* ci = ClientInstance::get(); ci && InstanceLocator::isReadableMemory(ci->getGuiData(), 0x40)) {
+        windowSize = ImVec2(ci->getGuiData()->mResolution.x, ci->getGuiData()->mResolution.y);
+    }
 
     if (lastWindowSize.x != windowSize.x || lastWindowSize.y != windowSize.y) {
         auto holder = nes::make_holder<WindowResizeEvent>(windowSize.x, windowSize.y);
@@ -475,7 +479,9 @@ void D3DHook::initImGui(ID3D11Device* device, ID3D11DeviceContext* deviceContext
     ImGui_ImplDX11_Init(device, deviceContext);
 
     ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize = ImVec2(ClientInstance::get()->getGuiData()->mResolution.x, ClientInstance::get()->getGuiData()->mResolution.y);
+    if (auto* ci = ClientInstance::get(); ci && InstanceLocator::isReadableMemory(ci->getGuiData(), 0x40)) {
+        io.DisplaySize = ImVec2(ci->getGuiData()->mResolution.x, ci->getGuiData()->mResolution.y);
+    }
 
     imGuiInitialized = true;
 }
@@ -497,10 +503,16 @@ void D3DHook::igNewFrame()
     ImGui::NewFrame();
 
     ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize = ImVec2(ClientInstance::get()->getGuiData()->mResolution.x, ClientInstance::get()->getGuiData()->mResolution.y);
+    auto* ci = ClientInstance::get();
+    const bool haveGuiData = ci && InstanceLocator::isReadableMemory(ci->getGuiData(), 0x40);
+    if (haveGuiData) {
+        io.DisplaySize = ImVec2(ci->getGuiData()->mResolution.x, ci->getGuiData()->mResolution.y);
+    }
 
     MathUtils::fov = RenderUtils::transform.mFov;
-    MathUtils::displaySize = ClientInstance::get()->getGuiData()->mResolution;
+    if (haveGuiData) {
+        MathUtils::displaySize = ci->getGuiData()->mResolution;
+    }
     MathUtils::origin = RenderUtils::transform.mOrigin;
 
 

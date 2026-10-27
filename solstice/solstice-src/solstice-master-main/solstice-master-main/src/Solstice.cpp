@@ -256,9 +256,21 @@ void Solstice::init(HMODULE hModule)
 
     console->info("initialized signatures in {}ms", send - sstart);
 
-    console->info("clientinstance addr @ 0x{:X}", reinterpret_cast<uintptr_t>(ClientInstance::get()));
-    console->info("mcgame from clientinstance addr @ 0x{:X}", reinterpret_cast<uintptr_t>(ClientInstance::get()->getMinecraftGame()));
-    console->info("localplayer addr @ 0x{:X}", reinterpret_cast<uintptr_t>(ClientInstance::get()->getLocalPlayer()));
+    // ClientInstance is the entry point for everything below. It can still be
+    // null when the build has unresolved signatures -- print what we have and keep
+    // going, so hooks/GUI can be tested independently of the SDK being complete.
+    auto* clientInstance = ClientInstance::get();
+    console->info("clientinstance addr @ 0x{:X}", reinterpret_cast<uintptr_t>(clientInstance));
+    if (clientInstance)
+    {
+        auto* mcGame = clientInstance->getMinecraftGame();
+        console->info("mcgame from clientinstance addr @ 0x{:X}", reinterpret_cast<uintptr_t>(mcGame));
+        console->info("localplayer addr @ 0x{:X}", reinterpret_cast<uintptr_t>(clientInstance->getLocalPlayer()));
+    }
+    else
+    {
+        console->error("clientinstance not found -- SDK-dependent features will be skipped");
+    }
 
     // press enter to continue if failed sigs
     if (failedSigs > 0)
@@ -279,7 +291,9 @@ void Solstice::init(HMODULE hModule)
 
 
 
-    ClientInstance::get()->getMinecraftGame()->playUi("beacon.activate", 1, 1.0f);
+    ClientInstance* readyClient = ClientInstance::get();
+    if (readyClient && readyClient->getMinecraftGame())
+        readyClient->getMinecraftGame()->playUi("beacon.activate", 1, 1.0f);
     ChatUtils::displayClientMessage("Initialized!");
 
     console->info("Press END to eject dll.");

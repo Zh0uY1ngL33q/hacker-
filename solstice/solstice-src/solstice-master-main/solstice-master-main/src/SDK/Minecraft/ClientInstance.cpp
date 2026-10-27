@@ -9,6 +9,7 @@
 #include <SDK/SigManager.hpp>
 
 #include "MinecraftGame.hpp"
+#include "InstanceLocator.hpp"
 
 #include <Utils/Structs.hpp>
 
@@ -16,14 +17,25 @@
 
 ClientInstance* ClientInstance::get()
 {
-    static MinecraftGame* game = MinecraftGame::getInstance();
-    if (game == nullptr)
+    static ClientInstance* instance = nullptr;
+    if (InstanceLocator::isPlausibleObject(instance))
+        return instance;
+
+    // Normal path: MinecraftGame -> mClientInstances.
+    if (auto* game = MinecraftGame::getInstance(); InstanceLocator::isPlausibleObject(game))
     {
-        game = MinecraftGame::getInstance();
-        return nullptr;
+        auto* fromGame = game->getPrimaryClientInstance();
+        if (InstanceLocator::isPlausibleObject(fromGame))
+        {
+            instance = fromGame;
+            return instance;
+        }
     }
-    static ClientInstance* instance = game->getPrimaryClientInstance();
-    if (instance == nullptr) instance = game->getPrimaryClientInstance();
+
+    // Fallback: locate it on the heap. MinecraftGame::getInstance() already tries
+    // that, so this only runs when the map lookup came back empty (e.g. the map
+    // existed but was still being filled).
+    instance = InstanceLocator::locate(nullptr, nullptr);
     return instance;
 }
 
@@ -103,19 +115,28 @@ std::string ClientInstance::getScreenName()
 
 void ClientInstance::setDisableInput(bool disable)
 {
-    MemUtils::callVirtualFunc<void>(OffsetProvider::ClientInstance_setDisableInput, this, disable);
+    // SUSPECT in 1.21.120 (84423017) -- a virtual index that large is unmapped.
+    const int index = static_cast<int>(OffsetProvider::ClientInstance_setDisableInput);
+    if (index < 2 || index >= 4096)
+        return;
+    MemUtils::callVirtualFunc<void>(index, this, disable);
 }
 
 bool ClientInstance::getMouseGrabbed()
 {
     // idk why but the original virtual func's result was inverted
     // so im just gonna recreate that here because i'm too lazy to refactor everything
-    return !getMinecraftGame()->getMouseGrabbed();
+    auto* game = getMinecraftGame();
+    if (!InstanceLocator::isPlausibleObject(game))
+        return true; // pretend the mouse is grabbed: the safe state, no input lost
+    return !game->getMouseGrabbed();
 }
 
 void ClientInstance::grabMouse()
 {
     static uintptr_t func = SigManager::ClientInstance_grabMouse;
+    if (!func)
+        return;
     MemUtils::callFastcall<void>(func, this);
 
 }
@@ -123,11 +144,15 @@ void ClientInstance::grabMouse()
 void ClientInstance::releaseMouse()
 {
     static uintptr_t func = SigManager::ClientInstance_releaseMouse;
-    MemUtils::callFastcall<void>(func, this);
-    getMinecraftGame()->setMouseGrabbed(false);
+    if (func)
+        MemUtils::callFastcall<void>(func, this);
+
+    if (auto* game = getMinecraftGame(); InstanceLocator::isPlausibleObject(game))
+        game->setMouseGrabbed(false);
 }
 
 void ClientInstance::playUi(const std::string& soundName, float volume, float pitch)
 {   // this is exactly what the game does
-    getMinecraftGame()->playUi(soundName, volume, pitch);
+    if (auto* game = getMinecraftGame(); InstanceLocator::isPlausibleObject(game))
+        game->playUi(soundName, volume, pitch);
 }

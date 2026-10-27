@@ -95,8 +95,7 @@ def main():
     args = ap.parse_args()
 
     img = vs.Image(args.image)
-    start, end, _ = img.code_span()
-    hay = img.data[start:end]
+    spans = img.exec_spans()
 
     results = json.load(open(args.verify, encoding="utf-8"))["results"]
     missing = [r for r in results if r["status"] == "MISSING"]
@@ -104,7 +103,11 @@ def main():
     out = []
     for r in missing:
         pat = vs.parse_pattern(r["pattern"])
-        hits = tolerate(hay, start, pat)
+        hits = []
+        for s, e in spans:
+            for rel, mism in tolerate(img.data[s:e], 0, pat):
+                hits.append((s + rel, mism))
+        hits.sort(key=lambda h: h[1])
 
         entry = {"name": r["name"], "kind": r["kind"], "pattern": r["pattern"]}
         if not hits:
@@ -115,13 +118,13 @@ def main():
 
         best_mism = hits[0][1]
         best = [h for h in hits if h[1] == best_mism]
-        entry["rva"] = "0x%X" % (start + best[0][0])
+        entry["rva"] = "0x%X" % best[0][0]
         entry["mismatches"] = best_mism
         entry["candidates"] = len(best)
 
         # The corrected pattern is literally the bytes at the candidate, so it is
         # correct by construction for this build.
-        actual = hay[best[0][0]:best[0][0] + len(pat)]
+        actual = img.data[best[0][0]:best[0][0] + len(pat)]
         newpat = []
         for j, v in enumerate(pat):
             newpat.append("?" if v is None else "%02X" % actual[j])
@@ -130,7 +133,7 @@ def main():
         entry["result"] = "unique" if len(best) == 1 else "ambiguous"
         out.append(entry)
         print("%-46s %-9s mism=%-2d cands=%-2d 0x%X"
-              % (r["name"], entry["result"], best_mism, len(best), start + best[0][0]))
+              % (r["name"], entry["result"], best_mism, len(best), best[0][0]))
 
     counts = {}
     for e in out:
