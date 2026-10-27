@@ -9,6 +9,7 @@
 #include <Features/Events/BaseTickEvent.hpp>
 #include <SDK/OffsetProvider.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
+#include <SDK/Minecraft/InstanceLocator.hpp>
 #include <SDK/Minecraft/Inventory/PlayerInventory.hpp>
 #include <SDK/Minecraft/Network/LoopbackPacketSender.hpp>
 #include <SDK/Minecraft/Rendering/GuiData.hpp>
@@ -61,6 +62,16 @@ void BaseTickHook::onBaseTick(Actor* actor)
 
 void BaseTickHook::init()
 {
-    mDetour = std::make_unique<Detour>("Actor::baseTick", reinterpret_cast<void*>(ClientInstance::get()->getLocalPlayer()->vtable[OffsetProvider::Actor_baseTick]), &BaseTickHook::onBaseTick);
+    // initLp path: LocalPlayer does not exist yet on some entry paths (and the
+    // whole instance can be null when the SDK is unresolved); both mean "not now".
+    auto* localPlayer = ClientInstance::get()
+        ? ClientInstance::get()->getLocalPlayer()
+        : nullptr;
+    if (!InstanceLocator::isPlausibleObject(localPlayer))
+    {
+        spdlog::warn("Actor::baseTick skipped -- no LocalPlayer yet");
+        return;
+    }
+    mDetour = std::make_unique<Detour>("Actor::baseTick", reinterpret_cast<void*>(localPlayer->vtable[OffsetProvider::Actor_baseTick]), &BaseTickHook::onBaseTick);
     mDetour->enable();
 }

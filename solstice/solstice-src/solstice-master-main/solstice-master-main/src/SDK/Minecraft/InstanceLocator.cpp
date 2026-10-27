@@ -86,6 +86,8 @@ namespace {
         uint32_t scannedMb;
         uint32_t candidates;
         bool simValidated;
+        uint32_t treesSeen;    // maps whose sentinel/size invariants held
+        uint32_t clientsSeen;  // candidates whose value looked like a ClientInstance
     };
 
     struct Candidate {
@@ -140,6 +142,7 @@ namespace {
                     const uint64_t size = *reinterpret_cast<const uint64_t*>(map + 0x08);
                     if (size < 1 || size > 0x2000)
                         continue;
+                    ++found.treesSeen;
 
                     const uintptr_t root = *reinterpret_cast<const uintptr_t*>(head + 0x08);
                     if (!readableIn(regs, count, root, 0x20))
@@ -185,6 +188,7 @@ namespace {
                     }
                     if (!client)
                         continue;
+                    ++found.clientsSeen;
 
                     auto* game = reinterpret_cast<MinecraftGame*>(map - mapOffset);
                     if (!readableIn(regs, count, reinterpret_cast<uintptr_t>(game), 0x10))
@@ -393,8 +397,10 @@ namespace InstanceLocator {
         if (!found.client) {
             if (Solstice::console) {
                 Solstice::console->warn(
-                    "heap scan: no MinecraftGame found ({} regions, {} MB, {} ms)",
-                    regions.size(), found.scannedMb, elapsedMs);
+                    "heap scan: no MinecraftGame found ({} regions, {} MB, {} ms) "
+                    "trees={} clients={}",
+                    regions.size(), found.scannedMb, elapsedMs,
+                    found.treesSeen, found.clientsSeen);
             }
             return nullptr;
         }

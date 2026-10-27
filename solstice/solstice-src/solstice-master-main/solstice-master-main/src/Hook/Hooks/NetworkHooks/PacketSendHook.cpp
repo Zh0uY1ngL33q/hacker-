@@ -2,6 +2,7 @@
 // Created by vastrakai on 6/28/2024.
 //
 #include <SDK/Minecraft/ClientInstance.hpp>
+#include <SDK/Minecraft/InstanceLocator.hpp>
 #include <SDK/Minecraft/Network/LoopbackPacketSender.hpp>
 #include <SDK/Minecraft/Network/Packets/TextPacket.hpp>
 #include <SDK/Minecraft/Network/Packets/PlayerAuthInputPacket.hpp>
@@ -73,5 +74,13 @@ void PacketSendHook::sendPacket(PlayerAuthInputPacket* packet) {
 }
 
 void PacketSendHook::init() {
-    mDetour = std::make_unique<Detour>("LoopbackPacketSender::send", reinterpret_cast<void*>(ClientInstance::get()->getPacketSender()->vtable[2]), &PacketSendHook::onPacketSend);
+    // The instance is null while signatures are unresolved or the heap locator
+    // has not found the game yet; vtable[2] of null is what crashed at init.
+    auto* ci = ClientInstance::get();
+    if (!InstanceLocator::isPlausibleObject(ci))
+    {
+        spdlog::warn("LoopbackPacketSender::send skipped -- no ClientInstance yet");
+        return;
+    }
+    mDetour = std::make_unique<Detour>("LoopbackPacketSender::send", reinterpret_cast<void*>(ci->getPacketSender()->vtable[2]), &PacketSendHook::onPacketSend);
 }
