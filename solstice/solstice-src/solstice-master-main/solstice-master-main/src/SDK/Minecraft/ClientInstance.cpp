@@ -17,27 +17,8 @@
 
 ClientInstance* ClientInstance::get()
 {
-    static ClientInstance* instance = nullptr;
-    if (InstanceLocator::isPlausibleObject(instance))
-        return instance;
-
-    // Normal path: MinecraftGame -> mClientInstances, revalidated at deref time.
-    if (auto* game = MinecraftGame::getInstance(); InstanceLocator::isPlausibleObject(game))
-    {
-        auto* fromGame = InstanceLocator::firstClientFromGame(
-            game, OffsetProvider::MinecraftGame_mClientInstances);
-        if (InstanceLocator::isPlausibleObject(fromGame))
-        {
-            instance = fromGame;
-            return instance;
-        }
-    }
-
-    // Fallback: locate it on the heap. MinecraftGame::getInstance() already tries
-    // that, so this only runs when the map lookup came back empty (e.g. the map
-    // existed but was still being filled).
-    instance = InstanceLocator::locate(nullptr, nullptr);
-    return instance;
+    // Do not keep a second cache that can outlive the locator's map membership.
+    return InstanceLocator::locate(nullptr, nullptr);
 }
 
 glmatrixf ClientInstance::getViewMatrix()
@@ -128,7 +109,7 @@ bool ClientInstance::getMouseGrabbed()
     // idk why but the original virtual func's result was inverted
     // so im just gonna recreate that here because i'm too lazy to refactor everything
     auto* game = getMinecraftGame();
-    if (!InstanceLocator::isPlausibleObject(game))
+    if (!InstanceLocator::isPlausibleGame(game))
         return true; // pretend the mouse is grabbed: the safe state, no input lost
     return !game->getMouseGrabbed();
 }
@@ -148,12 +129,12 @@ void ClientInstance::releaseMouse()
     if (func)
         MemUtils::callFastcall<void>(func, this);
 
-    if (auto* game = getMinecraftGame(); InstanceLocator::isPlausibleObject(game))
+    if (auto* game = getMinecraftGame(); InstanceLocator::isPlausibleGame(game))
         game->setMouseGrabbed(false);
 }
 
 void ClientInstance::playUi(const std::string& soundName, float volume, float pitch)
 {   // this is exactly what the game does
-    if (auto* game = getMinecraftGame(); InstanceLocator::isPlausibleObject(game))
+    if (auto* game = getMinecraftGame(); InstanceLocator::isPlausibleGame(game))
         game->playUi(soundName, volume, pitch);
 }

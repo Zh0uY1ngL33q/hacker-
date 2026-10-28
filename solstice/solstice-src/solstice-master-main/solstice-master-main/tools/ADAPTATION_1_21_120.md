@@ -76,3 +76,20 @@ RTTI and call-graph classification are not used to identify these targets.
 - This proves a traversal defect and corrects a two-hit offset signature;
   it does not prove a runtime client has been found. Remaining game/cache
   validation and menu scanning policy are audited separately.
+
+## Consistent game and cache validation
+
+- `MinecraftGame` is no longer required to begin with a vtable in its SDK
+  entry/access paths. `isPlausibleGame` validates the known client-map chain,
+  including client/control-block vtables and the known MinecraftSim member.
+- Remove the independent SDK client/game caches and abandoned MainView path;
+  the locator owns caching, rechecking actual map membership on cached returns.
+- The cached-map reader now checks map size, both shared_ptr pointers and Sim;
+  it cannot bypass the stronger checks performed by a full scan.
+- The full scan no longer publishes a client whose Sim chain did not validate.
+  A later Sim-validated candidate can replace the first eight lookalikes.
+- `getPrimaryClientInstance` uses the same guarded raw reader instead of
+  copying/destroying a game-owned std::map from injected code.
+- Runtime tests required: find client in a world, leave/re-enter, ensure stale
+  caches are discarded, and unload. Menu-only discovery and scan latency remain
+  unresolved; the existing empty-map heuristic is not proof of game identity.

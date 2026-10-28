@@ -420,7 +420,7 @@ void Solstice::shutdownThread()
     console->warn("Shutting down...");
 
     if (auto* ci = ClientInstance::get(); ci) {
-        if (auto* game = ci->getMinecraftGame(); InstanceLocator::isPlausibleObject(game))
+        if (auto* game = ci->getMinecraftGame(); InstanceLocator::isPlausibleGame(game))
             game->playUi("beacon.deactivate", 1, 1.0f);
         // Chat feeds through the queued path which already tolerates missing GuiData.
     }

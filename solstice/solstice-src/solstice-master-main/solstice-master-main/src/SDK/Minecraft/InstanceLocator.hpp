@@ -18,6 +18,10 @@ namespace InstanceLocator {
     /// missing offset makes hat::member_at() return a field, not a pointer.
     bool isPlausibleObject(const void* p);
 
+    /// MinecraftGame need not start with a vtable. Validate its client map and
+    /// the client/shared_ptr/Sim chain instead; readable bytes alone are not ID.
+    bool isPlausibleGame(MinecraftGame* game);
+
     /// Committed, readable memory of at least `size` bytes. Use for pointers that
     /// do not necessarily start with a vtable (GuiData, Options, ...).
     bool isReadableMemory(const void* p, size_t size);

@@ -26,7 +26,7 @@ namespace {
             auto* client = ClientInstance::get();
             if (!InstanceLocator::isPlausibleObject(client)) return;
             auto* game = client->getMinecraftGame();
-            if (!InstanceLocator::isPlausibleObject(game)) return;
+            if (!InstanceLocator::isPlausibleGame(game)) return;
             if (!InstanceLocator::isReadableMemory(
                     reinterpret_cast<const char*>(game) + contextOffset, sizeof(void*)))
                 return;

@@ -11,8 +11,6 @@
 
 #include "ClientInstance.hpp"
 #include "InstanceLocator.hpp"
-#include "UWP/BedrockPlatformUWP.hpp"
-#include "UWP/MainView.hpp"
 
 namespace {
     // A member offset used with hat::member_at() has to be a small positive
@@ -28,48 +26,15 @@ namespace {
 
 MinecraftGame* MinecraftGame::getInstance()
 {
-    static MinecraftGame* cached = nullptr;
-    if (InstanceLocator::isPlausibleObject(cached))
-        return cached;
-
-    // Fast path: MainView -> BedrockPlatformUWP -> MinecraftGame. Only taken when
-    // both struct offsets resolved to something sane *and* every hop points at an
-    // object that starts with a game vtable.
-    if (usableOffset(OffsetProvider::MainView_bedrockPlatform) &&
-        usableOffset(OffsetProvider::BedrockPlatformUWP_mcGame))
-    {
-        auto* mainView = MainView::getInstance();
-        if (InstanceLocator::isPlausibleObject(mainView))
-        {
-            auto* platform = mainView->getBedrockPlatform();
-            if (InstanceLocator::isPlausibleObject(platform))
-            {
-                auto* game = platform->getMinecraftGame();
-                if (InstanceLocator::isPlausibleObject(game))
-                {
-                    cached = game;
-                    return cached;
-                }
-            }
-        }
-    }
-
-    // Slow path: read the object graph out of the heap. Needed on 1.21.120, where
-    // both offsets above changed and no signature can describe them.
-    cached = InstanceLocator::locateGame();
-    return cached;
+    // One cache owner, validated through the known map/client/Sim layout. The
+    // abandoned MainView chain and a first-qword vtable test are not game IDs.
+    auto* game = InstanceLocator::locateGame();
+    return InstanceLocator::isPlausibleGame(game) ? game : nullptr;
 }
 
 ClientInstance* MinecraftGame::getPrimaryClientInstance()
 {
-    auto helpme = hat::member_at<std::map<unsigned char, std::shared_ptr<class ClientInstance>>, MinecraftGame>(this, OffsetProvider::MinecraftGame_mClientInstances);
-
-    for (auto& clientInstance : helpme)
-    {
-        return clientInstance.second.get();
-    }
-
-    return nullptr;
+    return InstanceLocator::firstClientFromGame(this, OffsetProvider::MinecraftGame_mClientInstances);
 }
 
 UIProfanityContext* MinecraftGame::getProfanityContext()

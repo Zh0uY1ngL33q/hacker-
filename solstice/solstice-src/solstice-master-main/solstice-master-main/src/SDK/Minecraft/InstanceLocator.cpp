@@ -270,9 +270,7 @@ namespace {
                     // the client above was already validated as a shared_ptr
                     // pair plus a live MinecraftSim, which is what counts. The
                     // RTTI check is a bonus counter only.
-                   ++found.candidates;
-                    if (candidateCount >= kMaxCandidates)
-                        continue;
+                    ++found.candidates;
                     {
                         bool simOk = false;
                         if (simOffset > 0 && simOffset < 0x8000) {
@@ -287,7 +285,13 @@ namespace {
                                 }
                             }
                         }
-                        candidates[candidateCount++] = { game, client, map, simOk };
+                        if (candidateCount < kMaxCandidates) {
+                            candidates[candidateCount++] = { game, client, map, simOk };
+                        } else if (simOk) {
+                            // Do not let eight earlier lookalikes hide a later
+                            // candidate whose known Sim member also validates.
+                            candidates[0] = { game, client, map, true };
+                        }
                     }
                 }
             }
@@ -298,8 +302,8 @@ namespace {
             }
         }
 
-        // Prefer a candidate that also matched the MinecraftSim member; fall back
-        // to the first structurally valid map otherwise.
+        // Require the known MinecraftSim member as well as a shared_ptr-looking
+        // pair. A structurally similar tree alone is not a ClientInstance ID.
         for (size_t c = 0; c < candidateCount; ++c) {
             if (candidates[c].simOk) {
                 found.game = candidates[c].game;
@@ -308,11 +312,6 @@ namespace {
                 found.simValidated = true;
                 return found;
             }
-        }
-        if (candidateCount > 0) {
-            found.game = candidates[0].game;
-            found.client = candidates[0].client;
-            found.mapAddress = candidates[0].map;
         }
         return found;
     }
@@ -405,10 +404,20 @@ namespace InstanceLocator {
         // A game object starts with its vtable pointer, which lives in the game's
         // own image. A field that is not an object (an offset, a flag, a string)
         // fails this, which is what turns "silent garbage" into "not found".
-        if (!isReadable(p, sizeof(void*)))
+        __try {
+            if (!isReadable(p, sizeof(void*)))
+                return false;
+            const uintptr_t vtable = *reinterpret_cast<const uintptr_t*>(p);
+            return isMainModulePointer(reinterpret_cast<const void*>(vtable));
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER) {
             return false;
-        const uintptr_t vtable = *reinterpret_cast<const uintptr_t*>(p);
-        return isMainModulePointer(reinterpret_cast<const void*>(vtable));
+        }
+    }
+
+    bool isPlausibleGame(MinecraftGame* game)
+    {
+        return firstClientFromGame(game, OffsetProvider::MinecraftGame_mClientInstances) != nullptr;
     }
 
     ClientInstance* locate(MinecraftGame** outGame, uint32_t* outDiagnostics)
@@ -419,22 +428,29 @@ namespace InstanceLocator {
         static std::atomic<ClientInstance*> cachedClient{ nullptr };
         static std::atomic<MinecraftGame*> cachedGame{ nullptr };
 
+        const int mapOffset = OffsetProvider::MinecraftGame_mClientInstances;
+        if (mapOffset <= 0 || mapOffset >= 0x8000)
+            return nullptr;
+
         if (ClientInstance* cached = cachedClient.load(std::memory_order_acquire)) {
-            if (outGame)
-                *outGame = cachedGame.load(std::memory_order_acquire);
-            return cached;
+            auto* game = cachedGame.load(std::memory_order_acquire);
+            if (firstClientFromGame(game, mapOffset) == cached) {
+                if (outGame) *outGame = game;
+                return cached;
+            }
+            cachedClient.store(nullptr, std::memory_order_release);
         }
 
         std::lock_guard<std::mutex> lock(mutex);
         if (ClientInstance* cached = cachedClient.load(std::memory_order_acquire)) {
-            if (outGame)
-                *outGame = cachedGame.load(std::memory_order_acquire);
-            return cached;
+            auto* game = cachedGame.load(std::memory_order_acquire);
+            if (firstClientFromGame(game, mapOffset) == cached) {
+                if (outGame) *outGame = game;
+                return cached;
+            }
+            cachedClient.store(nullptr, std::memory_order_release);
         }
 
-        const int mapOffset = OffsetProvider::MinecraftGame_mClientInstances;
-        if (mapOffset <= 0 || mapOffset > 0x8000)
-            return nullptr;
         const int simOffset = OffsetProvider::ClientInstance_mMinecraftSim;
 
         const auto now = std::chrono::steady_clock::now();
@@ -487,7 +503,7 @@ namespace InstanceLocator {
         // Prefer the RTTI-confirmed game; a structural lookalike is only a
         // fallback.
         const MinecraftGame* reportedGame = found.gameRtti ? found.gameRtti : found.game;
-        if (!found.client) {
+        if (!found.client || firstClientFromGame(found.game, mapOffset) != found.client) {
             if (Solstice::console) {
                 Solstice::console->warn(
                     "heap scan: no ClientInstance yet ({} regions, {} MB, {} ms) "
@@ -536,6 +552,8 @@ namespace InstanceLocator {
         // pointer math (no std::map object, hence no destructor, hence legal
         // __try) so a page that dies between the big scan and this call is
         // caught by the handler instead of crashing the game.
+        if (!game || mapOffset <= 0 || mapOffset >= 0x8000)
+            return nullptr;
         const uintptr_t map = reinterpret_cast<uintptr_t>(game) + static_cast<uintptr_t>(mapOffset);
         __try {
             if (!isReadable(reinterpret_cast<const void*>(map), 0x10))
@@ -545,6 +563,9 @@ namespace InstanceLocator {
             if (!isReadable(reinterpret_cast<const void*>(head), 0x20))
                 return nullptr;
             if (*reinterpret_cast<const unsigned char*>(head + 0x19) != 1) // sentinel isnil
+                return nullptr;
+            const uint64_t size = *reinterpret_cast<const uint64_t*>(map + 8);
+            if (size == 0 || size > 0x2000)
                 return nullptr;
 
             const uintptr_t root = *reinterpret_cast<const uintptr_t*>(head + 0x08);
@@ -570,6 +591,16 @@ namespace InstanceLocator {
                 const uintptr_t control =
                     *reinterpret_cast<const uintptr_t*>(first + valueOffsets[k] + 8);
                 if (!isReadable(reinterpret_cast<const void*>(control), 0x10))
+                    continue;
+                if (!isPlausibleObject(reinterpret_cast<const void*>(candidate)) ||
+                    !isPlausibleObject(reinterpret_cast<const void*>(control)))
+                    continue;
+                const int simOffset = OffsetProvider::ClientInstance_mMinecraftSim;
+                if (simOffset <= 0 || simOffset >= 0x8000 ||
+                    !isReadable(reinterpret_cast<const void*>(candidate + simOffset), sizeof(void*)))
+                    continue;
+                const uintptr_t sim = *reinterpret_cast<const uintptr_t*>(candidate + simOffset);
+                if (!isPlausibleObject(reinterpret_cast<const void*>(sim)))
                     continue;
                 return reinterpret_cast<ClientInstance*>(candidate);
             }
