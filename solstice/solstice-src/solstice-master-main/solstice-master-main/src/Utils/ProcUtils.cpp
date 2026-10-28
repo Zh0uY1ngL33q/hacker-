@@ -39,10 +39,20 @@ int ProcUtils::getModuleCount()
 HWND ProcUtils::getMinecraftWindow()
 {
     static HWND window = nullptr;
+    DWORD cachedPid = 0;
+    if (window) GetWindowThreadProcessId(window, &cachedPid);
+    if (!IsWindow(window) || cachedPid != GetCurrentProcessId()) window = nullptr;
     if (!window)
     {
         std::map<HWND, std::string> titles;
         auto callback = [](HWND hwnd, LPARAM lParam) -> BOOL {
+
+            DWORD pid = 0;
+            GetWindowThreadProcessId(hwnd, &pid);
+            // A title match in another process (launcher/browser) is not the
+            // game's HWND and cannot be used by the ImGui Win32 backend.
+            if (pid != GetCurrentProcessId() || !IsWindowVisible(hwnd) || hwnd == GetConsoleWindow())
+                return TRUE;
 
             char title[256];
             GetWindowTextA(hwnd, title, sizeof(title));
@@ -63,7 +73,7 @@ HWND ProcUtils::getMinecraftWindow()
             }
         }
 
-        spdlog::info("Minecraft window handle: 0x{:X}", reinterpret_cast<uintptr_t>(window));
+        spdlog::info("Minecraft window handle: 0x{:X}, process {}", reinterpret_cast<uintptr_t>(window), GetCurrentProcessId());
     }
 
 

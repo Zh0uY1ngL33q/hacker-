@@ -544,6 +544,14 @@ void D3DHook::init()
 void D3DHook::s_init()
 {
     Solstice::console->info("Initializing D3DHook");
+    // Snapshot before kiero creates its dummy device. Loaded modules alone do
+    // not prove the active renderer, but distinguish pre-existing runtimes.
+    for (const char* name : {"dxgi.dll", "d3d11.dll", "d3d12.dll", "opengl32.dll", "vulkan-1.dll"}) {
+        char path[MAX_PATH]{};
+        const HMODULE module = GetModuleHandleA(name);
+        if (module) GetModuleFileNameA(module, path, MAX_PATH);
+        Solstice::console->info("[GUI probe] runtime {} loaded={} path={}", name, module != nullptr, path);
+    }
     // Attempt to init on D3D12
     if (kiero::init(kiero::RenderType::D3D12) == kiero::Status::Success)
     {

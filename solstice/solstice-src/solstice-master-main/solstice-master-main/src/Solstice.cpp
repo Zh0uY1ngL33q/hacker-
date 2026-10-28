@@ -118,6 +118,9 @@ void Solstice::init(HMODULE hModule)
     spdlog::set_default_logger(console);
     console->info("Build: {} branch {}", SOLSTICE_BUILD_VERSION, SOLSTICE_BUILD_BRANCH);
     console->info("Diagnostic log path: {}", logFile);
+    char hostPath[MAX_PATH]{};
+    GetModuleFileNameA(nullptr, hostPath, MAX_PATH);
+    console->info("[GUI probe] host process={} path={}", GetCurrentProcessId(), hostPath);
 
     console->info("Welcome to " + CC(0, 255, 0) + "Solstice" + ANSI_COLOR_RESET + "!"
 #ifdef __DEBUG__
@@ -312,8 +315,25 @@ void Solstice::shutdownThread()
     // Wait for the user to press END
     bool firstCall = true;
     bool isLpValid = false;
+    ULONGLONG lastKeyProbe = 0;
+    bool lastTabProbe = false;
     while (!mRequestEject)
     {
+        // Diagnostic only: no toggling or event injection. This tells whether
+        // Windows sees TAB even when the signature-based keyboard hook is idle.
+        const ULONGLONG probeNow = GetTickCount64();
+        if (probeNow - lastKeyProbe >= 50) {
+            lastKeyProbe = probeNow;
+            const bool tabDown = (GetAsyncKeyState(VK_TAB) & 0x8000) != 0;
+            if (tabDown && !lastTabProbe) {
+                DWORD foregroundPid = 0;
+                const HWND foreground = GetForegroundWindow();
+                GetWindowThreadProcessId(foreground, &foregroundPid);
+                console->info("[GUI probe] Windows TAB; foreground=0x{:X} pid={} hostPid={}",
+                    reinterpret_cast<uintptr_t>(foreground), foregroundPid, GetCurrentProcessId());
+            }
+            lastTabProbe = tabDown;
+        }
         if (firstCall)
         {
             NotifyUtils::notify("Solstice initialized!", 5.0f, Notification::Type::Info);
