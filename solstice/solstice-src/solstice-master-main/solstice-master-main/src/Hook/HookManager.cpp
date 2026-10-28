@@ -5,6 +5,7 @@
 #include "HookManager.hpp"
 
 #include <MinHook.h>
+#include <spdlog/spdlog.h>
 
 #include "Hooks/ActorHooks/ActorModelHook.hpp"
 #include "Hooks/ActorHooks/AnimationHooks.hpp"
@@ -73,7 +74,8 @@ void HookManager::init(bool initLp)
             mHooks.emplace_back(hook);
         }
 
-        MH_EnableHook(MH_ALL_HOOKS);
+        const MH_STATUS enableStatus = MH_EnableHook(MH_ALL_HOOKS);
+        spdlog::info("[GUI probe] MH_EnableHook(all)={} (0=success)", static_cast<int>(enableStatus));
     }
 }
 

@@ -3,6 +3,8 @@
 //
 
 #include "D3DHook.hpp"
+#include <atomic>
+#include <Hook/Detour.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -47,6 +49,53 @@ static HWND wnd = NULL;
 static WNDPROC oWndProc;
 
 static IDXGISwapChain3* gSwapChain = nullptr;
+
+namespace {
+    // Passive probes: forward the frame untouched. Neither export's presence
+    // nor creation of a dummy D3D device proves the game's active backend.
+    std::unique_ptr<Detour> gdiFrameProbe;
+    std::unique_ptr<Detour> wglFrameProbe;
+
+    void logGlFrameProbe(const char* name, HDC dc)
+    {
+        using GetGlContext = HGLRC(WINAPI*)();
+        const HMODULE gl = GetModuleHandleA("opengl32.dll");
+        const auto getContext = gl ? reinterpret_cast<GetGlContext>(GetProcAddress(gl, "wglGetCurrentContext")) : nullptr;
+        const HWND window = WindowFromDC(dc);
+        DWORD pid = 0;
+        GetWindowThreadProcessId(window, &pid);
+        spdlog::info("[GUI probe] {} reached; hwnd=0x{:X} pid={} thread={} GLcontext=0x{:X}",
+            name, reinterpret_cast<uintptr_t>(window), pid, GetCurrentThreadId(),
+            getContext ? reinterpret_cast<uintptr_t>(getContext()) : 0);
+    }
+
+    BOOL WINAPI onGdiFrameProbe(HDC dc)
+    {
+        static std::atomic<bool> logged{false};
+        if (!logged.exchange(true)) logGlFrameProbe("gdi32!SwapBuffers", dc);
+        return gdiFrameProbe->getOriginal<&onGdiFrameProbe>()(dc);
+    }
+
+    BOOL WINAPI onWglFrameProbe(HDC dc)
+    {
+        static std::atomic<bool> logged{false};
+        if (!logged.exchange(true)) logGlFrameProbe("opengl32!wglSwapBuffers", dc);
+        return wglFrameProbe->getOriginal<&onWglFrameProbe>()(dc);
+    }
+
+    void installGlFrameProbes()
+    {
+        const HMODULE gdi = GetModuleHandleA("gdi32.dll");
+        const HMODULE gl = GetModuleHandleA("opengl32.dll");
+        const auto gdiSwap = gdi ? GetProcAddress(gdi, "SwapBuffers") : nullptr;
+        const auto glSwap = gl ? GetProcAddress(gl, "wglSwapBuffers") : nullptr;
+        if (gdiSwap) gdiFrameProbe = std::make_unique<Detour>(
+            "probe gdi32!SwapBuffers", reinterpret_cast<void*>(gdiSwap), reinterpret_cast<void*>(&onGdiFrameProbe));
+        // Forwarded exports may share one target: do not detour it twice.
+        if (glSwap && glSwap != gdiSwap) wglFrameProbe = std::make_unique<Detour>(
+            "probe opengl32!wglSwapBuffers", reinterpret_cast<void*>(glSwap), reinterpret_cast<void*>(&onWglFrameProbe));
+    }
+}
 
 #define CHECK_HR(hr) if (FAILED(hr)) { spdlog::error("HRESULT failed: {0}", hr); return hr; }
 
@@ -544,6 +593,7 @@ void D3DHook::init()
 void D3DHook::s_init()
 {
     Solstice::console->info("Initializing D3DHook");
+    installGlFrameProbes(); // HookManager enables these with the other detours.
     // Snapshot before kiero creates its dummy device. Loaded modules alone do
     // not prove the active renderer, but distinguish pre-existing runtimes.
     for (const char* name : {"dxgi.dll", "d3d11.dll", "d3d12.dll", "opengl32.dll", "vulkan-1.dll"}) {
@@ -589,12 +639,14 @@ void D3DHook::s_shutdown()
     kiero::unbind(140);
     kiero::unbind(145);
     kiero::shutdown();
+    gdiFrameProbe.reset();
+    wglFrameProbe.reset();
 
     //if (imGuiInitialized) shutdownImGui();
 
     mBackBuffer11Rtv.clear();
     mBackBuffer11Tex.clear();
-    gContext11->Flush();
+    if (gContext11) gContext11->Flush();
 
     alreadyRunningD3D11 = false;
     d3dInitImGui = false;
