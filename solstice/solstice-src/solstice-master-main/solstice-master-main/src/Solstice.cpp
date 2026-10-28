@@ -6,6 +6,7 @@
 
 
 #include <fstream>
+#include <filesystem>
 #include <Features/FeatureManager.hpp>
 #include <Features/Configs/ConfigManager.hpp>
 #include <Hook/HookManager.hpp>
@@ -99,16 +100,24 @@ void Solstice::init(HMODULE hModule)
 
     console = spdlog::stdout_color_mt(CC(21, 207, 148) + "solstice" + ANSI_COLOR_RESET, spdlog::color_mode::automatic);
 
-    // Create a file logger sink
+    // Persist both console-> and spdlog:: messages for remote diagnostics.
     std::string logFile = FileUtils::getSolsticeDir() + xorstr_("solstice.log");
-
-    // Don't use the file sink if the log file doesn't exist
-    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    console_sink->set_pattern("[" + CC(255, 135, 0) + "%H:%M:%S.%e" + ANSI_COLOR_RESET + "] [%n] [%^%l%$] %v");
-    console_sink->set_level(spdlog::level::trace);
     console->set_level(spdlog::level::trace);
     console->set_pattern("[" + CC(255, 135, 0) + "%H:%M:%S.%e" + ANSI_COLOR_RESET + "] [%n] [%^%l%$] %v");
-    spdlog::set_default_logger(std::make_shared<spdlog::logger>(CC(21, 207, 148) + "solstice" + ANSI_COLOR_RESET, spdlog::sinks_init_list{console_sink}));
+    try {
+        std::filesystem::create_directories(FileUtils::getSolsticeDir());
+        // A fresh file per injection prevents old sessions being mistaken for
+        // the current build. Upload it before the next injection.
+        auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFile, true);
+        fileSink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
+        console->sinks().push_back(fileSink);
+    } catch (const std::exception& ex) {
+        console->error("Cannot create diagnostic log {}: {}", logFile, ex.what());
+    }
+    console->flush_on(spdlog::level::info);
+    spdlog::set_default_logger(console);
+    console->info("Build: {} branch {}", SOLSTICE_BUILD_VERSION, SOLSTICE_BUILD_BRANCH);
+    console->info("Diagnostic log path: {}", logFile);
 
     console->info("Welcome to " + CC(0, 255, 0) + "Solstice" + ANSI_COLOR_RESET + "!"
 #ifdef __DEBUG__

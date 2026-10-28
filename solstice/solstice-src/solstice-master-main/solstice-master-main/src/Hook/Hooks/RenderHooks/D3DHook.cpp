@@ -548,15 +548,19 @@ void D3DHook::s_init()
     if (kiero::init(kiero::RenderType::D3D12) == kiero::Status::Success)
     {
         Solstice::console->info("Initialized kiero [D3D12]");
-        kiero::bind(140, reinterpret_cast<void**>(&oPresent), reinterpret_cast<void*>(present));
-        kiero::bind(145, reinterpret_cast<void**>(&oResizeBuffers), reinterpret_cast<void*>(resizeBuffers));
+        const auto presentStatus = kiero::bind(140, reinterpret_cast<void**>(&oPresent), reinterpret_cast<void*>(present));
+        const auto resizeStatus = kiero::bind(145, reinterpret_cast<void**>(&oResizeBuffers), reinterpret_cast<void*>(resizeBuffers));
+        Solstice::console->info("[GUI probe] D3D12 bind: Present={} ResizeBuffers={} (0=success)",
+            static_cast<int>(presentStatus), static_cast<int>(resizeStatus));
         return;
         // Else, attempt to init on D3D11
     } else if (kiero::init(kiero::RenderType::D3D11) == kiero::Status::Success)
     {
         Solstice::console->info("Initialized kiero [D3D11]");
-        kiero::bind(8, reinterpret_cast<void**>(&oPresent), reinterpret_cast<void*>(present));
-        kiero::bind(13, reinterpret_cast<void**>(&oResizeBuffers), reinterpret_cast<void*>(resizeBuffers));
+        const auto presentStatus = kiero::bind(8, reinterpret_cast<void**>(&oPresent), reinterpret_cast<void*>(present));
+        const auto resizeStatus = kiero::bind(13, reinterpret_cast<void**>(&oResizeBuffers), reinterpret_cast<void*>(resizeBuffers));
+        Solstice::console->info("[GUI probe] D3D11 bind: Present={} ResizeBuffers={} (0=success)",
+            static_cast<int>(presentStatus), static_cast<int>(resizeStatus));
         return;
     }
     Solstice::console->error("Failed to initialize kiero");
