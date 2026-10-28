@@ -25,7 +25,7 @@
 //     node + 0x19 : _Isnil (1 for the sentinel)
 //
 // For a non-empty map: head->_Parent is the root, root->_Parent is the head,
-// head->_Left is the leftmost node and the leftmost node has no left child. The
+// head->_Left is the leftmost node; its missing left child is head, NOT null. The
 // first node's value is the shared_ptr<ClientInstance>.
 //
 // Every step is validated and the scan gives up instead of dereferencing
@@ -227,17 +227,17 @@ namespace {
                     const uintptr_t first = *reinterpret_cast<const uintptr_t*>(head);
                     if (!readableIn(regs, count, first, 0x40))
                         continue;
-                    // Leftmost node of an MSVC tree has no left child.
-                    if (*reinterpret_cast<const uintptr_t*>(first) != 0)
+                    // MSVC represents a missing child with the head sentinel.
+                    // The image iterator dereferences child's +0x19 isnil flag;
+                    // requiring null here rejected every real non-empty tree.
+                    if (*reinterpret_cast<const uintptr_t*>(first) != head)
                         continue;
 
-                    // pair<const uint8_t, shared_ptr<ClientInstance>>: the key is
-                    // one byte, so the pointer is 8-byte aligned at +0x28 in the
-                    // standard layout, but +0x20 is also tried so a compiler that
-                    // packs the pair differently still works.
-                    const size_t valueOffsets[2] = { 0x28, 0x20 };
+                    // Confirmed by the same image's map iteration: node+0x28.
+                    // node+0x20 is the key/padding, not an alternate shared_ptr.
+                    const size_t valueOffsets[1] = { 0x28 };
                     ClientInstance* client = nullptr;
-                    for (size_t k = 0; k < 2 && !client; ++k) {
+                    for (size_t k = 0; k < 1 && !client; ++k) {
                         const uintptr_t candidate =
                             *reinterpret_cast<const uintptr_t*>(first + valueOffsets[k]);
                         if (!readableIn(regs, count, candidate, 0x10))
@@ -558,11 +558,11 @@ namespace InstanceLocator {
                 return nullptr;
             if (*reinterpret_cast<const unsigned char*>(first + 0x19) == 1)
                 return nullptr; // empty map
-            if (*reinterpret_cast<const uintptr_t*>(first) != 0)
+            if (*reinterpret_cast<const uintptr_t*>(first) != head)
                 return nullptr; // not the leftmost node
 
-            const size_t valueOffsets[2] = { 0x28, 0x20 };
-            for (size_t k = 0; k < 2; ++k) {
+            const size_t valueOffsets[1] = { 0x28 };
+            for (size_t k = 0; k < 1; ++k) {
                 const uintptr_t candidate =
                     *reinterpret_cast<const uintptr_t*>(first + valueOffsets[k]);
                 if (!isReadable(reinterpret_cast<const void*>(candidate), 0x10))

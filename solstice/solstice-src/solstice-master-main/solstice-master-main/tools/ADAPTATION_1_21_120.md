@@ -57,3 +57,22 @@ RTTI and call-graph classification are not used to identify these targets.
 3. GUI display is **not** claimed fixed by the input changes: the latest
    available log has no D3D Present callback. Rendering is a separate blocker.
 4. Do not count a reduced ambiguous-signature count as proof of GUI functionality.
+
+## Client map: resolve the correct map and stop rejecting its sentinel children
+
+- Old `MinecraftGame_mClientInstances` pattern matches at `0x1A3CA3A`
+  (field `0xB60`) **and** `0x621A01A` (unrelated field `0x300`).
+- Extended pattern matches only `0x1A3CA3A` and still extracts `0xB60`.
+  It includes the node+`0x28` load and virtual call at byte displacement
+  `0x118` (getLocalPlayer index 35), not just generic tree traversal.
+- Crucial traversal correction: `0x1A3CAA8..0x1A3CACD` repeatedly loads
+  `_Left` and immediately reads that child's `+0x19` isnil byte. Missing
+  children therefore point to the **non-null head sentinel**. The old
+  `first->_Left == 0` condition in both scanner and cached-map reader
+  rejects real MSVC trees. Both now require `first->_Left == head`.
+- Remove the speculative node+`0x20` value fallback. The image explicitly
+  consumes node+`0x28`; treating key/padding as a shared_ptr is not supported
+  by this build's layout.
+- This proves a traversal defect and corrects a two-hit offset signature;
+  it does not prove a runtime client has been found. Remaining game/cache
+  validation and menu scanning policy are audited separately.
