@@ -138,6 +138,12 @@ namespace {
                 break;
         }
         name[sizeof(name) - 1] = '\0';
+        if (!strstr(name, needle)) {
+            // One-shot diagnostics: what does this build's RTTI actually name?
+            static std::atomic<bool> logged{ false };
+            if (!logged.exchange(true) && Solstice::console)
+                Solstice::console->warn("rtti probe: candidate class name: {}", name);
+        }
         return strstr(name, needle) ? 1 : 0;
     }
 
@@ -259,46 +265,29 @@ namespace {
                     ++found.clientsSeen;
 
                     auto* game = reinterpret_cast<MinecraftGame*>(map - mapOffset);
-                    if (!readableIn(regs, count, reinterpret_cast<uintptr_t>(game), 0x10))
+                    // Not every candidate game is polymorphic at offset 0 (the
+                    // first qword need not be a vtable), so no vtable test here:
+                    // the client above was already validated as a shared_ptr
+                    // pair plus a live MinecraftSim, which is what counts. The
+                    // RTTI check is a bonus counter only.
+                   ++found.candidates;
+                    if (candidateCount >= kMaxCandidates)
                         continue;
-                    const uintptr_t gameVtable = *reinterpret_cast<const uintptr_t*>(game);
-                    if (!isMainModulePointer(reinterpret_cast<const void*>(gameVtable)))
-                        continue;
-                    // The client check above is already strong (shared_ptr pair
-                    // with game vtables); RTTI here is a bonus confirmation.
-                    if (rttiClassIs(regs, count, gameVtable, "MinecraftGame") == 1)
-                        ++found.rttiSeen;
-
-                    // Extra check, used only to choose between several maps: a real
-                    // ClientInstance holds a MinecraftSim pointer at a known offset
-                    // (that signature still resolves), and the simulation is itself a
-                    // game object. A lookalike map will not satisfy both.
-                    bool simOk = false;
-                    if (simOffset > 0 && simOffset < 0x8000) {
-                        const uintptr_t simField = reinterpret_cast<uintptr_t>(client) + simOffset;
-                        if (readableIn(regs, count, simField, 8)) {
-                            const uintptr_t sim = *reinterpret_cast<const uintptr_t*>(simField);
-                            if (readableIn(regs, count, sim, 0x10) &&
-                                isMainModulePointer(reinterpret_cast<const void*>(
-                                    *reinterpret_cast<const uintptr_t*>(sim))))
-                            {
-                                simOk = true;
+                    {
+                        bool simOk = false;
+                        if (simOffset > 0 && simOffset < 0x8000) {
+                            const uintptr_t simField = reinterpret_cast<uintptr_t>(client) + simOffset;
+                            if (readableIn(regs, count, simField, 8)) {
+                                const uintptr_t sim = *reinterpret_cast<const uintptr_t*>(simField);
+                                if (readableIn(regs, count, sim, 0x10) &&
+                                    isMainModulePointer(reinterpret_cast<const void*>(
+                                        *reinterpret_cast<const uintptr_t*>(sim))))
+                                {
+                                    simOk = true;
+                                }
                             }
                         }
-                    }
-
-                    ++found.candidates;
-                    if (candidateCount < kMaxCandidates) {
                         candidates[candidateCount++] = { game, client, map, simOk };
-                    } else {
-                        // Full: only keep it if it beats the current best, which
-                        // also stops us from scanning the whole heap.
-                        for (size_t c = 0; c < candidateCount; ++c) {
-                            if (!candidates[c].simOk && simOk) {
-                                candidates[c] = { game, client, map, simOk };
-                                break;
-                            }
-                        }
                     }
                 }
             }
@@ -454,7 +443,9 @@ namespace InstanceLocator {
         // microseconds. A full 500 MB heap scan synchronously on the caller's
         // (a game) thread froze the client for 7-12 s, so it must stay rare.
         if (MinecraftGame* known = cachedGame.load(std::memory_order_acquire)) {
-            if (isPlausibleObject(known)) {
+            // A MinecraftGame need not start with a vtable, so revalidation is
+            // readability, not isPlausibleObject.
+            if (isReadable(reinterpret_cast<const void*>(known), 0x40)) {
                 if (ClientInstance* c = firstClientFromGame(known, mapOffset)) {
                     cachedClient.store(c, std::memory_order_release);
                     if (outGame)
@@ -505,10 +496,11 @@ namespace InstanceLocator {
                     found.treesSeen, found.clientsSeen, found.gamesSeen,
                     found.rttiSeen, reinterpret_cast<uintptr_t>(reportedGame));
             }
-            // A named game is trustworthy enough to cache: subsequent calls
-            // take the cheap path until the map actually fills.
-            if (found.gameRtti)
-                cachedGame.store(found.gameRtti, std::memory_order_release);
+            // Cache whichever game we report (RTTI-confirmed preferred): the
+            // cheap path costs microseconds per call, and full scans then
+            // happen only every 180 s instead of every 30.
+            if (reportedGame)
+                cachedGame.store(const_cast<MinecraftGame*>(reportedGame), std::memory_order_release);
             if (outGame && reportedGame)
                 *outGame = const_cast<MinecraftGame*>(reportedGame);
             return nullptr;
