@@ -38,6 +38,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <cstring>
 #include <mutex>
 #include <vector>
 
@@ -89,6 +90,9 @@ namespace {
         uint32_t treesSeen;    // maps whose sentinel/size invariants held
         uint32_t clientsSeen;  // candidates whose value looked like a ClientInstance
         uint32_t gamesSeen;    // MinecraftGame candidates (incl. empty-map at menu)
+        uint32_t rttiSeen;     // empty-map games whose RTTI name matched
+        MinecraftGame* gameRtti;  // RTTI-confirmed MinecraftGame (may be null)
+        uintptr_t rttiMapAddress;
     };
 
     struct Candidate {
@@ -97,6 +101,45 @@ namespace {
         uintptr_t map;
         bool simOk;
     };
+
+    // MSVC RTTI, read at runtime: vtable[-1] holds a pointer to a
+    // CompleteObjectLocator, whose pTypeDescriptor RVA (relative to the module
+    // base) names the class. Decisive for separating the real MinecraftGame
+    // from lookalikes that merely hold an empty std::map at the same offset.
+    // Returns 1 = name matches, 0 = readable but different, -1 = unreadable.
+    int rttiClassIs(const Region* regs, size_t count, uintptr_t vtable,
+                    const char* needle)
+    {
+        const uintptr_t base = mainModuleBase();
+        const uintptr_t colAddr = vtable - sizeof(void*);
+        if (!base || vtable < 8)
+            return -1;
+        if (!readableIn(regs, count, colAddr, sizeof(void*)))
+            return -1;
+        const uintptr_t col = *reinterpret_cast<const uintptr_t*>(colAddr);
+        if (!readableIn(regs, count, col, 0x10))
+            return -1;
+        // x64 COL: signature, offset, cdOffset, pTypeDescriptor (RVA), ...
+        const uint32_t tdRva = *reinterpret_cast<const uint32_t*>(col + 0x0C);
+        if (tdRva == 0 || tdRva > 0x2000000ull)
+            return 0;
+        const uintptr_t td = base + tdRva;
+        // TypeDescriptor: vfptr, spare, then the decorated name.
+        if (!readableIn(regs, count, td, 0x10))
+            return 0;
+        char name[72];
+        const uintptr_t nameAddr = td + 0x10;
+        size_t n = 0;
+        for (; n < sizeof(name) - 1; ++n) {
+            if (!readableIn(regs, count, nameAddr + n, 1))
+                return n == 0 ? -1 : 0;
+            name[n] = *reinterpret_cast<const char*>(nameAddr + n);
+            if (name[n] == '\0')
+                break;
+        }
+        name[sizeof(name) - 1] = '\0';
+        return strstr(name, needle) ? 1 : 0;
+    }
 
     // No C++ objects with destructors in here: MSVC refuses __try in such a
     // function, and the whole point is to survive a stale region.
@@ -160,9 +203,18 @@ namespace {
                         const uintptr_t gameVtable = *reinterpret_cast<const uintptr_t*>(game);
                         if (!isMainModulePointer(reinterpret_cast<const void*>(gameVtable)))
                             continue;
-                        ++found.gamesSeen;
-                        found.game = game;
-                        found.mapAddress = map;
+                        const int rtti = rttiClassIs(regs, count, gameVtable, "MinecraftGame");
+                        if (rtti == 1) {
+                            // A named MinecraftGame beats any structural lookalike.
+                            ++found.rttiSeen;
+                            found.gameRtti = game;
+                            found.rttiMapAddress = map;
+                        } else if (!found.game) {
+                            // Barely trusted fallback; superseded by gameRtti.
+                            ++found.gamesSeen;
+                            found.game = game;
+                            found.mapAddress = map;
+                        }
                         continue;
                     }
 
@@ -212,6 +264,10 @@ namespace {
                     const uintptr_t gameVtable = *reinterpret_cast<const uintptr_t*>(game);
                     if (!isMainModulePointer(reinterpret_cast<const void*>(gameVtable)))
                         continue;
+                    // The client check above is already strong (shared_ptr pair
+                    // with game vtables); RTTI here is a bonus confirmation.
+                    if (rttiClassIs(regs, count, gameVtable, "MinecraftGame") == 1)
+                        ++found.rttiSeen;
 
                     // Extra check, used only to choose between several maps: a real
                     // ClientInstance holds a MinecraftSim pointer at a known offset
@@ -370,6 +426,7 @@ namespace InstanceLocator {
     {
         static std::mutex mutex;
         static std::chrono::steady_clock::time_point lastAttempt{};
+        static std::chrono::steady_clock::time_point lastFullScan{};
         static std::atomic<ClientInstance*> cachedClient{ nullptr };
         static std::atomic<MinecraftGame*> cachedGame{ nullptr };
 
@@ -386,22 +443,48 @@ namespace InstanceLocator {
             return cached;
         }
 
+        const int mapOffset = OffsetProvider::MinecraftGame_mClientInstances;
+        if (mapOffset <= 0 || mapOffset > 0x8000)
+            return nullptr;
+        const int simOffset = OffsetProvider::ClientInstance_mMinecraftSim;
+
         const auto now = std::chrono::steady_clock::now();
+
+        // Cheap path: a known MinecraftGame is revalidated and its map read in
+        // microseconds. A full 500 MB heap scan synchronously on the caller's
+        // (a game) thread froze the client for 7-12 s, so it must stay rare.
+        if (MinecraftGame* known = cachedGame.load(std::memory_order_acquire)) {
+            if (isPlausibleObject(known)) {
+                if (ClientInstance* c = firstClientFromGame(known, mapOffset)) {
+                    cachedClient.store(c, std::memory_order_release);
+                    if (outGame)
+                        *outGame = known;
+                    return c;
+                }
+                // Still no client. The map fills only once a world is joined;
+                // retry the cheap path and only pay for a full scan if this
+                // game never produces one within the window below.
+                if (outGame)
+                    *outGame = known;
+                if (now - lastFullScan < std::chrono::seconds(180))
+                    return nullptr;
+            } else {
+                cachedGame.store(nullptr, std::memory_order_release);
+            }
+        }
+
+        // Full-scan throttle: at most every 10 s without a cached game.
         if (lastAttempt.time_since_epoch().count() != 0 && now - lastAttempt < std::chrono::seconds(10))
             return nullptr;
         lastAttempt = now;
 
         std::vector<Region> regions = collectRegions();
 
-        const int mapOffset = OffsetProvider::MinecraftGame_mClientInstances;
-        if (mapOffset <= 0 || mapOffset > 0x8000)
-            return nullptr;
-        const int simOffset = OffsetProvider::ClientInstance_mMinecraftSim;
-
         const auto started = std::chrono::steady_clock::now();
         const Found found = scanRegions(regions.data(), regions.size(), mapOffset, simOffset);
         const auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - started).count();
+        lastFullScan = now;
 
         if (outDiagnostics) {
             outDiagnostics[0] = static_cast<uint32_t>(regions.size());
@@ -410,19 +493,24 @@ namespace InstanceLocator {
             outDiagnostics[3] = static_cast<uint32_t>(elapsedMs);
         }
 
+        // Prefer the RTTI-confirmed game; a structural lookalike is only a
+        // fallback.
+        const MinecraftGame* reportedGame = found.gameRtti ? found.gameRtti : found.game;
         if (!found.client) {
             if (Solstice::console) {
                 Solstice::console->warn(
                     "heap scan: no ClientInstance yet ({} regions, {} MB, {} ms) "
-                    "trees={} clients={} games={} game@{}",
+                    "trees={} clients={} games={} rtti={} game@{}",
                     regions.size(), found.scannedMb, elapsedMs,
                     found.treesSeen, found.clientsSeen, found.gamesSeen,
-                    reinterpret_cast<uintptr_t>(found.game));
+                    found.rttiSeen, reinterpret_cast<uintptr_t>(reportedGame));
             }
-            // The game itself can be resolved even when the map is still empty
-            // (title screen); hand it back without caching a client.
-            if (outGame && found.game)
-                *outGame = found.game;
+            // A named game is trustworthy enough to cache: subsequent calls
+            // take the cheap path until the map actually fills.
+            if (found.gameRtti)
+                cachedGame.store(found.gameRtti, std::memory_order_release);
+            if (outGame && reportedGame)
+                *outGame = const_cast<MinecraftGame*>(reportedGame);
             return nullptr;
         }
 
