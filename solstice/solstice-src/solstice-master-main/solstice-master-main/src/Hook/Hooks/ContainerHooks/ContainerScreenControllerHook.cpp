@@ -8,6 +8,8 @@
 #include <Features/Events/ContainerScreenTickEvent.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
 #include <SDK/Minecraft/Actor/Actor.hpp>
+#include <SDK/Minecraft/InstanceLocator.hpp>
+#include <SDK/OffsetProvider.hpp>
 
 std::unique_ptr<Detour> ContainerScreenControllerHook::mDetour;
 
@@ -15,11 +17,22 @@ uint32_t ContainerScreenControllerHook::onContainerTick(class ContainerScreenCon
 {
     auto original = mDetour->getOriginal<&ContainerScreenControllerHook::onContainerTick>();
 
-    auto player = ClientInstance::get()->getLocalPlayer();
-    if (!player) return original(csc); // just in case
-    if (player->getContainerManagerModel()->mContainerType != ContainerType::Container)
+    // Repairing the entry address must not activate an offset-zero member read
+    // while Actor_mContainerManagerModel is still unresolved on this build.
+    const int modelOffset = OffsetProvider::Actor_mContainerManagerModel;
+    if (modelOffset <= 0 || modelOffset >= 0x8000 ||
+        !gFeatureManager || !gFeatureManager->mDispatcher)
+        return original(csc);
+    auto* client = ClientInstance::get();
+    if (!InstanceLocator::isPlausibleObject(client)) return original(csc);
+    auto* player = client->getLocalPlayer();
+    if (!InstanceLocator::isPlausibleObject(player)) return original(csc);
+    auto* model = player->getContainerManagerModel();
+    if (!InstanceLocator::isPlausibleObject(model) ||
+        !InstanceLocator::isReadableMemory(model, 0x52)) return original(csc);
+    if (model->mContainerType != ContainerType::Container)
     {
-        spdlog::debug("Not a container - screen {} (id: {})", std::string(magic_enum::enum_name(player->getContainerManagerModel()->mContainerType)), player->getContainerManagerModel()->mContainerType);
+        spdlog::debug("Not a container - screen {} (id: {})", std::string(magic_enum::enum_name(model->mContainerType)), model->mContainerType);
         return original(csc);
     }
 

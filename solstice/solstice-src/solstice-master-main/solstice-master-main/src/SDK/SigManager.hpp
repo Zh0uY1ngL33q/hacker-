@@ -65,13 +65,13 @@ public:
     DEFINE_SIG(ClientInstance_mBgfx, "48 8B ? ? ? ? ? 48 8D ? ? ? ? ? FF 15 ? ? ? ? 0F B7", SigType::RefSig, 3);
     DEFINE_SIG(ClientInstance_grabMouse, "48 8B 01 48 8B ? ? ? ? ? EB ? 48 8B", SigType::Sig, 0);
     DEFINE_SIG(ClientInstance_releaseMouse, "40 ? 48 83 EC ? 48 8B ? 48 8B ? 48 8B ? ? ? ? ? FF 15 ? ? ? ? 84 C0 74 ? 48 8B ? ? ? ? ? 48 8B ? 48 8B ? ? ? ? ? 48 83 C4 ? 5B 48 FF ? ? ? ? ? 48 83 C4 ? 5B C3 48 89", SigType::Sig, 0);
-    DEFINE_SIG(ContainerScreenController_tick, "48 8B ? 48 89 ? ? 48 89 ? ? 48 89 ? ? 55 41 54 41 55 41 56 41 57 48 8D ? ? 48 81 ? ? ? ? ? 0F 29 ? ? 0F 29 ? ? 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? 4C 8B ? 48 ? ? ? ? ? ? E8 ? ? ? ? 48 ? ? ? 49 ? ? ? ?", SigType::RefSig, 1);
+    DEFINE_SIG(ContainerScreenController_tick, "48 8B ? 48 89 ? ? 48 89 ? ? 48 89 ? ? 55 41 54 41 55 41 56 41 57 48 8D ? ? 48 81 ? ? ? ? ? 0F 29 ? ? 0F 29 ? ? 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? 4C 8B ? 48 ? ? ? ? ? ? E8 ? ? ? ? 48 ? ? ? 49 ? ? ? ?", SigType::Sig, 0);
     DEFINE_SIG(ContainerScreenController_handleAutoPlace, "E8 ? ? ? ? 48 8B 4F 18 44 8B F0 48 81 C1 ? ? ?", SigType::RefSig, 1);
     DEFINE_SIG(ComplexInventoryTransaction_vtable, "48 8D 05 ? ? ? ? 48 89 ? 8B ? ? 89 ? ? 48 ? ? ? 48 ? ? ? E8 ? ? ? ? 90 48 8D 05 ? ? ? ? 49 ? ? 8B ?", SigType::RefSig, 3);
     DEFINE_SIG(EnchantUtils_getEnchantLevel, "E8 ? ? ? ? 8B D8 4D 8B ? 49 8B", SigType::RefSig, 1);
-    DEFINE_SIG(GameMode_getDestroyRate, "48 89 5C 24 18 57 48 83 EC 30 48 8B F9 0F 29 74 24", SigType::RefSig, 1);
+    DEFINE_SIG(GameMode_getDestroyRate, "48 89 5C 24 18 57 48 83 EC 30 48 8B F9 0F 29 74 24 20 48 8B 49 08 E8 ? ? ? ? 48 8B 15 ? ? ? ? 0F 28 F0 48 8B 4F 08", SigType::Sig, 0);
     DEFINE_SIG(HoverTextRenderer_render, "48 8B C4 48 89 58 08 48 89 68 10 48 89 70 18 57 48 81 EC ? ? ? ? 0F 29 70 E8 0F 29 78 D8 44 0F 29 40 ? 49 8B D9 49 8B F8 48 8B F1 48 8B 6A 10", SigType::Sig, 0);
-    DEFINE_SIG(GameMode_baseUseItem, "48 ? ? E8 ? ? ? ? 0F B6 F8 40 84 FF 74 ? 48 ?", SigType::RefSig, 1);
+    DEFINE_SIG(GameMode_baseUseItem, "48 89 5C 24 10 48 89 7C 24 18 55 48 8D 6C 24 D0 48 81 EC 30 01 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 45 20 48 8B DA 48 8B F9 C6 81 C2 00 00 00 00", SigType::Sig, 0);
     DEFINE_SIG(GuiData_displayClientMessage, "48 89 ? ? ? ? ? ? E8 ? ? ? ? 4C 8B ? 48 85 ? 74 ? BF FF FF FF", SigType::Sig, 0);
     DEFINE_SIG(InventoryTransaction_addAction, "E8 ? ? ? ? 48 81 C3 ? ? ? ? 49 3B ? 75 ? 41 BE", SigType::RefSig, 1);
     DEFINE_SIG(ItemStack_vTable, "48 8D 0D ? ? ? ? E8 ? ? ? ? 90 48 8D 05 ? ? ? ? 48 89 05 ? ? ?", SigType::RefSig, 3);

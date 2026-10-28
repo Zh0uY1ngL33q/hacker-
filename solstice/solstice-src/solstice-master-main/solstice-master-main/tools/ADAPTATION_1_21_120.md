@@ -93,3 +93,36 @@ RTTI and call-graph classification are not used to identify these targets.
 - Runtime tests required: find client in a world, leave/re-enter, ensure stale
   caches are discarded, and unload. Menu-only discovery and scan latency remain
   unresolved; the existing empty-map heuristic is not proof of game identity.
+
+## Three more invalid function-address decoders
+
+### ContainerScreenController_tick
+
+- The existing long signature is unique at `0x1E26600`. It starts with
+  `mov rax,rsp; mov [rax+0x10],rbx; ...`, not `call rel32`.
+- Old `rel(1)` gives RVA `-0x74D4D570`; corrected `Sig / 0` keeps the actual
+  function entry. No pattern drift or guessed fixed RVA is introduced.
+- The hook passes through while `Actor_mContainerManagerModel` is unresolved
+  instead of reading a vtable as that member. Container feature behavior is
+  still pending runtime verification; guarding it is not a recovered offset.
+
+### GameMode_getDestroyRate
+
+- Generic prologue matched `0x5BF54B0` and unrelated `0x8628110`; rel(1)
+  decoded the prologue as an address instead of using either entry.
+- Extend through the `[this+8]` player load, direct call, global load, and
+  XMM0-to-XMM6 result preservation. New entry pattern is unique at `0x5BF54B0`.
+- The function consumes the incoming block argument through its first call
+  and applies player-state/effect logic to a floating-point result. The other
+  prologue candidate instead allocates/constructs a `0x3B0`-byte object.
+
+### GameMode_baseUseItem
+
+- Two old sites (`0x39679D1`, `0x3968295`) start with `mov rcx,rax`; their
+  actual calls are at +3, not +0. **Both** call `0x5BEC700`.
+- Use a unique entry pattern at that common target instead of a generic
+  mov-plus-call pattern with `rel(1)` pointing inside `mov`.
+- Target consumes `this` in RCX and item argument in RDX, accesses player at
+  `this+8`, constructs the use-item event, and returns a byte-valued result.
+- These are offline address-decoding repairs, not a claim that all block or
+  item-use behavior has passed in-game testing.
