@@ -50,7 +50,8 @@ std::vector<std::string> AntiBot::getPlayerNames() {
     std::vector<std::string> playerNames;
     if (!player) return playerNames;
 
-    auto playerList = player->getLevel()->getPlayerList();
+    auto playerList = player->getLevel() ? player->getLevel()->getPlayerList() : nullptr; // returns null when unverifiable
+    if (!playerList) return playerNames;
     for (const auto& entry : *playerList | std::views::values)
     {
         playerNames.emplace_back(entry.mName);

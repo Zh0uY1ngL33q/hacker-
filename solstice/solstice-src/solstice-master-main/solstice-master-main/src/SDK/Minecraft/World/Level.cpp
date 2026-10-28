@@ -6,17 +6,26 @@
 
 #include <libhat.hpp>
 #include <SDK/OffsetProvider.hpp>
+#include <SDK/Minecraft/InstanceLocator.hpp>
 #include <SDK/Minecraft/Actor/SyncedPlayerMovementSettings.hpp>
 
 std::unordered_map<mce::UUID, PlayerListEntry>* Level::getPlayerList()
 {
     static auto vIndex = OffsetProvider::Level_getPlayerList;
-    return MemUtils::callVirtualFunc<std::unordered_map<mce::UUID, PlayerListEntry>*>(vIndex, this);
+    // MISSING in 1.21.120; a virtual call through slot 0 (dtor) or a huge
+    // index is a wild jump. Callers must tolerate null.
+    if (vIndex < 2 || vIndex >= 4096)
+        return nullptr;
+    const auto map = MemUtils::callVirtualFunc<std::unordered_map<mce::UUID, PlayerListEntry>*>(vIndex, this);
+    return InstanceLocator::isReadableMemory(map, 0x8) ? map : nullptr;
 }
 
 HitResult* Level::getHitResult()
 {
     static auto vIndex = OffsetProvider::Level_getHitResult;
+    // SUSPECT in 1.21.120 (-151183361): huge/negative vtable index.
+    if (vIndex < 2 || vIndex >= 4096)
+        return nullptr;
     return MemUtils::callVirtualFunc<HitResult*>(vIndex, this);
 }
 
