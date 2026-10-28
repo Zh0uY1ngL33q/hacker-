@@ -17,6 +17,7 @@ static ModernGui modernGui = ModernGui();
 void ClickGui::onEnable()
 {
     auto ci = ClientInstance::get();
+    spdlog::info("[GUI probe] ClickGui enabled; client={}", ci != nullptr);
     if (ci)
     {
         lastMouseState = !ci->getMouseGrabbed();
@@ -87,7 +88,9 @@ float ClickGui::getEaseAnim(EasingUtil ease, int mode) {
 
 void ClickGui::onRenderEvent(RenderEvent& event)
 {
-    if (mEnabled) ClientInstance::get()->releaseMouse();
+    if (mEnabled) {
+        if (auto* client = ClientInstance::get()) client->releaseMouse();
+    }
     static float animation = 0;
     static int styleMode = 0; // Ease enum
     static int scrollDirection = 0;

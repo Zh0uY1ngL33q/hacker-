@@ -240,6 +240,11 @@ bool D3DHook::createTextureFromData(const uint8_t* data, int width, int height, 
 
 HRESULT D3DHook::present(IDXGISwapChain3* swapChain, UINT syncInterval, UINT flags)
 {
+    static bool loggedPresent = false;
+    if (!loggedPresent) {
+        loggedPresent = true;
+        spdlog::info("[GUI probe] Present reached");
+    }
     if (Solstice::mRequestEject)
     {
         return oPresent(swapChain, syncInterval, flags);
@@ -408,6 +413,12 @@ HRESULT D3DHook::present(IDXGISwapChain3* swapChain, UINT syncInterval, UINT fla
     D2D::beginRender(surface.get(), dpi);
 
     igNewFrame();
+
+    static bool loggedRenderFrame = false;
+    if (!loggedRenderFrame) {
+        loggedRenderFrame = true;
+        spdlog::info("[GUI probe] RenderEvent dispatch reached");
+    }
 
     auto holder = nes::make_holder<RenderEvent>();
     gFeatureManager->mDispatcher->trigger(holder);

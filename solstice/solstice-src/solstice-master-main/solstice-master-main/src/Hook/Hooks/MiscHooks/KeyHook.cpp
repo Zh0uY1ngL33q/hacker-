@@ -126,6 +126,9 @@ void KeyHook::onKey(uint32_t key, bool isDown)
 {
     auto oFunc = mDetour->getOriginal<&onKey>();
 
+    if (key == VK_TAB && isDown)
+        spdlog::info("[GUI probe] TAB received; ImGui context={}", ImGui::GetCurrentContext() != nullptr);
+
     if (key == VK_END && isDown && ClientInstance::get()->getScreenName() != "chat_screen" && !ImGui::GetIO().WantCaptureKeyboard && !ImGui::GetIO().WantTextInput)
     {
         Solstice::mRequestEject = true;
