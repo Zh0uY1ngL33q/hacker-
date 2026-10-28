@@ -12,12 +12,14 @@ std::unique_ptr<Detour> MouseHook::mDetour = nullptr;
 
 void* thisMouse = nullptr;
 
-void MouseHook::onMouse(void* _this, char actionButtonId, int buttonData, short x, short y, short dx, short dy,
+void MouseHook::onMouse(void* _this, char actionButtonId, uint8_t buttonData, short x, short y, short dx, short dy,
     uint8_t forceMotionlessPointer)
 {
     auto oFunc = mDetour->getOriginal<&onMouse>();
 
     thisMouse = _this;
+    if (!gFeatureManager || !gFeatureManager->mDispatcher)
+        return oFunc(_this, actionButtonId, buttonData, x, y, dx, dy, forceMotionlessPointer);
 
     if (forceMotionlessPointer == 2)
     {

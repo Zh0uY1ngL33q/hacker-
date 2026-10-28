@@ -80,12 +80,15 @@ public:
     DEFINE_SIG(ItemUseInventoryTransaction_vtable, "48 8D ? ? ? ? ? 48 89 ? 8B 46 ? 89 47 ? 0F B6 ? ? 88 47 ? 8B 56", SigType::RefSig, 3);
     DEFINE_SIG(ItemUseOnActorInventoryTransaction_vtable, "48 8D ? ? ? ? ? 48 89 ? 48 89 ? ? 89 6F ? C7 47 74", SigType::RefSig, 3);
     DEFINE_SIG(ItemReleaseInventoryTransaction_vtable, "48 8D ? ? ? ? ? 48 89 ? ? 40 88 ? ? ? ? ? 89 AF ? ? ? ? 40 88 ? ? ? ? ? 89 AF ? ? ? ? 0F 57 ? 0F 11 ? ? ? ? ? 48 89 ? ? ? ? ? 48 C7 87 C8 00 00 00", SigType::RefSig, 3); // "gamePlayEmote" -> couple of refs -> this 
-    DEFINE_SIG(Keyboard_feed, "E8 ? ? ? ? 66 ? ? ? ? 45 0F ? ? ? 45 0F ? ? ? 45 0F", SigType::RefSig, 1);
+    // 1.21.120: key-state table update followed by a 0x1c-byte event enqueue.
+    // The old call-site pattern resolved to the CRT-style rand() at RVA 0x402380.
+    DEFINE_SIG(Keyboard_feed, "48 83 EC 48 0F B6 C1 4C 8D 05 ? ? ? ? 89 54 24 20 88 4C 24 24 C6 44 24 38 00 41 89 14 80", SigType::Sig, 0);
     DEFINE_SIG(MainView_instance, "48 8B 05 ? ? ? ? C6 40 ? ? 0F 57 C0", SigType::RefSig, 3);
     DEFINE_SIG(MinecraftPackets_createPacket, "E8 ? ? ? ? 90 48 83 ? ? ? ? ? 00 0F 84 ? ? ? ? E8 ? ? ? ? 48 8B ? E8 ? ? ?", SigType::RefSig, 1);
     DEFINE_SIG(Mob_getJumpControlComponent, "E8 ? ? ? ? 48 85 C0 74 ? C6 40 ? ? 48 83 C4 ? C3", SigType::RefSig, 1);
     DEFINE_SIG(Mob_getCurrentSwingDuration, "48 89 5C 24 10 57 48 83 EC 50 0F 29 74 24 40 48 8B 05 ? ? ? ? 48 33 C4 48 89 44 24 30 F3 0F 10 35 ? ? ? ? 48 8B F9 E8 ? ? ? ? 48 85 C0 74 04 F3 0F 10", SigType::RefSig, 1);
-    DEFINE_SIG(MouseDevice_feed, "48 8B C4 48 89 58 08 48 89 68 10 48 89 70 18 57 41 54 41 55 41 56 41 57 48 83 EC", SigType::RefSig, 1);
+    // Entry, not rel32; distinguish the input serializer from two unrelated prologues.
+    DEFINE_SIG(MouseDevice_feed, "48 8B C4 48 89 58 08 48 89 68 10 48 89 70 18 57 41 54 41 55 41 56 41 57 48 83 EC 60 44 0F B7 B4 24 B0 00 00 00 48 8B D9 44 0F B7 A4 24 B8 00 00 00", SigType::Sig, 0);
     DEFINE_SIG(NetworkStackItemDescriptor_ctor, "48 ? ? ? ? ? ? E8 ? ? ? ? 90 48 8B CF E8 ? ? ? ? 48 ? ? 48 ? ? E8 ? ? ? ? F2 ? ? ?", SigType::RefSig, 1);
     DEFINE_SIG(PlayerMovement_clearInputStateInlined, "75 ? 48 8B ? ? ? ? ? ? 48 8D ? ? ? ? ? ? 48 89 ? ? ? 4D 8B", SigType::Sig, 0);
     DEFINE_SIG(PlayerMovement_clearInputStateInlined2, "0F 84 ? ? ? ? 48 8B ? ? 48 89 ? ? ? ? ? ? 48 89 ? ? ? ? ? ? 4C 89 ? ? ? ? ? ? 10 8B", SigType::Sig, 0);

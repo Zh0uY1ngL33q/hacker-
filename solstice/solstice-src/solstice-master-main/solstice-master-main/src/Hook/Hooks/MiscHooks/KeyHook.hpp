@@ -13,7 +13,7 @@ public:
 
     static std::unique_ptr<Detour> mDetour;
 
-    static void onKey(uint32_t key, bool isDown);
+    static void onKey(uint8_t key, uint32_t state);
     void init() override;
 };
 

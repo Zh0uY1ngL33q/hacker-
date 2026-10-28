@@ -16,7 +16,7 @@ public:
 
     static inline std::map<char, bool> mButtonStates;
 
-    static void onMouse(void* _this, char actionButtonId, int buttonData, __int16 x, __int16 y, __int16 dx, __int16 dy, uint8_t forceMotionlessPointer);
+    static void onMouse(void* _this, char actionButtonId, uint8_t buttonData, __int16 x, __int16 y, __int16 dx, __int16 dy, uint8_t forceMotionlessPointer);
     static void simulateMouseInput(char actionButtonId, int buttonData, short x = 0, short y = 0, short dx = 0, short dy = 0);
     void init() override;
 };

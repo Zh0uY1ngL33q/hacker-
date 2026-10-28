@@ -122,39 +122,38 @@ ImGuiKey ImGui_ImplWin32_VirtualKeyToImGuiKey(WPARAM wParam)
     }
 }
 
-void KeyHook::onKey(uint32_t key, bool isDown)
+void KeyHook::onKey(uint8_t key, uint32_t state)
 {
     auto oFunc = mDetour->getOriginal<&onKey>();
+    const bool isDown = state != 0;
 
     if (key == VK_TAB && isDown)
         spdlog::info("[GUI probe] TAB received; ImGui context={}", ImGui::GetCurrentContext() != nullptr);
 
-    if (key == VK_END && isDown && ClientInstance::get()->getScreenName() != "chat_screen" && !ImGui::GetIO().WantCaptureKeyboard && !ImGui::GetIO().WantTextInput)
+    const bool haveImGui = ImGui::GetCurrentContext() != nullptr;
+    if (key == VK_END && isDown && (!haveImGui ||
+        (!ImGui::GetIO().WantCaptureKeyboard && !ImGui::GetIO().WantTextInput)))
     {
         Solstice::mRequestEject = true;
     }
 
     Keyboard::mPressedKeys[key] = isDown;
 
-    auto holder = nes::make_holder<KeyEvent>(key, isDown);
-    if (!gFeatureManager)
-    {
-        spdlog::critical("FeatureManager is null");
-    }
-    if (!gFeatureManager->mDispatcher)
-    {
-        spdlog::critical("Dispatcher is null");
-    }
+    // Incomplete renderer startup must not swallow real game input. Preserve
+    // the full EDX state: the native function stores 32 bits, not a C++ bool.
+    if (!haveImGui || !gFeatureManager || !gFeatureManager->mDispatcher ||
+        !gFeatureManager->mModuleManager)
+        return oFunc(key, state);
 
+    auto holder = nes::make_holder<KeyEvent>(key, isDown);
     gFeatureManager->mDispatcher->trigger<KeyEvent>(holder);
 
     if (holder->mCancelled) return;
 
-    if (!ImGui::GetCurrentContext()) return;
     ImGuiIO& io = ImGui::GetIO();
 
     ImGuiKey imKey = ImGui_ImplWin32_VirtualKeyToImGuiKey(key);
-    io.AddKeyEvent(imKey, isDown);
+    if (imKey != ImGuiKey_None) io.AddKeyEvent(imKey, isDown);
     if (isDown)
     {
         HKL layout = GetKeyboardLayout(0);
@@ -182,7 +181,7 @@ void KeyHook::onKey(uint32_t key, bool isDown)
         return;
     }
 
-    oFunc(key, isDown);
+    oFunc(key, state);
 
     // Look for modules
     const auto* clickGui = gFeatureManager->mModuleManager->getModule<ClickGui>();
@@ -190,10 +189,11 @@ void KeyHook::onKey(uint32_t key, bool isDown)
 
     for (auto& module : gFeatureManager->mModuleManager->getModules())
     {
+        if (module->mKey != key) continue;
         // The entry point can still be unresolvable on a build whose signature set
         // is incomplete; keep the keybinds working instead of crashing on null.
         if (clientInstance && clientInstance->getMouseGrabbed() && module.get() != clickGui) continue;
-        if (clientInstance && clientInstance->getScreenName() == "chat_screen") continue;
+        if (module.get() != clickGui && clientInstance && clientInstance->getScreenName() == "chat_screen") continue;
 
         if (module->mKey == key)
         {
