@@ -188,3 +188,18 @@ RTTI and call-graph classification are not used to identify these targets.
   destruction. The wrapper rejects this specific incompatible stride body
   and missing/unreadable entries. The correct actor-list function is still
   unresolved; returning an empty list is containment, not adaptation.
+
+## Actor renderer entry (offline only)
+
+- The old unique match at 0x2827A7E begins with two `mov` instructions,
+  but RefSig/1 decodes bytes inside the first `mov` as a relative address.
+  The actual direct `call` is at 0x2827A84 and resolves to 0x2827560.
+- The replacement entry pattern matches once across the executable image.
+  The caller supplies RCX, RDX, R8, R9, two stack pointers, and a stack byte;
+  the callee saves the first four, reads a 12-byte vector, an 8-byte vector,
+  and the flag. These are compatible with the existing hook ABI, though full
+  type semantics and actual execution still need validation.
+- The detour is deliberately deferred: Interface and Freecam consume actor
+  components and options whose layouts are not yet verified. Merely fixing
+  the address must not make those consumers run automatically. This is entry
+  recovery, not working actor-render events or complete visual adaptation.

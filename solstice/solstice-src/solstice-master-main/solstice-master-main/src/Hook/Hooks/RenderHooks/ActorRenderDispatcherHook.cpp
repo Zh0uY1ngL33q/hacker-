@@ -14,8 +14,11 @@ void ActorRenderDispatcherHook::render(ActorRenderDispatcher* _this, BaseActorRe
     Actor* entity, glm::vec3* cameraTargetPos, glm::vec3* pos, glm::vec2* rot, bool ignoreLighting)
 {
     auto oFunc = mDetour->getOriginal<&render>();
-    auto localPlayer = ClientInstance::get()->getLocalPlayer();
-    if (!localPlayer) return;
+    auto* client = ClientInstance::get();
+    auto* localPlayer = client ? client->getLocalPlayer() : nullptr;
+    if (!localPlayer) {
+        return oFunc(_this, entityRenderContext, entity, cameraTargetPos, pos, rot, ignoreLighting);
+    }
 
     auto holder = nes::make_holder<ActorRenderEvent>(_this, entityRenderContext, entity, cameraTargetPos, pos, rot, ignoreLighting, mDetour.get());
     gFeatureManager->mDispatcher->trigger(holder);
@@ -29,5 +32,11 @@ void ActorRenderDispatcherHook::render(ActorRenderDispatcher* _this, BaseActorRe
 
 void ActorRenderDispatcherHook::init()
 {
-    mDetour = std::make_unique<Detour>("ActorRenderDispatcher::render", reinterpret_cast<void*>(SigManager::ActorRenderDispatcher_render), &ActorRenderDispatcherHook::render);
+    // The entry is recovered offline, but Interface and Freecam currently
+    // consume unvalidated game objects/components in ActorRenderEvent. Do not
+    // enable this detour until those event consumers are adapted and tested.
+    if (SigManager::ActorRenderDispatcher_render)
+        spdlog::warn("ActorRenderDispatcher::render entry resolved; hook deferred pending event consumer validation");
+    else
+        spdlog::warn("ActorRenderDispatcher::render entry unresolved; hook skipped");
 }
