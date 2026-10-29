@@ -175,3 +175,16 @@ RTTI and call-graph classification are not used to identify these targets.
   0x12F3714 calls 0x1301000. This constrains the immediate owner but does
   not establish its type or a link from MinecraftSim/GameSession. Do not
   publish +0x1E8 as a ClientInstance or GameSession offset.
+
+## Runtime actor list false positive
+
+- The purported `Level_getRuntimeActorList` entry at 0x1D99FF0 creates an
+  output vector and advances its end by 0x20 at 0x1D9A048; its element copy
+  calls 0x23B000, which reads string length at +0x10 and capacity at +0x18,
+  using a small-string threshold of 0x0F. The input is iterated at stride
+  0x98. This is not evidence of a vector of 8-byte Actor pointers.
+- The SDK wrapper expects vector<Actor*>. Calling this target through it
+  risks interpreting string storage as actor pointers and mishandling element
+  destruction. The wrapper rejects this specific incompatible stride body
+  and missing/unreadable entries. The correct actor-list function is still
+  unresolved; returning an empty list is containment, not adaptation.
