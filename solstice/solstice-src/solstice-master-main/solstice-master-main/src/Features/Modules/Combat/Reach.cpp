@@ -13,12 +13,21 @@ void Reach::onInit() {
     func = SigManager::Reach;
 
     uintptr_t addr2 = SigManager::BlockReach;
+    if (!addr2) return;
     addr2 += 4;
     int offset2 = *reinterpret_cast<int*>(addr2);
     mBlockReachPtr = reinterpret_cast<float*>(addr2 + offset2 + 4);
 }
 
 void Reach::onEnable() {
+    // Never patch address zero when the version-specific signature is missing.
+    // This is a safety gate, not an adaptation of Reach.
+    if (!func || !mBlockReachPtr) {
+        spdlog::warn("Reach disabled: required signatures are unresolved");
+        mEnabled = false;
+        mWantedState = false;
+        return;
+    }
     MemUtils::ReadBytes((void*)func, mOriginalData, sizeof(mOriginalData));
 
     mDetour = AllocateBuffer((void*)func);
@@ -39,10 +48,12 @@ void Reach::onEnable() {
 }
 
 void Reach::onDisable() {
+    if (!mDetour) return;
     gFeatureManager->mDispatcher->deafen<BaseTickEvent, &Reach::onBaseTickEvent>(this);
     
     MemUtils::writeBytes(func, mOriginalData, sizeof(mOriginalData));
     FreeBuffer(mDetour);
+    mDetour = nullptr;
 
     MemUtils::Write((uintptr_t) mBlockReachPtr, 5.7f);
 }
