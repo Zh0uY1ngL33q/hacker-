@@ -164,3 +164,14 @@ RTTI and call-graph classification are not used to identify these targets.
 - b262678 refuses the ambiguous callback extraction; this bypasses packet
   events but does not recover a binding or prove the cause of the 7089d28
   PacketReceive exception. Preserve it until a candidate is established.
+- Follow-up: in the fall-through path from 0x130144F to 0x13017BE,
+  R14 is not written between the dereference at 0x1301460 and the copy to
+  R12. The selector RSI is derived from bits 10-11 of EBX (0..3). Thus on
+  that path the candidate is `*(*(owner + 0x1E8 + 8*selector))`, not a
+  simple field at +0x08, +0x20, or +0x50. The actual crashing execution
+  path and candidate's identity still require confirmation.
+- At 0x12F35DB-0x12F35F7, the caller loads the callee RCX from `[R15]`
+  and RDX from an indexed pointer array at `[RCX+0xA0]`; the branch at
+  0x12F3714 calls 0x1301000. This constrains the immediate owner but does
+  not establish its type or a link from MinecraftSim/GameSession. Do not
+  publish +0x1E8 as a ClientInstance or GameSession offset.
