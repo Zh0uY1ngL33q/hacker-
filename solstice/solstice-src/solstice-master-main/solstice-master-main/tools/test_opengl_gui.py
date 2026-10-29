@@ -45,6 +45,13 @@ class OpenGLGuiContracts(unittest.TestCase):
         self.assertEqual(swap.count('if (scope.outermost) OpenGLGui::render(dc);'), 2)
         self.assertIn('~GlSwapScope() { --glSwapDepth;', swap)
 
+    def test_gl_uses_client_rect_and_foreground_mouse_position(self):
+        gl = source('src/Hook/Hooks/RenderHooks/OpenGLGui.cpp')
+        self.assertLess(gl.index('GetClientRect(window, &clientRect)'), gl.index('ImGui::NewFrame()'))
+        self.assertIn('io.DisplaySize = ImVec2(static_cast<float>(clientRect.right - clientRect.left)', gl)
+        self.assertIn('GetCursorPos(&cursor) && ScreenToClient(window, &cursor)', gl)
+        self.assertIn('if (capturing && !io.WantSetMousePos)', gl)
+
     def test_framebuffer_is_restored(self):
         gl = source('src/Hook/Hooks/RenderHooks/OpenGLGui.cpp')
         save = gl.index('GL_DRAW_FRAMEBUFFER_BINDING')

@@ -233,7 +233,26 @@ void OpenGLGui::render(HDC dc) try
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGuiIO& io = ImGui::GetIO();
+    // This project's Win32 backend deliberately omits its usual DisplaySize
+    // update. Use the actual client area rather than the unadapted GuiData.
+    RECT clientRect{};
+    if (!GetClientRect(window, &clientRect) || clientRect.right <= clientRect.left ||
+        clientRect.bottom <= clientRect.top) {
+        glGuiCapture.store(false);
+        glRestoreClip();
+        return;
+    }
+    io.DisplaySize = ImVec2(static_cast<float>(clientRect.right - clientRect.left),
+                            static_cast<float>(clientRect.bottom - clientRect.top));
     const bool capturing = gui->mWantedState && GetForegroundWindow() == window;
+    // The local Win32 backend also omits its mouse-position fallback. Poll in
+    // the foreground so the software cursor has a position even before a
+    // WM_MOUSEMOVE is delivered after opening the menu.
+    if (capturing && !io.WantSetMousePos) {
+        POINT cursor{};
+        if (GetCursorPos(&cursor) && ScreenToClient(window, &cursor))
+            io.AddMousePosEvent(static_cast<float>(cursor.x), static_cast<float>(cursor.y));
+    }
     if (!capturing) { glGuiCapture.store(false); glGuiReportedOpenDraw = false; }
     io.MouseDrawCursor = capturing;
     if (capturing) {
