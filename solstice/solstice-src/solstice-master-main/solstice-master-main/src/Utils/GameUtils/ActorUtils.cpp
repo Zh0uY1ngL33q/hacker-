@@ -61,7 +61,12 @@ std::vector<struct Actor *> ActorUtils::getActorList(bool playerOnly, bool exclu
             }
         } else if (antibot->mEntitylistMode.mValue == AntiBot::EntitylistMode::RuntimeActorList)
         {
-            auto tactors = player->getLevel()->getRuntimeActorList();
+            // Check before reading the unverified Actor_mLevel field or
+            // invoking a member on its possibly invalid result.
+            if (!Level::isRuntimeActorListAvailable()) return actors;
+            auto* level = player->getLevel();
+            if (!level) return actors;
+            auto tactors = level->getRuntimeActorList();
             for (auto actor : tactors)
             {
                 // Continue if the actor is null

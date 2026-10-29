@@ -68,6 +68,7 @@ public:
     std::unordered_map<mce::UUID, PlayerListEntry>* getPlayerList();
     class HitResult* getHitResult();
     class SyncedPlayerMovementSettings* getPlayerMovementSettings();
+    static bool isRuntimeActorListAvailable();
     std::vector<Actor*> getRuntimeActorList();
     LevelData* getLevelData();
     class BlockPalette* getBlockPalette();

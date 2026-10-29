@@ -37,26 +37,29 @@ SyncedPlayerMovementSettings* Level::getPlayerMovementSettings()
     return MemUtils::callVirtualFunc<SyncedPlayerMovementSettings*>(vIndex, this);
 }
 
-std::vector<Actor*> Level::getRuntimeActorList()
+bool Level::isRuntimeActorListAvailable()
 {
-    static auto func = SigManager::Level_getRuntimeActorList;
-    std::vector<Actor*> actors;
-    if (!func) return actors;
+    const auto func = SigManager::Level_getRuntimeActorList;
+    if (!func) return false;
 
-    // The 1.21.120 signature uniquely matches a routine that copies
-    // std::string elements (stride 0x20), not a vector<Actor*> producer.
-    // Refuse this known incompatible body until a real entry is recovered.
+    // The 1.21.120 match copies strings with stride 0x20, not Actor*.
     constexpr unsigned char stringStride[] = {0x48, 0x83, 0x47, 0x08, 0x20};
     const auto* strideInstruction = reinterpret_cast<const void*>(func + 0x58);
     if (!InstanceLocator::isReadableMemory(strideInstruction, sizeof(stringStride)) ||
         std::memcmp(strideInstruction, stringStride, sizeof(stringStride)) == 0) {
         static std::atomic_flag warned = ATOMIC_FLAG_INIT;
-        if (!warned.test_and_set()) {
+        if (!warned.test_and_set())
             spdlog::warn("Level::getRuntimeActorList unavailable: unverified or incompatible target");
-        }
-        return actors;
+        return false;
     }
-    MemUtils::callFastcall<void>(func, this, &actors);
+    return true;
+}
+
+std::vector<Actor*> Level::getRuntimeActorList()
+{
+    std::vector<Actor*> actors;
+    if (!isRuntimeActorListAvailable()) return actors;
+    MemUtils::callFastcall<void>(SigManager::Level_getRuntimeActorList, this, &actors);
     return actors;
 }
 
