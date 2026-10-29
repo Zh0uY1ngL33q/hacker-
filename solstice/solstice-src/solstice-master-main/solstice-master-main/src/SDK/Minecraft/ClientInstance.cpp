@@ -14,6 +14,25 @@
 #include <Utils/Structs.hpp>
 
 #include "KeyboardMouseSettings.hpp"
+#include <Windows.h>
+
+namespace {
+    // Separate SEH leaf: no STL iterators/objects requiring C++ unwinding.
+    LoopbackPacketSender* readPacketSenderMember(ClientInstance* client, int offset)
+    {
+        __try {
+            if (!InstanceLocator::isPlausibleObject(client) ||
+                !InstanceLocator::isReadableMemory(
+                    reinterpret_cast<const char*>(client) + offset, sizeof(void*)))
+                return nullptr;
+            auto* sender = hat::member_at<LoopbackPacketSender*>(client, offset);
+            return InstanceLocator::isPlausibleObject(sender) ? sender : nullptr;
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER) {
+            return nullptr;
+        }
+    }
+}
 
 ClientInstance* ClientInstance::get()
 {
@@ -45,7 +64,14 @@ LevelRenderer* ClientInstance::getLevelRenderer()
 
 LoopbackPacketSender* ClientInstance::getPacketSender()
 {
-    return hat::member_at<LoopbackPacketSender*>(this, OffsetProvider::ClientInstance_mPacketSender);
+    const int offset = OffsetProvider::ClientInstance_mPacketSender;
+    if (offset <= 0 || offset >= 0x8000) return nullptr;
+    // Current 1.21.120 hits include [vtable+0x228] and [vtable+0x9a0],
+    // not ClientInstance fields. A small positive number is not sufficient.
+    const auto match = OffsetProvider::mSigMatchCounts.find("ClientInstance_mPacketSender");
+    if (match == OffsetProvider::mSigMatchCounts.end() || match->second != 1)
+        return nullptr;
+    return readPacketSenderMember(this, offset);
 }
 
 GuiData* ClientInstance::getGuiData()

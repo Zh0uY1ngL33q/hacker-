@@ -126,3 +126,22 @@ RTTI and call-graph classification are not used to identify these targets.
   `this+8`, constructs the use-item event, and returns a byte-valued result.
 - These are offline address-decoding repairs, not a claim that all block or
   item-use behavior has passed in-game testing.
+
+## Runtime result: 20c1d49 (2026-10-29)
+
+- User build reaches client discovery: game/client/local-player pointers are
+  non-null; scan examines 38 MB in **51 ms**, with Sim validation successful.
+- Keyboard, mouse, and container tick detours are created at the recovered
+  entries. Actual callbacks are not yet validated: init crashes earlier.
+- New crash is `PacketSendHook::init`, dereferencing
+  `ci->getPacketSender()->vtable[2]` after the client became available.
+- `ClientInstance_mPacketSender` is still ambiguous. The first runtime hit
+  at RVA `0x218374B` is `mov rax,[rax+0x228]` after loading a vtable; other
+  hits load virtual slot `0x9A0`, and one is an unrelated short displacement.
+  None proves a member offset on ClientInstance. Do **not** replace it with
+  0x228, 0x9A0, or a guessed nearby getter's offset.
+- Until the actual field is recovered, reject non-unique sender extraction;
+  init checks the sender/vtable/target before installing its detour. Native
+  sending remains unhooked, and synthetic sending skips an unavailable sender.
+- This is a crash containment, **not** a recovered sender offset or completed
+  packet feature. Sender recovery and in-game testing remain open.

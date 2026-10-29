@@ -13,6 +13,28 @@
 
 #include "Features/Events/ChatEvent.hpp"
 #include "Features/Events/PacketOutEvent.hpp"
+#include <Windows.h>
+
+namespace {
+    uintptr_t packetSendTarget(LoopbackPacketSender* sender)
+    {
+        __try {
+            if (!InstanceLocator::isPlausibleObject(sender)) return 0;
+            const auto* table = *reinterpret_cast<const uintptr_t* const*>(sender);
+            if (!InstanceLocator::isReadableMemory(table, 3 * sizeof(uintptr_t))) return 0;
+            const uintptr_t target = table[2];
+            MEMORY_BASIC_INFORMATION mbi{};
+            if (!target || VirtualQuery(reinterpret_cast<const void*>(target), &mbi, sizeof(mbi)) != sizeof(mbi) ||
+                mbi.State != MEM_COMMIT || (mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD)) ||
+                !(mbi.Protect & (PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY)))
+                return 0;
+            return target;
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER) {
+            return 0;
+        }
+    }
+}
 
 class ChatEvent;
 // Trampoline: same signature as the detoured function, no C++ objects, so
@@ -65,10 +87,13 @@ void PacketSendHook::sendInputPacket(std::shared_ptr<PlayerAuthInputPacket> pack
 }
 
 void PacketSendHook::sendPacket(PlayerAuthInputPacket* packet) {
-    auto player = ClientInstance::get()->getLocalPlayer();
+    auto* client = ClientInstance::get();
+    if (!packet || !InstanceLocator::isPlausibleObject(client)) return;
+    auto player = client->getLocalPlayer();
     if (!player) return;
 
-    auto sender = ClientInstance::get()->getPacketSender();
+    auto sender = client->getPacketSender();
+    if (!sender) return;
 
     if (mCurrentTick == 0 && packet->mClientTick > mCurrentTick) mCurrentTick = packet->mClientTick;
     mCurrentTick++;
@@ -98,5 +123,11 @@ void PacketSendHook::init() {
         spdlog::warn("LoopbackPacketSender::send skipped -- no ClientInstance yet");
         return;
     }
-    mDetour = std::make_unique<Detour>("LoopbackPacketSender::send", reinterpret_cast<void*>(ci->getPacketSender()->vtable[2]), &PacketSendHook::onPacketSend);
+    auto* sender = ci->getPacketSender();
+    const uintptr_t target = packetSendTarget(sender);
+    if (!target) {
+        spdlog::warn("LoopbackPacketSender::send skipped -- sender field is unresolved/ambiguous or target invalid");
+        return;
+    }
+    mDetour = std::make_unique<Detour>("LoopbackPacketSender::send", reinterpret_cast<void*>(target), &PacketSendHook::onPacketSend);
 }
