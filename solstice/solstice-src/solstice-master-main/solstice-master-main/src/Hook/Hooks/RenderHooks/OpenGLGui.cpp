@@ -26,6 +26,10 @@ namespace {
     std::recursive_mutex glGuiMutex;
     std::atomic<bool> glGuiActive{false};
     std::atomic<bool> glGuiCapture{false};
+    std::atomic<long long> glGuiLastDrawMs{0};
+    bool glGuiReportedOpenDraw = false;
+    bool glGuiReportedMismatch = false;
+    long long glNowMs() { return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count(); }
     std::atomic<bool> glGuiStop{false};
     std::atomic<unsigned> glGuiWindowCalls{0};
     ImGuiContext* glGuiContext = nullptr;
@@ -101,12 +105,12 @@ namespace {
                     if (gui && down && !repeated && key == gui->mKey &&
                         !ImGui::GetIO().WantTextInput) {
                         gui->toggle();
-                        glGuiCapture.store(gui->mWantedState);
+                        if (!gui->mWantedState) glGuiCapture.store(false);
                         consume = true;
                     } else if (gui && (gui->mEnabled || gui->mWantedState)) {
                         KeyEvent event(key, down);
                         gui->onKeyEvent(event); // preserves Escape/binding/Shift behavior
-                        glGuiCapture.store(gui->mWantedState);
+                        if (!gui->mWantedState) glGuiCapture.store(false);
                     }
                 }
                 if (message == WM_KILLFOCUS) {
@@ -118,7 +122,7 @@ namespace {
                 }
                 // Closing Escape must not fall through and open the game's
                 // pause menu on the same key-down that closed the GUI.
-                if (gui && (gui->mWantedState || openAtEntry)) {
+                if (gui && (OpenGLGui::capturesInput() || (openAtEntry && !gui->mWantedState))) {
                     switch (message) {
                     case WM_KEYDOWN: case WM_KEYUP: case WM_CHAR:
                     case WM_MOUSEMOVE: case WM_LBUTTONDOWN: case WM_LBUTTONUP:
@@ -154,7 +158,10 @@ namespace {
 }
 
 bool OpenGLGui::isActive() { return glGuiActive.load(); }
-bool OpenGLGui::capturesInput() { return glGuiCapture.load(); }
+bool OpenGLGui::capturesInput() {
+    const auto last = glGuiLastDrawMs.load();
+    return glGuiCapture.load() && last != 0 && glNowMs() - last < 500;
+}
 
 void OpenGLGui::render(HDC dc) try
 {
@@ -212,7 +219,14 @@ void OpenGLGui::render(HDC dc) try
         glGuiActive.store(true);
         spdlog::info("OpenGL Modern ClickGUI initialized on the game window; TAB opens, ESC closes");
     }
-    if (current != glGuiOwner || window != glGuiWindow) return;
+    if (current != glGuiOwner || window != glGuiWindow) {
+        if (!glGuiReportedMismatch) {
+            glGuiReportedMismatch = true;
+            spdlog::warn("OpenGL GUI swap context/window mismatch: context={} owner={} window={} expected={}",
+                (void*)current, (void*)glGuiOwner, (void*)window, (void*)glGuiWindow);
+        }
+        return;
+    }
     ImGui::SetCurrentContext(glGuiContext);
     auto* gui = glClickGui();
     if (!gui) return;
@@ -220,7 +234,7 @@ void OpenGLGui::render(HDC dc) try
     ImGui_ImplWin32_NewFrame();
     ImGuiIO& io = ImGui::GetIO();
     const bool capturing = gui->mWantedState && GetForegroundWindow() == window;
-    glGuiCapture.store(capturing);
+    if (!capturing) { glGuiCapture.store(false); glGuiReportedOpenDraw = false; }
     io.MouseDrawCursor = capturing;
     if (capturing) {
         if (!glGuiClipped) {
@@ -252,7 +266,24 @@ void OpenGLGui::render(HDC dc) try
     glGetBooleanv(GL_COLOR_WRITEMASK, previousColorMask);
     glDrawBuffer(glGuiDrawBuffer);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    ImDrawData* drawData = ImGui::GetDrawData();
+    ImGui_ImplOpenGL3_RenderDrawData(drawData);
+    if (capturing && drawData && drawData->TotalVtxCount > 0) {
+        glGuiLastDrawMs.store(glNowMs());
+        glGuiCapture.store(true);
+        if (!glGuiReportedOpenDraw) {
+            glGuiReportedOpenDraw = true;
+            spdlog::info("OpenGL GUI submitted: vertices={} lists={} display={}x{} framebuffer={} drawBuffer={}",
+                drawData->TotalVtxCount, drawData->CmdListsCount, io.DisplaySize.x, io.DisplaySize.y,
+                previousFramebuffer, static_cast<unsigned>(glGuiDrawBuffer));
+        }
+    } else if (capturing) {
+        glGuiCapture.store(false);
+        if (!glGuiReportedOpenDraw) {
+            glGuiReportedOpenDraw = true;
+            spdlog::warn("OpenGL GUI open frame has no vertices; display={}x{}", io.DisplaySize.x, io.DisplaySize.y);
+        }
+    }
     glColorMask(previousColorMask[0], previousColorMask[1], previousColorMask[2], previousColorMask[3]);
     glDrawBuffer(static_cast<GLenum>(previousDrawBuffer));
     glGuiBindFramebuffer(0x8CA9, static_cast<GLuint>(previousFramebuffer));

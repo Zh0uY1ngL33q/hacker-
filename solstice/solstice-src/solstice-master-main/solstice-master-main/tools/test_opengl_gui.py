@@ -56,7 +56,9 @@ class OpenGLGuiContracts(unittest.TestCase):
     def test_closing_escape_is_consumed_and_raw_input_cleaned(self):
         gl = source('src/Hook/Hooks/RenderHooks/OpenGLGui.cpp')
         self.assertIn('const bool openAtEntry', gl)
-        self.assertIn('gui->mWantedState || openAtEntry', gl)
+        self.assertIn('OpenGLGui::capturesInput() || (openAtEntry && !gui->mWantedState)', gl)
+        self.assertIn('glNowMs() - last < 500', gl)
+        self.assertIn('drawData->TotalVtxCount > 0', gl)
         self.assertIn('message == WM_INPUT ? DefWindowProc', gl)
         self.assertIn('key == gui->mKey', gl)
         self.assertIn('WM_KILLFOCUS', gl)
