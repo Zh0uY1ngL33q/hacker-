@@ -145,3 +145,22 @@ RTTI and call-graph classification are not used to identify these targets.
   sending remains unhooked, and synthetic sending skips an unavailable sender.
 - This is a crash containment, **not** a recovered sender offset or completed
   packet feature. Sender recovery and in-game testing remain open.
+
+## Packet dispatch callsite analysis (1.21.120 snapshot)
+
+- Crash log from build 7089d28 gives return RVA 0x1301E60 immediately
+  after an indirect dispatcher call at 0x1301E5A. Before the call, RCX is
+  loaded from the packet object at +0x20, RDX from R13, R8 from R12, and
+  R9 points to the stack-held packet shared_ptr. This is consistent with
+  the existing hook ABI; it does not independently establish object types.
+- In this function, 0x13017BE copies R14 to R12. One earlier path reads
+  `[saved RCX + RSI*8 + 0x1E8]`, then dereferences that pointer into R14 at
+  0x130144F-0x1301460. There are other writes to R14, and branches must be
+  traced before asserting this is the origin on every path. The type of
+  saved RCX is not established, and this is NOT a GameSession field offset.
+- The old callback pattern produces six hits in the offline image with
+  member displacements 0x08, 0x20 or 0x50; none is proven to be a
+  GameSession callback. Runtime matching is capped, reporting four.
+- b262678 refuses the ambiguous callback extraction; this bypasses packet
+  events but does not recover a binding or prove the cause of the 7089d28
+  PacketReceive exception. Preserve it until a candidate is established.
