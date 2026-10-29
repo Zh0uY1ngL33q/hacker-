@@ -240,6 +240,8 @@ include_directories(include/nes)
 # like a missing definition rather than a stale file list. With this, ninja
 # re-checks the globs on every build.
 file(GLOB_RECURSE sourceFiles CONFIGURE_DEPENDS "src/*.cpp")
+set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/src/Hook/Hooks/RenderHooks/OpenGLGui.cpp"
+        PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 file(GLOB_RECURSE includeFiles CONFIGURE_DEPENDS "include/*.hpp")
 set_source_files_properties(${sourceFiles} PROPERTIES CXX_SCAN_FOR_MODULES OFF)
 set_source_files_properties(${includeFiles} PROPERTIES CXX_SCAN_FOR_MODULES OFF)
@@ -318,6 +320,7 @@ set(RESOURCE_SOURCE_CONTENT "${RESOURCE_SOURCE_CONTENT}\n")
 set(RESOURCE_SOURCE_CONTENT "${RESOURCE_SOURCE_CONTENT}void ResourceLoader::loadResources() {\n")
 
 set(RESOURCE_SOURCE_CONTENT "${RESOURCE_SOURCE_CONTENT}    ImFontConfig font_config;\n")
+set(RESOURCE_SOURCE_CONTENT "${RESOURCE_SOURCE_CONTENT}    font_config.FontDataOwnedByAtlas = false; // Embedded resource, not heap memory.\n")
 set(RESOURCE_SOURCE_CONTENT "${RESOURCE_SOURCE_CONTENT}    font_config.FontBuilderFlags = ImGuiFreeTypeBuilderFlags_NoHinting;\n")
 
 foreach(file ${resource_files_list})

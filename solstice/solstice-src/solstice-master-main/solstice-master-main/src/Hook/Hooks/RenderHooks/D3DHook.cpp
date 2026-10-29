@@ -3,7 +3,10 @@
 //
 
 #include "D3DHook.hpp"
+#include "OpenGLGui.hpp"
 #include <atomic>
+#include <chrono>
+#include <thread>
 #include <Hook/Detour.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -51,49 +54,43 @@ static WNDPROC oWndProc;
 static IDXGISwapChain3* gSwapChain = nullptr;
 
 namespace {
-    // Passive probes: forward the frame untouched. Neither export's presence
-    // nor creation of a dummy D3D device proves the game's active backend.
-    std::unique_ptr<Detour> gdiFrameProbe;
-    std::unique_ptr<Detour> wglFrameProbe;
+    // These are presentation hooks now, not probes. GDI can forward to WGL;
+    // the nesting guard renders exactly once before the outer native swap.
+    std::unique_ptr<Detour> gdiSwapDetour;
+    std::unique_ptr<Detour> wglSwapDetour;
+    thread_local unsigned glSwapDepth = 0;
+    std::atomic<unsigned> glSwapCalls{0};
+    struct GlSwapScope {
+        bool outermost;
+        GlSwapScope() : outermost(glSwapDepth++ == 0) { glSwapCalls.fetch_add(1); }
+        ~GlSwapScope() { --glSwapDepth; glSwapCalls.fetch_sub(1); }
+    };
 
-    void logGlFrameProbe(const char* name, HDC dc)
+    BOOL WINAPI onGdiSwapBuffers(HDC dc)
     {
-        using GetGlContext = HGLRC(WINAPI*)();
-        const HMODULE gl = GetModuleHandleA("opengl32.dll");
-        const auto getContext = gl ? reinterpret_cast<GetGlContext>(GetProcAddress(gl, "wglGetCurrentContext")) : nullptr;
-        const HWND window = WindowFromDC(dc);
-        DWORD pid = 0;
-        GetWindowThreadProcessId(window, &pid);
-        spdlog::info("[GUI probe] {} reached; hwnd=0x{:X} pid={} thread={} GLcontext=0x{:X}",
-            name, reinterpret_cast<uintptr_t>(window), pid, GetCurrentThreadId(),
-            getContext ? reinterpret_cast<uintptr_t>(getContext()) : 0);
+        GlSwapScope scope;
+        if (scope.outermost) OpenGLGui::render(dc);
+        return gdiSwapDetour->getOriginal<&onGdiSwapBuffers>()(dc);
     }
 
-    BOOL WINAPI onGdiFrameProbe(HDC dc)
+    BOOL WINAPI onWglSwapBuffers(HDC dc)
     {
-        static std::atomic<bool> logged{false};
-        if (!logged.exchange(true)) logGlFrameProbe("gdi32!SwapBuffers", dc);
-        return gdiFrameProbe->getOriginal<&onGdiFrameProbe>()(dc);
+        GlSwapScope scope;
+        if (scope.outermost) OpenGLGui::render(dc);
+        return wglSwapDetour->getOriginal<&onWglSwapBuffers>()(dc);
     }
 
-    BOOL WINAPI onWglFrameProbe(HDC dc)
-    {
-        static std::atomic<bool> logged{false};
-        if (!logged.exchange(true)) logGlFrameProbe("opengl32!wglSwapBuffers", dc);
-        return wglFrameProbe->getOriginal<&onWglFrameProbe>()(dc);
-    }
-
-    void installGlFrameProbes()
+    void installGlSwapHooks()
     {
         const HMODULE gdi = GetModuleHandleA("gdi32.dll");
         const HMODULE gl = GetModuleHandleA("opengl32.dll");
         const auto gdiSwap = gdi ? GetProcAddress(gdi, "SwapBuffers") : nullptr;
         const auto glSwap = gl ? GetProcAddress(gl, "wglSwapBuffers") : nullptr;
-        if (gdiSwap) gdiFrameProbe = std::make_unique<Detour>(
-            "probe gdi32!SwapBuffers", reinterpret_cast<void*>(gdiSwap), reinterpret_cast<void*>(&onGdiFrameProbe));
+        if (gdiSwap) gdiSwapDetour = std::make_unique<Detour>(
+            "OpenGL gdi32!SwapBuffers", reinterpret_cast<void*>(gdiSwap), reinterpret_cast<void*>(&onGdiSwapBuffers));
         // Forwarded exports may share one target: do not detour it twice.
-        if (glSwap && glSwap != gdiSwap) wglFrameProbe = std::make_unique<Detour>(
-            "probe opengl32!wglSwapBuffers", reinterpret_cast<void*>(glSwap), reinterpret_cast<void*>(&onWglFrameProbe));
+        if (glSwap && glSwap != gdiSwap) wglSwapDetour = std::make_unique<Detour>(
+            "OpenGL opengl32!wglSwapBuffers", reinterpret_cast<void*>(glSwap), reinterpret_cast<void*>(&onWglSwapBuffers));
     }
 }
 
@@ -289,6 +286,7 @@ bool D3DHook::createTextureFromData(const uint8_t* data, int width, int height, 
 
 HRESULT D3DHook::present(IDXGISwapChain3* swapChain, UINT syncInterval, UINT flags)
 {
+    if (OpenGLGui::isActive()) return oPresent(swapChain, syncInterval, flags);
     static bool loggedPresent = false;
     if (!loggedPresent) {
         loggedPresent = true;
@@ -593,7 +591,7 @@ void D3DHook::init()
 void D3DHook::s_init()
 {
     Solstice::console->info("Initializing D3DHook");
-    installGlFrameProbes(); // HookManager enables these with the other detours.
+    installGlSwapHooks(); // HookManager enables these with the other detours.
     // Snapshot before kiero creates its dummy device. Loaded modules alone do
     // not prove the active renderer, but distinguish pre-existing runtimes.
     for (const char* name : {"dxgi.dll", "d3d11.dll", "d3d12.dll", "opengl32.dll", "vulkan-1.dll"}) {
@@ -633,14 +631,25 @@ void D3DHook::shutdown()
 void D3DHook::s_shutdown()
 {
     Solstice::console->info("Shutting down D3DHook");
+    OpenGLGui::shutdown();
     FrameTransforms.reset();
     kiero::unbind(8);
     kiero::unbind(13);
     kiero::unbind(140);
     kiero::unbind(145);
     kiero::shutdown();
-    gdiFrameProbe.reset();
-    wglFrameProbe.reset();
+    const auto swapDeadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+    while (glSwapCalls.load() && std::chrono::steady_clock::now() < swapDeadline)
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    if (!glSwapCalls.load()) {
+        gdiSwapDetour.reset();
+        wglSwapDetour.reset();
+    } else {
+        HMODULE retained = nullptr;
+        GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN,
+            reinterpret_cast<LPCWSTR>(&onGdiSwapBuffers), &retained);
+        spdlog::warn("OpenGL native swap is still in flight; module retained until game restart");
+    }
 
     //if (imGuiInitialized) shutdownImGui();
 

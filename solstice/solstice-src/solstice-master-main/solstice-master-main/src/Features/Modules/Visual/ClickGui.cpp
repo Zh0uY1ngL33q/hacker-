@@ -8,6 +8,7 @@
 #include <Features/Events/KeyEvent.hpp>
 #include <Features/GUI/ModernDropdown.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
+#include <Hook/Hooks/RenderHooks/OpenGLGui.hpp>
 
 static bool lastMouseState = false;
 static bool isPressingShift = false;
@@ -18,7 +19,7 @@ void ClickGui::onEnable()
 {
     auto ci = ClientInstance::get();
     spdlog::info("[GUI probe] ClickGui enabled; client={}", ci != nullptr);
-    if (ci)
+    if (ci && !OpenGLGui::isActive())
     {
         lastMouseState = !ci->getMouseGrabbed();
         ci->releaseMouse();
@@ -39,7 +40,7 @@ void ClickGui::onDisable()
     gFeatureManager->mDispatcher->deafen<MouseEvent, &ClickGui::onMouseEvent>(this);
     gFeatureManager->mDispatcher->deafen<KeyEvent, &ClickGui::onKeyEvent>(this);
 
-    if (lastMouseState && ClientInstance::get()) {
+    if (!OpenGLGui::isActive() && lastMouseState && ClientInstance::get()) {
         ClientInstance::get()->grabMouse();
     }
 }
@@ -88,7 +89,7 @@ float ClickGui::getEaseAnim(EasingUtil ease, int mode) {
 
 void ClickGui::onRenderEvent(RenderEvent& event)
 {
-    if (mEnabled) {
+    if (mEnabled && !OpenGLGui::isActive()) {
         if (auto* client = ClientInstance::get()) client->releaseMouse();
     }
     static float animation = 0;

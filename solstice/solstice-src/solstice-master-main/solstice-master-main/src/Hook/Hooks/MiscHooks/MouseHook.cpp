@@ -3,6 +3,7 @@
 //
 
 #include "MouseHook.hpp"
+#include <Hook/Hooks/RenderHooks/OpenGLGui.hpp>
 
 
 #include "Features/Events/MouseEvent.hpp"
@@ -16,16 +17,19 @@ void MouseHook::onMouse(void* _this, char actionButtonId, uint8_t buttonData, sh
     uint8_t forceMotionlessPointer)
 {
     auto oFunc = mDetour->getOriginal<&onMouse>();
-
     thisMouse = _this;
-    if (!gFeatureManager || !gFeatureManager->mDispatcher)
-        return oFunc(_this, actionButtonId, buttonData, x, y, dx, dy, forceMotionlessPointer);
-
     if (forceMotionlessPointer == 2)
     {
         forceMotionlessPointer = true;
         return oFunc(_this, actionButtonId, buttonData, x, y, dx, dy, forceMotionlessPointer);
     }
+    if (OpenGLGui::isActive()) {
+        if (OpenGLGui::capturesInput()) return;
+        return oFunc(_this, actionButtonId, buttonData, x, y, dx, dy, forceMotionlessPointer);
+    }
+
+    if (!gFeatureManager || !gFeatureManager->mDispatcher)
+        return oFunc(_this, actionButtonId, buttonData, x, y, dx, dy, forceMotionlessPointer);
 
     auto holder = nes::make_holder<MouseEvent>(_this, actionButtonId, buttonData, x, y, dx, dy, forceMotionlessPointer);
     gFeatureManager->mDispatcher->trigger(holder);

@@ -4,6 +4,7 @@
 
 void ResourceLoader::loadResources() {
     ImFontConfig font_config;
+    font_config.FontDataOwnedByAtlas = false; // Embedded resource, not heap memory.
     font_config.FontBuilderFlags = ImGuiFreeTypeBuilderFlags_NoHinting;
     auto cash_wav = GET_RESOURCE(cash_wav);
     Resources.emplace("cash.wav", cash_wav);

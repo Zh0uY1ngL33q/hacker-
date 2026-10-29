@@ -7,6 +7,7 @@
 #include <SDK/Minecraft/ClientInstance.hpp>
 #include <SDK/Minecraft/Rendering/GuiData.hpp>
 #include <Utils/ProcUtils.hpp>
+#include <Hook/Hooks/RenderHooks/OpenGLGui.hpp>
 
 #include "D2D.hpp"
 
@@ -14,6 +15,9 @@ void ImRenderUtils::addBlur(const ImVec4& pos, float strength, float radius, ImD
 {
     if (!ImGui::GetCurrentContext())
         return;
+
+    // Direct2D draw-list callbacks cannot execute in an OpenGL renderer.
+    if (OpenGLGui::isActive()) return;
 
 	if (optimized) D2D::addBlurOptimized(list, strength, pos, radius);
     else D2D::addBlur(list, strength, pos, radius);
@@ -248,6 +252,7 @@ void ImRenderUtils::fillCircle(ImVec2 center, float radius, const ImColor& color
 
 ImVec2 ImRenderUtils::getScreenSize()
 {
+    if (OpenGLGui::isActive()) return ImGui::GetIO().DisplaySize;
     glm::vec2 resolution = ClientInstance::get()->getGuiData()->mResolution;
     return ImVec2(resolution.x, resolution.y);
 }

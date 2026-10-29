@@ -4,6 +4,7 @@ target_sources(Solstice PRIVATE
         "imgui_draw.cpp"
         "imgui_impl_dx11.cpp"
         "imgui_impl_dx12.cpp"
+        "imgui_impl_opengl3.cpp"
         "imgui_impl_win32.cpp"
         "imgui_tables.cpp"
         "imgui_widgets.cpp"
@@ -13,5 +14,10 @@ target_sources(Solstice PRIVATE
         "stb_image.h"
         "ImTween.h"
 )
+
+# The bundled GL loader has private symbols/macros; isolate it from unity TUs.
+set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/imgui_impl_opengl3.cpp"
+        PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON SKIP_PRECOMPILE_HEADERS ON)
+target_link_libraries(Solstice PRIVATE opengl32.lib)
 
 target_include_directories(Solstice PUBLIC "${CMAKE_CURRENT_LIST_DIR}")

@@ -18,6 +18,16 @@
 #include <Utils/Keyboard.hpp>
 #include <Utils/StringUtils.hpp>
 #include <Utils/MiscUtils/ColorUtils.hpp>
+#include <Hook/Hooks/RenderHooks/OpenGLGui.hpp>
+
+namespace {
+    void playModernGuiSound(const char* name, float volume, float pitch)
+    {
+        // UI navigation on GL must not depend on unverified game sound offsets.
+        if (OpenGLGui::isActive()) return;
+        if (auto* client = ClientInstance::get()) client->playUi(name, volume, pitch);
+    }
+}
 
 ImVec4 ModernGui::scaleToPoint(const ImVec4& _this, const ImVec4& point, float amount)
 {
@@ -390,7 +400,7 @@ void ModernGui::render(float animation, float inScale, int& scrollDirection, cha
                                             {
                                                 lastBoolSetting = boolSetting;
                                                 isBoolSettingBinding = true;
-                                                ClientInstance::get()->playUi("random.pop", 0.75f, 1.0f);
+                                                playModernGuiSound("random.pop", 0.75f, 1.0f);
                                             }
                                         }
 
@@ -859,7 +869,7 @@ void ModernGui::render(float animation, float inScale, int& scrollDirection, cha
                             if (ImGui::IsMouseClicked(0) && !displayColorPicker && catPositions[i].isExtended)
                             {
                                 if (!moduleToggled) mod->toggle();
-                                ClientInstance::get()->playUi("random.pop", 0.75f, 1.0f);
+                                playModernGuiSound("random.pop", 0.75f, 1.0f);
                                 moduleToggled = true;
                             }
                             else if (ImGui::IsMouseClicked(1) && !displayColorPicker && catPositions[i].isExtended)
@@ -871,7 +881,7 @@ void ModernGui::render(float animation, float inScale, int& scrollDirection, cha
                             {
                                 lastMod = mod;
                                 isBinding = true;
-                                ClientInstance::get()->playUi("random.pop", 0.75f, 1.0f);
+                                playModernGuiSound("random.pop", 0.75f, 1.0f);
                             }
                         }
                     }
@@ -902,10 +912,10 @@ void ModernGui::render(float animation, float inScale, int& scrollDirection, cha
                         isBinding = false;
                         if (key.first == VK_ESCAPE)
                         {
-                            ClientInstance::get()->playUi("random.break", 0.75f, 1.0f);
+                            playModernGuiSound("random.break", 0.75f, 1.0f);
                         } else
                         {
-                            ClientInstance::get()->playUi("random.orb", 0.75f, 1.0f);
+                            playModernGuiSound("random.orb", 0.75f, 1.0f);
                         }
                     }
                 }
@@ -923,11 +933,11 @@ void ModernGui::render(float animation, float inScale, int& scrollDirection, cha
 
                         if (key.first == VK_ESCAPE)
                         {
-                            ClientInstance::get()->playUi("random.break", 0.75f, 1.0f);
+                            playModernGuiSound("random.break", 0.75f, 1.0f);
                         }
                         else
                         {
-                            ClientInstance::get()->playUi("random.orb", 0.75f, 1.0f);
+                            playModernGuiSound("random.orb", 0.75f, 1.0f);
                         }
                     }
                 }
