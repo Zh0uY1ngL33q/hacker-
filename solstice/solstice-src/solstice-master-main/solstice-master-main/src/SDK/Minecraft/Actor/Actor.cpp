@@ -227,6 +227,11 @@ JumpControlComponent* Actor::getJumpControlComponent()
 
 MobHurtTimeComponent* Actor::getMobHurtTimeComponent()
 {
+    // Offset unresolved on 1.21.120; member_at(this, 0) would alias the
+    // vtable and hand consumers a fake non-null pointer (TargetHUD reads
+    // it three times for hurt flashes). Null is the honest answer while
+    // the offset is unknown.
+    if (OffsetProvider::Actor_mHurtTimeComponent == 0) return nullptr;
     return hat::member_at<MobHurtTimeComponent*>(this, OffsetProvider::Actor_mHurtTimeComponent);
 }
 

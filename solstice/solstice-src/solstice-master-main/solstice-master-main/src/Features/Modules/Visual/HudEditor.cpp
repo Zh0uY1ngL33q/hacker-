@@ -222,9 +222,8 @@ void HudEditor::onRenderEvent(RenderEvent& event)
     auto drawList = ImGui::GetBackgroundDrawList();
     ImVec2 display = ImGui::GetIO().DisplaySize;
 
-    auto ci = ClientInstance::get();
-
-    ci->releaseMouse();
+    // releaseMouse tolerates null instances; only call it when one exists.
+    if (auto* ci = ClientInstance::get()) ci->releaseMouse();
 
     // Draw background
     drawList->AddRectFilled(ImVec2(0, 0), display, IM_COL32(0, 0, 0, 50));

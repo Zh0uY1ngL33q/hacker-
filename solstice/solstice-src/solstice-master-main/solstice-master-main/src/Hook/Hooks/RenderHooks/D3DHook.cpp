@@ -48,6 +48,33 @@ static com_ptr<ID3D11On12Device> gDevice11on12;
 
 static bool imGuiInitialized = false;
 
+// The ImGui overlay is rasterized into the swap chain's back buffer, so that
+// buffer's size -- not GuiData's possibly scaled/unverified resolution -- is
+// the actual coordinate space on the D3D path. This mirrors the client-area
+// fix the OpenGL GUI already uses; the reserved GuiData offsets (0x590/0x30)
+// are unverified on 1.21.120 and were handing every DX-path module a wrong
+// or stale DisplaySize.
+static ImVec2 gOverlaySize{ 0.f, 0.f };
+
+static ImVec2 realOverlaySize(IDXGISwapChain3* swapChain)
+{
+    if (swapChain) {
+        DXGI_SWAP_CHAIN_DESC sd{};
+        if (SUCCEEDED(swapChain->GetDesc(&sd)) &&
+            sd.BufferDescription.Width && sd.BufferDescription.Height)
+            return ImVec2(static_cast<float>(sd.BufferDescription.Width),
+                          static_cast<float>(sd.BufferDescription.Height));
+    }
+    if (const HWND window = ProcUtils::getMinecraftWindow()) {
+        RECT client{};
+        if (GetClientRect(window, &client) && client.right > client.left &&
+            client.bottom > client.top)
+            return ImVec2(static_cast<float>(client.right - client.left),
+                          static_cast<float>(client.bottom - client.top));
+    }
+    return ImVec2(0.f, 0.f);
+}
+
 static HWND wnd = NULL;
 static WNDPROC oWndProc;
 
@@ -438,13 +465,16 @@ HRESULT D3DHook::present(IDXGISwapChain3* swapChain, UINT syncInterval, UINT fla
 
     index = alreadyRunningD3D11 ? 0 : index;
 
+    gOverlaySize = realOverlaySize(swapChain);
 
     initImGui(gDevice11.get(), gContext11.get());
     D2D::init(swapChain, gDevice11.get());
 
     static ImVec2 lastWindowSize = ImGui::GetIO().DisplaySize;
     ImVec2 windowSize = lastWindowSize;
-    if (auto* ci = ClientInstance::get(); ci && InstanceLocator::isReadableMemory(ci->getGuiData(), 0x40)) {
+    if (gOverlaySize.x > 0.f && gOverlaySize.y > 0.f) {
+        windowSize = gOverlaySize;
+    } else if (auto* ci = ClientInstance::get(); ci && InstanceLocator::isReadableMemory(ci->getGuiData(), 0x40)) {
         windowSize = ImVec2(ci->getGuiData()->mResolution.x, ci->getGuiData()->mResolution.y);
     }
 
@@ -537,7 +567,9 @@ void D3DHook::initImGui(ID3D11Device* device, ID3D11DeviceContext* deviceContext
     ImGui_ImplDX11_Init(device, deviceContext);
 
     ImGuiIO& io = ImGui::GetIO();
-    if (auto* ci = ClientInstance::get(); ci && InstanceLocator::isReadableMemory(ci->getGuiData(), 0x40)) {
+    if (gOverlaySize.x > 0.f && gOverlaySize.y > 0.f) {
+        io.DisplaySize = gOverlaySize;
+    } else if (auto* ci = ClientInstance::get(); ci && InstanceLocator::isReadableMemory(ci->getGuiData(), 0x40)) {
         io.DisplaySize = ImVec2(ci->getGuiData()->mResolution.x, ci->getGuiData()->mResolution.y);
     }
 
@@ -562,13 +594,18 @@ void D3DHook::igNewFrame()
 
     ImGuiIO& io = ImGui::GetIO();
     auto* ci = ClientInstance::get();
+    const bool haveRealSize = gOverlaySize.x > 0.f && gOverlaySize.y > 0.f;
     const bool haveGuiData = ci && InstanceLocator::isReadableMemory(ci->getGuiData(), 0x40);
-    if (haveGuiData) {
+    if (haveRealSize) {
+        io.DisplaySize = gOverlaySize;
+    } else if (haveGuiData) {
         io.DisplaySize = ImVec2(ci->getGuiData()->mResolution.x, ci->getGuiData()->mResolution.y);
     }
 
     MathUtils::fov = RenderUtils::transform.mFov;
-    if (haveGuiData) {
+    if (haveRealSize) {
+        MathUtils::displaySize = { gOverlaySize.x, gOverlaySize.y };
+    } else if (haveGuiData) {
         MathUtils::displaySize = ci->getGuiData()->mResolution;
     }
     MathUtils::origin = RenderUtils::transform.mOrigin;
