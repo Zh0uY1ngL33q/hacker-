@@ -21,6 +21,7 @@ tool must be pointed at the dump, never at the on-disk exe.
 
 import argparse
 import json
+import mmap
 import os
 import re
 import struct
@@ -34,7 +35,8 @@ from collections import Counter
 class Image:
     def __init__(self, path):
         with open(path, "rb") as f:
-            self.data = f.read()
+            # Map once; scans must not copy the 139 MB code section per pattern.
+            self.data = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
         self.path = path
         self.size_of_image = 0
         self.sections = []
@@ -155,20 +157,19 @@ def scan(buf, start, end, pat, limit=64):
         return []
 
     best_len, best_start = longest_run(pat)
-    hay = buf[start:end]
     hits = []
 
     if best_len >= 2:
         anchor = bytes(pat[best_start:best_start + best_len])
-        pos = 0
+        pos = start
         while True:
-            pos = hay.find(anchor, pos)
+            pos = buf.find(anchor, pos, end)
             if pos < 0:
                 break
             base = pos - best_start
-            if base >= 0 and base + n <= len(hay):
-                if all(pat[j] is None or hay[base + j] == pat[j] for j in range(n)):
-                    hits.append(start + base)
+            if base >= start and base + n <= end:
+                if all(pat[j] is None or buf[base + j] == pat[j] for j in range(n)):
+                    hits.append(base)
                     if len(hits) >= limit:
                         break
             pos += 1
@@ -179,8 +180,8 @@ def scan(buf, start, end, pat, limit=64):
     # 139 MB regex search here does not matter.
     parts = [b"." if v is None else re.escape(struct.pack("B", v)) for v in pat]
     rx = re.compile(b"".join(parts), re.DOTALL)
-    for m in rx.finditer(hay):
-        hits.append(start + m.start())
+    for m in rx.finditer(buf, start, end):
+        hits.append(m.start())
         if len(hits) >= limit:
             break
     return hits
@@ -196,7 +197,7 @@ def scan_spans(buf, spans, pat, limit=64):
     """
     hits = []
     for start, end in spans:
-        hits.extend(scan(buf, start, end, pat, limit=limit))
+        hits.extend(scan(buf, start, end, pat, limit=limit - len(hits)))
         if len(hits) >= limit:
             break
     return hits
@@ -206,7 +207,7 @@ def scan_spans(buf, spans, pat, limit=64):
 # Extract definitions straight from the Solstice headers
 # --------------------------------------------------------------------------
 RE_INDEX_FIELD = re.compile(
-    r'DEFINE_INDEX_FIELD_TYPED\s*\(\s*[^,]+,\s*(\w+)\s*,\s*"([^"]+)"\s*,\s*(\d+)\s*,\s*OffsetType::(\w+)',
+    r'DEFINE_INDEX_FIELD_TYPED\s*\(\s*([^,]+),\s*(\w+)\s*,\s*"([^"]+)"\s*,\s*(\d+)\s*,\s*OffsetType::(\w+)',
 )
 RE_INDEX_FIELD2 = re.compile(
     r'DEFINE_INDEX_FIELD\s*\(\s*(\w+)\s*,\s*"([^"]+)"\s*,\s*(\d+)\s*,\s*OffsetType::(\w+)',
@@ -215,6 +216,27 @@ RE_SIG = re.compile(
     r'DEFINE_SIG\s*\(\s*(\w+)\s*,\s*"([^"]+)"\s*,\s*SigType::(\w+)\s*,\s*(-?\d+)\s*\)',
 )
 RE_FIELD = re.compile(r'^\s*DEFINE_FIELD\s*\(\s*(\w+)\s*,\s*([^)]+)\)', re.M)
+
+def active_cpp(text):
+    """Remove comments, preserving quoted strings and line boundaries."""
+    tokens = re.compile(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'|//[^\n]*|/\*[\s\S]*?\*/')
+    return tokens.sub(lambda m: m.group() if m.group()[0] in "\"'" else
+                      re.sub(r'[^\n]', ' ', m.group()), text)
+
+def read_offset(buf, position, definition):
+    ctype = definition.get("read_type", "int").strip()
+    types = {"int": (4, True), "uint8_t": (1, False), "int8_t": (1, True),
+             "uint16_t": (2, False), "int16_t": (2, True),
+             "uint32_t": (4, False), "int32_t": (4, True),
+             "uint64_t": (8, False), "int64_t": (8, True)}
+    size, signed = types[ctype]
+    if position < 0 or position + size > len(buf):
+        raise ValueError("offset read outside image")
+    raw = int.from_bytes(buf[position:position + size], "little", signed=signed)
+    if definition["offset_type"] == "Index":
+        # C++ signed integer division truncates towards zero, not -infinity.
+        return (-1 if raw < 0 else 1) * (abs(raw) // 8)
+    return raw
 
 
 def load_definitions(src_dir):
@@ -234,16 +256,18 @@ def load_definitions(src_dir):
             if m:
                 commented.add(m.group(1))
 
+    text = active_cpp(text)
     for m in RE_INDEX_FIELD.finditer(text):
-        defs.append({"kind": "offset", "name": m.group(1), "pattern": m.group(2),
-                    "disp_off": int(m.group(3)), "offset_type": m.group(4)})
+        defs.append({"kind": "offset", "read_type": m.group(1).strip(),
+                    "name": m.group(2), "pattern": m.group(3),
+                    "disp_off": int(m.group(4)), "offset_type": m.group(5)})
     for m in RE_INDEX_FIELD2.finditer(text):
         defs.append({"kind": "offset", "name": m.group(1), "pattern": m.group(2),
-                    "disp_off": int(m.group(3)), "offset_type": m.group(4)})
+                    "disp_off": int(m.group(3)), "offset_type": m.group(4), "read_type": "int"})
 
     with open(sig_path, "r", encoding="utf-8", errors="replace") as f:
         sig_text = f.read()
-    for m in RE_SIG.finditer(sig_text):
+    for m in RE_SIG.finditer(active_cpp(sig_text)):
         defs.append({"kind": "sig", "name": m.group(1), "pattern": m.group(2),
                      "sig_type": m.group(3), "disp_off": int(m.group(4))})
 
@@ -306,13 +330,12 @@ def main():
         if d["kind"] == "offset" and n >= 1:
             rva = hits[0] + d["disp_off"]
             entry["rva"] = "0x%X" % hits[0]
-            if rva + 4 <= len(img.data):
-                raw = struct.unpack_from("<i", img.data, rva)[0]
-                val = raw // 8 if d["offset_type"] == "Index" else raw
+            if rva + 8 <= len(img.data):
+                val = read_offset(img.data, rva, d)
                 entry["field_offset"] = val
                 # Plausibility gate: a nonsense index means the pattern matched
                 # the wrong code, even though it "resolved".
-                if d["offset_type"] == "Index" and not (0 <= val <= 4096):
+                if d["offset_type"] == "Index" and not (2 <= val < 4096):
                     entry["status"] = "SUSPECT"
                     entry["note"] = "implausible vtable index %d" % val
                 elif abs(val) > 0x20000:

@@ -1,0 +1,838 @@
+[
+  {
+    "name": "MinecraftSim_mGameSim",
+    "kind": "offset",
+    "verified": false,
+    "old_pattern": "49 8B 85 ? ? ? ? 8B 40",
+    "new_pattern": "49 8B 06 ? ? ? ? 8B 40",
+    "diff_count": 1,
+    "hits": 64,
+    "hit_rvas": [
+      "0x242AEB",
+      "0x242B5A",
+      "0x242C1D",
+      "0x242C76",
+      "0x248866",
+      "0x24A6BE"
+    ],
+    "near_rva": "0x242AEB",
+    "values": [
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625,
+      1221495625
+    ],
+    "plausible_hits": [],
+    "note": "ambiguous or implausible after fix"
+  },
+  {
+    "name": "UIProfanityContext_mEnabled",
+    "kind": "offset",
+    "verified": false,
+    "note": "no near miss; needs disassembly"
+  },
+  {
+    "name": "LevelChunk_mSubChunks",
+    "kind": "offset",
+    "verified": false,
+    "old_pattern": "48 2B ? ? ? ? ? 48 8B ? 48 C1 FF ? 48 0F",
+    "new_pattern": "48 2B ? ? ? ? ? 48 8B ? 48 C1 E1 ? 48 89",
+    "diff_count": 2,
+    "hits": 2,
+    "hit_rvas": [
+      "0x55C411",
+      "0x39AAD77"
+    ],
+    "near_rva": "0x55C411",
+    "values": [
+      150520136,
+      116965704
+    ],
+    "plausible_hits": [],
+    "note": "ambiguous or implausible after fix"
+  },
+  {
+    "name": "bgfx_context_m_renderCtx",
+    "kind": "offset",
+    "verified": false,
+    "old_pattern": "48 8B ? ? ? ? ? 48 8B ? 48 8B ? ? FF 15 ? ? ? ? 48 89 ? ? ? ? ? 48 63",
+    "new_pattern": "48 8D ? ? ? ? ? 48 8B ? 48 8B ? ? FF 15 ? ? ? ? 48 8B ? ? ? ? ? 48 8D",
+    "diff_count": 3,
+    "hits": 2,
+    "hit_rvas": [
+      "0x239464",
+      "0x239568"
+    ],
+    "near_rva": "0x239464",
+    "values": [
+      145006829,
+      145006625
+    ],
+    "plausible_hits": [],
+    "note": "ambiguous or implausible after fix"
+  },
+  {
+    "name": "LevelRendererPlayer_mFovX",
+    "kind": "offset",
+    "verified": false,
+    "old_pattern": "0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 80 B9 58 0F 00 00",
+    "new_pattern": "0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 83 C0 00 00",
+    "diff_count": 4,
+    "hits": 2,
+    "hit_rvas": [
+      "0x135DA31",
+      "0x136AAD7"
+    ],
+    "near_rva": "0x135DA31",
+    "values": [
+      128,
+      128
+    ],
+    "plausible_hits": [
+      0,
+      1
+    ],
+    "note": "ambiguous or implausible after fix"
+  },
+  {
+    "name": "Level_getLevelData",
+    "kind": "offset",
+    "verified": false,
+    "old_pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 8B 88",
+    "new_pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 8B C3",
+    "diff_count": 1,
+    "hits": 2,
+    "hit_rvas": [
+      "0x1987D7A",
+      "0x220569C"
+    ],
+    "near_rva": "0x1987D7A",
+    "values": [
+      17322345,
+      17305961
+    ],
+    "plausible_hits": [],
+    "note": "ambiguous or implausible after fix"
+  },
+  {
+    "name": "ClientInstance_getInputHandler",
+    "kind": "offset",
+    "verified": false,
+    "note": "no near miss; needs disassembly"
+  },
+  {
+    "name": "ClientInstance_getMouseGrabbed",
+    "kind": "offset",
+    "verified": false,
+    "note": "no near miss; needs disassembly"
+  },
+  {
+    "name": "LevelRendererPlayer_mFovY",
+    "kind": "offset",
+    "verified": false,
+    "old_pattern": "89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? F3 0F",
+    "new_pattern": "89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87",
+    "diff_count": 2,
+    "hits": 7,
+    "hit_rvas": [
+      "0x2DB1E04",
+      "0x2DB1E0F",
+      "0x2DB1E1A",
+      "0x2DB1E25",
+      "0x2DB1E30",
+      "0x2DB1E3B"
+    ],
+    "near_rva": "0x2DB1E04",
+    "values": [
+      6556,
+      6560,
+      6564,
+      6568,
+      6572,
+      6576,
+      6580
+    ],
+    "plausible_hits": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "note": "ambiguous or implausible after fix"
+  },
+  {
+    "name": "MainView_bedrockPlatform",
+    "kind": "offset",
+    "verified": false,
+    "old_pattern": "48 8B ? ? ? ? ? 48 8B ? B2 ? 48 8B ? ? ? ? ? FF 15 ? ? ? ? 84 C0",
+    "new_pattern": "48 8B ? ? ? ? ? 48 8B ? B2 ? 48 8B ? ? ? ? ? FF 15 ? ? ? ? 90 48",
+    "diff_count": 2,
+    "hits": 2,
+    "hit_rvas": [
+      "0x1972521",
+      "0x862DAF4"
+    ],
+    "near_rva": "0x1972521",
+    "values": [
+      2784,
+      888
+    ],
+    "plausible_hits": [
+      0,
+      1
+    ],
+    "note": "ambiguous or implausible after fix"
+  },
+  {
+    "name": "BlockLegacy_getCollisionShape",
+    "kind": "offset",
+    "verified": false,
+    "old_pattern": "48 8B ? ? FF 15 ? ? ? ? 0F 10 ? 0F 11 ? ? ? ? ? ? F2 0F ? ? ? F2 0F",
+    "new_pattern": "48 8B ? ? FF 15 ? ? ? ? 0F 10 ? 08 48 ? ? ? ? ? ? 40 0F ? ? ? F2 0F",
+    "diff_count": 3,
+    "hits": 1,
+    "hit_rvas": [
+      "0x4A604B"
+    ],
+    "near_rva": "0x4A604B",
+    "values": [
+      123912161
+    ],
+    "plausible_hits": [],
+    "note": "ambiguous or implausible after fix"
+  },
+  {
+    "name": "BlockSource_mBuildHeight",
+    "kind": "offset",
+    "verified": false,
+    "old_pattern": "0F BF ? ? 3B C8 0F 8D ? ? ? ? 8B 0F",
+    "new_pattern": "0F 4F ? ? 3B C8 0F 8D ? ? ? ? 45 0F",
+    "diff_count": 2,
+    "hits": 1,
+    "hit_rvas": [
+      "0x5D16440"
+    ],
+    "near_rva": "0x5D16440",
+    "values": [
+      264780612
+    ],
+    "plausible_hits": [],
+    "note": "ambiguous or implausible after fix"
+  },
+  {
+    "name": "MinecraftSim_mRenderSim",
+    "kind": "offset",
+    "verified": false,
+    "old_pattern": "48 8B ? ? ? ? ? F3 0F ? ? ? F3 41 ? ? ? ? 48 8D",
+    "new_pattern": "48 8B ? ? ? ? ? F3 0F ? ? ? F3 41 ? ? ? ? 3B 74",
+    "diff_count": 2,
+    "hits": 1,
+    "hit_rvas": [
+      "0x2AED2A"
+    ],
+    "near_rva": "0x2AED2A",
+    "values": [
+      269553651
+    ],
+    "plausible_hits": [],
+    "note": "ambiguous or implausible after fix"
+  },
+  {
+    "name": "Actor_mContainerManagerModel",
+    "kind": "offset",
+    "verified": false,
+    "old_pattern": "49 8B ? ? ? ? ? 48 89 ? ? ? 48 89 ? ? ? F0 FF ? ? 66 0F ? ? ? ? EB ? 0F 57 ? 66 0F 73 D8 ? 66 48 ? ? ? 0F 57 ? 66 0F ? ? ? ? ? ? 48 85",
+    "new_pattern": "85 F6 ? ? ? ? ? 48 89 ? ? ? 48 89 ? ? ? F0 FF ? ? 66 0F ? ? ? ? EB ? 0F 57 ? 66 0F 73 D8 ? 66 48 ? ? ? 0F 57 ? 66 0F ? ? ? ? ? ? 74 1D",
+    "diff_count": 4,
+    "hits": 1,
+    "hit_rvas": [
+      "0x3011111"
+    ],
+    "near_rva": "0x3011111",
+    "values": [
+      9127961
+    ],
+    "plausible_hits": [],
+    "note": "ambiguous or implausible after fix"
+  },
+  {
+    "name": "Level_getPlayerList",
+    "kind": "offset",
+    "verified": false,
+    "note": "no near miss; needs disassembly"
+  },
+  {
+    "name": "BlockLegacy_mBlockId",
+    "kind": "offset",
+    "verified": false,
+    "old_pattern": "44 0F ? ? ? ? ? ? B8 ? ? ? ? 48 8B ? 48 8B",
+    "new_pattern": "44 0F ? ? ? ? ? ? 00 ? ? ? ? 48 8B ? 48 8B",
+    "diff_count": 1,
+    "hits": 8,
+    "hit_rvas": [
+      "0x4A2A2C",
+      "0x4345725",
+      "0x6638C30",
+      "0x6747DC2",
+      "0x69104F8",
+      "0x6C4C3BE"
+    ],
+    "near_rva": "0x4A2A2C",
+    "values": [
+      86052,
+      15773577,
+      43040643,
+      -2146634264,
+      110628,
+      38948,
+      1166888168,
+      -909766843
+    ],
+    "plausible_hits": [
+      0,
+      4,
+      5
+    ],
+    "note": "ambiguous or implausible after fix"
+  },
+  {
+    "name": "bgfx_d3d12_RendererContextD3D12_m_commandQueue",
+    "kind": "offset",
+    "verified": false,
+    "old_pattern": "48 8B ? ? ? ? ? 4C 8B ? ? 48 8B ? 48 8B ? ? 48 8B ? ? FF 15 ? ? ? ? 48 FF ? ? 48 8B ? ? 48 8B ? 48 3B ? 74 ? 48 8B",
+    "new_pattern": "48 D1 ? ? ? ? ? 4C 8B ? ? 48 8B ? 48 8B ? ? 48 8B ? ? FF 15 ? ? ? ? 48 FF ? ? 48 8B ? ? 48 8B ? 48 3B ? 74 ? 48 89",
+    "diff_count": 2,
+    "hits": 2,
+    "hit_rvas": [
+      "0x7C5A222",
+      "0x7C6B431"
+    ],
+    "near_rva": "0x7C5A222",
+    "values": [
+      160122882,
+      244009218
+    ],
+    "plausible_hits": [],
+    "note": "ambiguous or implausible after fix"
+  },
+  {
+    "name": "ContainerManagerModel_getContainerType",
+    "kind": "offset",
+    "verified": false,
+    "old_pattern": "48 8B ? ? FF 15 ? ? ? ? 84 C0 75 ? 48 8B ? 48 8B ? 48 8B ? ? FF 15 ? ? ? ? 84 C0 74 ? B0",
+    "new_pattern": "48 8B ? ? FF 15 ? ? ? ? 84 C0 75 ? 48 8B ? 48 8B ? 48 8B ? ? FF 15 ? ? ? ? 84 C0 74 ? 48",
+    "diff_count": 1,
+    "hits": 2,
+    "hit_rvas": [
+      "0x5E6D89",
+      "0x20E3685"
+    ],
+    "near_rva": "0x5E6D89",
+    "values": [
+      -6111255,
+      2277353
+    ],
+    "plausible_hits": [],
+    "note": "ambiguous or implausible after fix"
+  },
+  {
+    "name": "BlockSource_clip",
+    "kind": "offset",
+    "verified": false,
+    "old_pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 90 48 8D ? ? ? ? ? 48 8D ? ? ? ? ? E8 ? ? ? ? 48 8B",
+    "new_pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 90 48 8B ? ? ? ? ? 88 00 ? ? ? ? ? E8 ? ? ? ? 48 8B",
+    "diff_count": 3,
+    "hits": 64,
+    "hit_rvas": [
+      "0x241ABC",
+      "0x241CAB",
+      "0x312CBC",
+      "0xCC1182",
+      "0xCC1372",
+      "0xCC157B"
+    ],
+    "near_rva": "0x241ABC",
+    "values": [
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961,
+      17305961
+    ],
+    "plausible_hits": [],
+    "note": "ambiguous or implausible after fix"
+  },
+  {
+    "name": "ContainerManagerModel_getSlot",
+    "kind": "offset",
+    "verified": false,
+    "old_pattern": "48 8B ? ? FF 15 ? ? ? ? 0F B6 ? ? 44 89",
+    "new_pattern": "48 8B ? ? FF 15 ? ? ? ? 0F B6 ? ? EB 09",
+    "diff_count": 2,
+    "hits": 42,
+    "hit_rvas": [
+      "0x24DB0F",
+      "0x24E29A",
+      "0x2CF93A",
+      "0x315F2A",
+      "0xC45F4A",
+      "0xCD63DA"
+    ],
+    "near_rva": "0x24DB0F",
+    "values": [
+      249741281,
+      -41762847,
+      159563745,
+      193118177,
+      126009313,
+      -175980575,
+      -108871711,
+      -41762847,
+      25346017,
+      92454881,
+      159563745,
+      226672609,
+      -75317279,
+      -209535007,
+      126009313,
+      193118177,
+      260227041,
+      58900449,
+      193118177,
+      193118177,
+      92454881,
+      25346017,
+      92454881,
+      226672609,
+      -243089439,
+      -175980575,
+      -108871711,
+      -41762847,
+      193118177,
+      92454881,
+      193118177,
+      260227041,
+      -209535007,
+      -209535007,
+      -41762847,
+      226672609,
+      -243089439,
+      -175980575,
+      -108871711,
+      92454881,
+      -142426143,
+      -75317279
+    ],
+    "plausible_hits": [],
+    "note": "ambiguous or implausible after fix"
+  },
+  {
+    "name": "Actor_mHurtTimeComponent",
+    "kind": "offset",
+    "verified": false,
+    "note": "no near miss; needs disassembly"
+  },
+  {
+    "name": "Actor_getLevel",
+    "kind": "sig",
+    "verified": false,
+    "old_pattern": "E8 ? ? ? ? 48 8B ? 48 8B ? 48 8B ? ? ? ? ? 48 8B ? E8 ? ? ? ? 4C 8B ? 4C 8B ? 48 8B",
+    "new_pattern": "E8 ? ? ? ? 48 8B ? 48 8B ? 48 8B ? ? ? ? ? 49 8B ? E8 ? ? ? ? 4C 8B ? 48 8B ? 48 8B",
+    "diff_count": 2,
+    "hits": 3,
+    "hit_rvas": [
+      "0x7BF3C7",
+      "0x7BF47A",
+      "0x68634BC"
+    ],
+    "near_rva": "0x7BF3C7",
+    "note": "ambiguous after fix"
+  },
+  {
+    "name": "FluxSwing",
+    "kind": "sig",
+    "verified": false,
+    "note": "no near miss; needs disassembly"
+  },
+  {
+    "name": "ConnectionRequest_create_DeviceModel",
+    "kind": "sig",
+    "verified": false,
+    "old_pattern": "48 8B 11 48 83 C2 ? EB",
+    "new_pattern": "48 8B 11 48 83 C2 ? 48",
+    "diff_count": 1,
+    "hits": 6,
+    "hit_rvas": [
+      "0x12ACECE",
+      "0x12AEDC2",
+      "0x2435E60",
+      "0x24787EA",
+      "0x5F2B729",
+      "0x7D1AF28"
+    ],
+    "near_rva": "0x12ACECE",
+    "note": "ambiguous after fix"
+  },
+  {
+    "name": "ItemRenderer_render",
+    "kind": "sig",
+    "verified": false,
+    "old_pattern": "48 8B ? 48 89 ? ? 55 56 57 41 ? 41 ? 41 ? 41 ? 48 81 EC ? ? ? ? 0F 29 ? ? 0F 29 ? ? 44 0F ? ? ? 44 0F ? ? ? 49 8B",
+    "new_pattern": "48 8B ? 48 89 ? ? 55 56 57 41 ? 41 ? 41 ? 41 ? 48 81 EC ? ? ? ? 0F 29 ? ? 0F 29 ? ? 44 0F ? ? ? 44 0F ? ? ? 44 0F",
+    "diff_count": 2,
+    "hits": 29,
+    "hit_rvas": [
+      "0x3DAB90",
+      "0x417BD0",
+      "0xA2DA10",
+      "0xA35710",
+      "0x1262430",
+      "0x1405270"
+    ],
+    "near_rva": "0x3DAB90",
+    "note": "ambiguous after fix"
+  },
+  {
+    "name": "Mob_getCurrentSwingDuration",
+    "kind": "sig",
+    "verified": false,
+    "note": "no near miss; needs disassembly"
+  },
+  {
+    "name": "ItemUseInventoryTransaction_vtable",
+    "kind": "sig",
+    "verified": false,
+    "note": "no near miss; needs disassembly"
+  },
+  {
+    "name": "ScreenView_setupAndRender",
+    "kind": "sig",
+    "verified": false,
+    "old_pattern": "48 8B ? ? E8 ? ? ? ? 90 48 8D ? ? ? E8 ? ? ? ? 48 8B 8C ? ? ? ? ? 48 33 ? E8 ? ? ? ?",
+    "new_pattern": "48 8B ? ? 15 ? ? ? ? 90 48 8D ? ? ? E8 ? ? ? ? 48 8B 8C ? ? ? ? ? 48 33 ? E8 ? ? ? ?",
+    "diff_count": 1,
+    "hits": 7,
+    "hit_rvas": [
+      "0xCF7CA7",
+      "0xDF65C7",
+      "0x13FD3EC",
+      "0x536DB55",
+      "0x5B45A66",
+      "0x6258F9B"
+    ],
+    "near_rva": "0xCF7CA7",
+    "note": "ambiguous after fix"
+  },
+  {
+    "name": "MoveInputComponent_ClearMoveState1",
+    "kind": "sig",
+    "verified": false,
+    "old_pattern": "80 B9 ? ? ? ? 00 75 ? F3 0F 10 ? ? ? ? ? F3 0F 11 ?",
+    "new_pattern": "80 3F ? ? ? ? 00 80 ? F3 0F 10 ? ? ? ? ? F3 0F 11 ?",
+    "diff_count": 2,
+    "hits": 2,
+    "hit_rvas": [
+      "0x209B3F4",
+      "0x3422B88"
+    ],
+    "near_rva": "0x209B3F4",
+    "note": "ambiguous after fix"
+  },
+  {
+    "name": "Reach",
+    "kind": "sig",
+    "verified": false,
+    "old_pattern": "74 ? F3 44 ? ? ? ? ? ? ? EB ? F3 0F",
+    "new_pattern": "74 ? F3 41 ? ? ? ? ? ? ? EB ? F3 0F",
+    "diff_count": 1,
+    "hits": 5,
+    "hit_rvas": [
+      "0xB3319E",
+      "0xB357E5",
+      "0xB359B5",
+      "0xB38EDF",
+      "0xB3F796"
+    ],
+    "near_rva": "0xB3319E",
+    "note": "ambiguous after fix"
+  },
+  {
+    "name": "RenderController_getHurtColor",
+    "kind": "sig",
+    "verified": false,
+    "old_pattern": "E8 ? ? ? ? 44 ? ? ? ? 4C ? ? ? 4C ? ? 48 ? ? ? ? ? ? 49 ? ? E8 ? ? ?",
+    "new_pattern": "E8 ? ? ? ? 8D ? ? ? ? 4C ? ? ? 4C ? ? 48 ? ? ? ? ? ? 49 ? ? E8 ? ? ?",
+    "diff_count": 1,
+    "hits": 2,
+    "hit_rvas": [
+      "0x5E962B0",
+      "0x5E9630F"
+    ],
+    "near_rva": "0x5E962B0",
+    "note": "ambiguous after fix"
+  },
+  {
+    "name": "ActorAnimationControllerPlayer_applyToPose",
+    "kind": "sig",
+    "verified": false,
+    "note": "no near miss; needs disassembly"
+  },
+  {
+    "name": "HoverTextRenderer_render",
+    "kind": "sig",
+    "verified": false,
+    "note": "no near miss; needs disassembly"
+  },
+  {
+    "name": "ConnectionRequest_create_DefaultInputMode",
+    "kind": "sig",
+    "verified": false,
+    "note": "no near miss; needs disassembly"
+  },
+  {
+    "name": "LocalPlayer_applyTurnDelta",
+    "kind": "sig",
+    "verified": false,
+    "old_pattern": "48 8B CE E8 ? ? ? ? 48 8B ? ? ? ? ? 48 ? ? E8 ? ? ? ? 4C 8D ? ? ? ? ? ? 49 8B ? ? 49 8B ? ? 41 ? ? ? ? 41 ? ? ? ? 45 ? ? ?",
+    "new_pattern": "48 8B CE E8 ? ? ? ? 48 8B ? ? ? ? ? 48 ? ? E8 ? ? ? ? 4C 8D ? ? ? ? ? ? 49 8B ? ? 49 8B ? ? 49 ? ? ? ? 0F ? ? ? ? 8B ? ? ?",
+    "diff_count": 3,
+    "hits": 7,
+    "hit_rvas": [
+      "0x29EC9F",
+      "0xCD398C",
+      "0x190E37D",
+      "0x198B679",
+      "0x22B9C0D",
+      "0x2E691AD"
+    ],
+    "near_rva": "0x29EC9F",
+    "note": "ambiguous after fix"
+  },
+  {
+    "name": "ItemReleaseInventoryTransaction_vtable",
+    "kind": "sig",
+    "verified": false,
+    "note": "no near miss; needs disassembly"
+  },
+  {
+    "name": "JSON_parse",
+    "kind": "sig",
+    "verified": false,
+    "note": "no near miss; needs disassembly"
+  },
+  {
+    "name": "ConnectionRequest_create_CurrentInputMode",
+    "kind": "sig",
+    "verified": false,
+    "note": "no near miss; needs disassembly"
+  },
+  {
+    "name": "GuiData_displayClientMessage",
+    "kind": "sig",
+    "verified": false,
+    "old_pattern": "48 89 ? ? ? ? ? ? E8 ? ? ? ? 4C 8B ? 48 85 ? 74 ? BF FF FF FF",
+    "new_pattern": "48 89 ? ? ? ? ? ? 24 ? ? ? ? FD FF ? 48 85 ? 74 ? BF FF FF FF",
+    "diff_count": 3,
+    "hits": 3,
+    "hit_rvas": [
+      "0x27FB67",
+      "0x280137",
+      "0x280907"
+    ],
+    "near_rva": "0x27FB67",
+    "note": "ambiguous after fix"
+  },
+  {
+    "name": "NetworkStackItemDescriptor_ctor",
+    "kind": "sig",
+    "verified": false,
+    "old_pattern": "48 ? ? ? ? ? ? E8 ? ? ? ? 90 48 8B CF E8 ? ? ? ? 48 ? ? 48 ? ? E8 ? ? ? ? F2 ? ? ?",
+    "new_pattern": "48 ? ? ? ? ? ? E8 ? ? ? ? 90 48 8B CF E8 ? ? ? ? 48 ? ? 48 ? ? 0F ? ? ? ? 00 ? ? ?",
+    "diff_count": 2,
+    "hits": 5,
+    "hit_rvas": [
+      "0x7E4ED5",
+      "0x7E55FD",
+      "0x7E58DD",
+      "0x7E5BBD",
+      "0x7E6C05"
+    ],
+    "near_rva": "0x7E4ED5",
+    "note": "ambiguous after fix"
+  },
+  {
+    "name": "PlayerMovement_clearInputStateInlined",
+    "kind": "sig",
+    "verified": false,
+    "old_pattern": "75 ? 48 8B ? ? ? ? ? ? 48 8D ? ? ? ? ? ? 48 89 ? ? ? 4D 8B",
+    "new_pattern": "75 ? 48 8B ? ? ? ? ? ? 48 8B ? ? ? ? ? ? 48 89 ? ? ? 48 8B",
+    "diff_count": 2,
+    "hits": 21,
+    "hit_rvas": [
+      "0x783660",
+      "0x166BFD4",
+      "0x2BBDB84",
+      "0x2D21A2F",
+      "0x3283DDF",
+      "0x5A0AE1F"
+    ],
+    "near_rva": "0x783660",
+    "note": "ambiguous after fix"
+  },
+  {
+    "name": "Actor_getStatusFlag",
+    "kind": "sig",
+    "verified": false,
+    "old_pattern": "E8 ? ? ? ? 84 C0 0F 84 ? ? ? ? F3 0F 10 BF",
+    "new_pattern": "E8 ? ? ? ? 84 C0 0F 84 ? ? ? ? F3 0F 10 B6",
+    "diff_count": 1,
+    "hits": 2,
+    "hit_rvas": [
+      "0x40995E",
+      "0x66352D6"
+    ],
+    "near_rva": "0x40995E",
+    "note": "ambiguous after fix"
+  },
+  {
+    "name": "InputModeBypass",
+    "kind": "sig",
+    "verified": false,
+    "old_pattern": "8b d7 48 8b ce 48 8b 80 ? ? ? ? ff 15 ? ? ? ? 49 8b 07",
+    "new_pattern": "8b 06 48 8b ce 48 8b 80 ? ? ? ? ff 15 ? ? ? ? 48 8b D8",
+    "diff_count": 3,
+    "hits": 54,
+    "hit_rvas": [
+      "0x49AD6F",
+      "0xC50946",
+      "0x1260B17",
+      "0x19133A8",
+      "0x19D7D70",
+      "0x19E77D2"
+    ],
+    "near_rva": "0x49AD6F",
+    "note": "ambiguous after fix"
+  }
+]
