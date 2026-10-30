@@ -12,7 +12,7 @@ public:
         mName = "PacketReceiveHook";
     }
 
-    static std::unordered_map<PacketID, std::unique_ptr<Detour>> mDetours;
+    static std::unordered_map<PacketID, std::shared_ptr<Detour>> mDetours;
     static inline void* NetworkIdentifier = nullptr;
 
     static void* onPacketSend(void* _this, void* networkIdentifier, void* netEventCallback, std::shared_ptr<class Packet> packet);

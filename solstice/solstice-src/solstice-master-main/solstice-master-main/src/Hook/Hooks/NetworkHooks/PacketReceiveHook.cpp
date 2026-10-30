@@ -14,7 +14,7 @@
 #include <Utils/MiscUtils/ColorUtils.hpp>
 #include <omp.h>
 
-std::unordered_map<PacketID, std::unique_ptr<Detour>> PacketReceiveHook::mDetours;
+std::unordered_map<PacketID, std::shared_ptr<Detour>> PacketReceiveHook::mDetours;
 
 void* PacketReceiveHook::onPacketSend(void* _this, void* networkIdentifier, void* netEventCallback, std::shared_ptr<Packet> packet)
 {
@@ -67,23 +67,31 @@ void PacketReceiveHook::init()
     uint64_t start = NOW;
     spdlog::info("Hooking {} packets", packetIds.size());
 
-    for (int i = 0; i < 0x136; i++) { // Fuck magic enum
+    // Several packet IDs may use the same native handler. MinHook cannot
+    // create two detours at one address; keep one owner/trampoline per target.
+    std::unordered_map<uintptr_t, std::shared_ptr<Detour>> byTarget;
+    for (int i = 0; i < 0x136; i++) {
         auto id = static_cast<PacketID>(i);
-        auto packet = MinecraftPackets::createPacket(static_cast<PacketID>(i));
-        if (!packet) continue;
+        auto packet = MinecraftPackets::createPacket(id);
+        if (!packet || !packet->mDispatcher) continue;
 
         auto packetFunc = packet->mDispatcher->getPacketHandler();
-        if (!packetFunc) {
-            spdlog::warn("Failed to hook packet: {} (0x{:X})", magic_enum::enum_name<PacketID>(id), i);
+        if (!packetFunc) continue;
+        auto existing = byTarget.find(packetFunc);
+        if (existing != byTarget.end()) {
+            mDetours[id] = existing->second;
             continue;
         }
 
-
-        auto detour = std::make_unique<Detour>("PacketHandlerDispatcherInstance<" + std::string(magic_enum::enum_name<PacketID>(id)) + "Packet,0>::handle", reinterpret_cast<void*>(packetFunc), &onPacketSend, true);
+        auto detour = std::make_shared<Detour>("PacketHandlerDispatcherInstance<" + std::string(magic_enum::enum_name<PacketID>(id)) + "Packet,0>::handle", reinterpret_cast<void*>(packetFunc), &onPacketSend, true);
+        if (!detour->mCreated || !detour->mOriginalFunc) {
+            spdlog::warn("Failed to create packet handler detour: {} (0x{:X})", magic_enum::enum_name<PacketID>(id), i);
+            continue;
+        }
+        byTarget.emplace(packetFunc, detour);
         mDetours[id] = std::move(detour);
-    };
+    }
 
     uint64_t timeTaken = NOW - start;
-
-    spdlog::info("Successfully hooked {} packets in {}ms", mDetours.size(), timeTaken);
+    spdlog::info("Created {} packet handler detours for {} packet IDs in {}ms", byTarget.size(), mDetours.size(), timeTaken);
 }
