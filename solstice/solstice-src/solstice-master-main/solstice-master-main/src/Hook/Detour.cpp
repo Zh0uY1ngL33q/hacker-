@@ -12,7 +12,7 @@
 
 Detour::~Detour()
 {
-    if (mFunc)
+    if (mCreated && mFunc)
     {
         MH_DisableHook(mFunc);
         MH_RemoveHook(mFunc);
@@ -26,6 +26,7 @@ Detour::Detour(const std::string& name, void* addr, void* detour, bool silent)
     this->mName = name;
 
     const MH_STATUS result = MH_CreateHook(mFunc, detour, &mOriginalFunc);
+    mCreated = (result == MH_STATUS::MH_OK);
 
     if (!silent)
     {
@@ -39,6 +40,12 @@ Detour::Detour(const std::string& name, void* addr, void* detour, bool silent)
 
 void Detour::enable(bool silent) const
 {
+    // A null target has special meaning (MH_ALL_HOOKS); never enable it
+    // for a detour that failed creation.
+    if (!mCreated || !mFunc) {
+        if (!silent) spdlog::error("Cannot enable uncreated detour {}", mName);
+        return;
+    }
     const MH_STATUS status = MH_EnableHook(mFunc);
 
     if (silent) return;
@@ -60,9 +67,9 @@ void Detour::restore() const
         spdlog::critical("Failed to restore detour [this == nullptr]");
         return;
     }
-    if (!mFunc)
+    if (!mCreated || !mFunc)
     {
-        spdlog::critical("Failed to restore detour for {} [mFunc == nullptr]", mName);
+        spdlog::critical("Failed to restore detour for {} [not created]", mName);
         return;
     }
     MH_STATUS status = MH_DisableHook(mFunc);

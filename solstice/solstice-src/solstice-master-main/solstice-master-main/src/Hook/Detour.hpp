@@ -11,6 +11,7 @@ class Detour {
 public:
     void* mFunc{};
     void* mOriginalFunc{};
+    bool mCreated = false;
 
     std::string mName;
 
