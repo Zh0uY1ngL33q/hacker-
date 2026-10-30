@@ -86,12 +86,20 @@ bgfx_context* ClientInstance::getBGFX()
 
 ClientInputHandler* ClientInstance::getInputHandler()
 {
-    return MemUtils::callVirtualFunc<ClientInputHandler*>(OffsetProvider::ClientInstance_getInputHandler, this);
+    // Unresolved in 1.21.120 ("probably rewritten"); index 0 is the dtor slot
+    // and a wild jump, so refuse instead of gamble.
+    const int index = static_cast<int>(OffsetProvider::ClientInstance_getInputHandler);
+    if (index < 2 || index >= 4096)
+        return nullptr;
+    return MemUtils::callVirtualFunc<ClientInputHandler*>(index, this);
 }
 
 KeyboardMouseSettings* ClientInstance::getKeyboardSettings()
 {
-    return getInputHandler()->getMappingFactory()->getKeyboardMouseSettings();
+    auto* handler = getInputHandler();
+    if (!InstanceLocator::isPlausibleObject(handler))
+        return nullptr;
+    return handler->getMappingFactory()->getKeyboardMouseSettings();
 }
 
 MinecraftGame* ClientInstance::getMinecraftGame()
