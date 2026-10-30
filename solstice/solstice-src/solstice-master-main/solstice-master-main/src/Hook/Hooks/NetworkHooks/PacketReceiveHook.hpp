@@ -12,7 +12,10 @@ public:
         mName = "PacketReceiveHook";
     }
 
-    static std::unordered_map<PacketID, std::shared_ptr<Detour>> mDetours;
+    // Keyed by the detoured handler-function address, not by PacketID:
+    // packet ids outside the 0x136 table ride other handlers through this
+    // callback, and per-id lookup created an empty entry and deref-crashed.
+    static std::unordered_map<uintptr_t, std::shared_ptr<Detour>> mDetours;
     static inline void* NetworkIdentifier = nullptr;
 
     static void* onPacketSend(void* _this, void* networkIdentifier, void* netEventCallback, std::shared_ptr<class Packet> packet);

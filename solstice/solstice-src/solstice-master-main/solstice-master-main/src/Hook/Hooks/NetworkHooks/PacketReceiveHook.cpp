@@ -12,13 +12,46 @@
 #include <SDK/Minecraft/GameSession.hpp>
 #include <SDK/Minecraft/MinecraftSim.hpp>
 #include <Utils/MiscUtils/ColorUtils.hpp>
+#include <atomic>
 #include <omp.h>
 
-std::unordered_map<PacketID, std::shared_ptr<Detour>> PacketReceiveHook::mDetours;
+std::unordered_map<uintptr_t, std::shared_ptr<Detour>> PacketReceiveHook::mDetours;
+
+namespace {
+    // The detour whose function this packet came through, recovered from the
+    // dispatcher's own vtable. Validated reads only.
+    Detour* detourFor(const std::shared_ptr<Packet>& packet)
+    {
+        if (!packet) return nullptr;
+        auto* dispatcher = packet->mDispatcher;
+        if (!InstanceLocator::isPlausibleObject(dispatcher) ||
+            !InstanceLocator::isReadableMemory(dispatcher, 0x10))
+            return nullptr;
+        const uintptr_t handler = dispatcher->getPacketHandler();
+        const auto it = PacketReceiveHook::mDetours.find(handler);
+        return it != PacketReceiveHook::mDetours.end() ? it->second.get() : nullptr;
+    }
+}
 
 void* PacketReceiveHook::onPacketSend(void* _this, void* networkIdentifier, void* netEventCallback, std::shared_ptr<Packet> packet)
 {
-    auto ofunc = PacketReceiveHook::mDetours[packet->getId()]->getOriginal<&PacketReceiveHook::onPacketSend>();
+    // Never mutate the map: an id outside the hooked set has no owner here.
+    auto* detour = detourFor(packet);
+    if (!detour)
+    {
+        // Unknown id through an unregistered handler: the packet flows through
+        // this callback untouched; log once so new packet types get noticed.
+        static std::atomic<bool> warned{ false };
+        if (!warned.exchange(true) && packet &&
+            InstanceLocator::isPlausibleObject(packet.get()))
+        {
+            spdlog::warn(
+                "packet receive: no detour owner for id 0x{:X}; passing packet through unhooked",
+                static_cast<unsigned>(packet->getId()));
+        }
+        return nullptr;
+    }
+    auto ofunc = detour->getOriginal<&PacketReceiveHook::onPacketSend>();
 
     NetworkIdentifier = networkIdentifier;
 
@@ -49,11 +82,13 @@ void* PacketReceiveHook::onPacketSend(void* _this, void* networkIdentifier, void
 void PacketReceiveHook::handlePacket(std::shared_ptr<Packet> packet)
 {
     if (!NetworkIdentifier) return;
-    auto* sim = ClientInstance::get()->getMinecraftSim();
+    auto* clientInstance = ClientInstance::get();
+    if (!InstanceLocator::isPlausibleObject(clientInstance)) return;
+    auto* sim = clientInstance->getMinecraftSim();
     if (!InstanceLocator::isPlausibleObject(sim)) return;
     auto* session = sim->getGameSession();
     if (!InstanceLocator::isPlausibleObject(session)) return;
-    onPacketSend(packet->mDispatcher, NetworkIdentifier, session->getEventCallback(), packet);
+    onPacketSend(packet ? packet->mDispatcher : nullptr, NetworkIdentifier, session->getEventCallback(), packet);
 }
 
 void PacketReceiveHook::init()
@@ -68,7 +103,10 @@ void PacketReceiveHook::init()
     spdlog::info("Hooking {} packets", packetIds.size());
 
     // Several packet IDs may use the same native handler. MinHook cannot
-    // create two detours at one address; keep one owner/trampoline per target.
+    // create two detours at one address, so one owner/trampoline per target --
+    // and entries are keyed by the TARGET ADDRESS so packet ids outside the
+    // scan table (new packet types) resolve safely at runtime instead of
+    // creating an empty map entry that deref-crashes in the callback.
     std::unordered_map<uintptr_t, std::shared_ptr<Detour>> byTarget;
     for (int i = 0; i < 0x136; i++) {
         auto id = static_cast<PacketID>(i);
@@ -77,11 +115,8 @@ void PacketReceiveHook::init()
 
         auto packetFunc = packet->mDispatcher->getPacketHandler();
         if (!packetFunc) continue;
-        auto existing = byTarget.find(packetFunc);
-        if (existing != byTarget.end()) {
-            mDetours[id] = existing->second;
+        if (byTarget.find(packetFunc) != byTarget.end())
             continue;
-        }
 
         auto detour = std::make_shared<Detour>("PacketHandlerDispatcherInstance<" + std::string(magic_enum::enum_name<PacketID>(id)) + "Packet,0>::handle", reinterpret_cast<void*>(packetFunc), &onPacketSend, true);
         if (!detour->mCreated || !detour->mOriginalFunc) {
@@ -89,9 +124,9 @@ void PacketReceiveHook::init()
             continue;
         }
         byTarget.emplace(packetFunc, detour);
-        mDetours[id] = std::move(detour);
+        mDetours[packetFunc] = std::move(detour);
     }
 
     uint64_t timeTaken = NOW - start;
-    spdlog::info("Created {} packet handler detours for {} packet IDs in {}ms", byTarget.size(), mDetours.size(), timeTaken);
+    spdlog::info("Created {} packet handler detours ({} targets) in {}ms", mDetours.size(), byTarget.size(), timeTaken);
 }
