@@ -61,9 +61,9 @@ static ImVec2 realOverlaySize(IDXGISwapChain3* swapChain)
     if (swapChain) {
         DXGI_SWAP_CHAIN_DESC sd{};
         if (SUCCEEDED(swapChain->GetDesc(&sd)) &&
-            sd.BufferDescription.Width && sd.BufferDescription.Height) {
-            const ImVec2 size(static_cast<float>(sd.BufferDescription.Width),
-                              static_cast<float>(sd.BufferDescription.Height));
+            sd.BufferDesc.Width && sd.BufferDesc.Height) {
+            const ImVec2 size(static_cast<float>(sd.BufferDesc.Width),
+                              static_cast<float>(sd.BufferDesc.Height));
             static bool loggedSwapchain = false;
             if (!loggedSwapchain) {
                 loggedSwapchain = true;
