@@ -61,16 +61,32 @@ static ImVec2 realOverlaySize(IDXGISwapChain3* swapChain)
     if (swapChain) {
         DXGI_SWAP_CHAIN_DESC sd{};
         if (SUCCEEDED(swapChain->GetDesc(&sd)) &&
-            sd.BufferDescription.Width && sd.BufferDescription.Height)
-            return ImVec2(static_cast<float>(sd.BufferDescription.Width),
-                          static_cast<float>(sd.BufferDescription.Height));
+            sd.BufferDescription.Width && sd.BufferDescription.Height) {
+            const ImVec2 size(static_cast<float>(sd.BufferDescription.Width),
+                              static_cast<float>(sd.BufferDescription.Height));
+            static bool loggedSwapchain = false;
+            if (!loggedSwapchain) {
+                loggedSwapchain = true;
+                spdlog::info("[GUI probe] overlay size {}x{} (swapchain buffer desc)",
+                    size.x, size.y);
+            }
+            return size;
+        }
     }
     if (const HWND window = ProcUtils::getMinecraftWindow()) {
         RECT client{};
         if (GetClientRect(window, &client) && client.right > client.left &&
-            client.bottom > client.top)
-            return ImVec2(static_cast<float>(client.right - client.left),
-                          static_cast<float>(client.bottom - client.top));
+            client.bottom > client.top) {
+            const ImVec2 size(static_cast<float>(client.right - client.left),
+                              static_cast<float>(client.bottom - client.top));
+            static bool loggedClient = false;
+            if (!loggedClient) {
+                loggedClient = true;
+                spdlog::info("[GUI probe] overlay size {}x{} (client area fallback)",
+                    size.x, size.y);
+            }
+            return size;
+        }
     }
     return ImVec2(0.f, 0.f);
 }
