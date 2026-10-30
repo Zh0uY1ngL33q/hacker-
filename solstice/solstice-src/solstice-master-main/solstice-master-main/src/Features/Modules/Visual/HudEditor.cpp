@@ -180,9 +180,17 @@ void HudEditor::onEnable()
     gFeatureManager->mDispatcher->listen<KeyEvent, &HudEditor::onKeyEvent>(this);
     gFeatureManager->mDispatcher->listen<MouseEvent, &HudEditor::onMouseEvent>(this);
 
-    auto ci = ClientInstance::get();
-    lastCscState = !ci->getMouseGrabbed();
-    ci->releaseMouse();
+    // The editor can be toggled before a client instance exists; releaseMouse/
+    // grabMouse tolerate null instances, so state must follow them.
+    if (auto* ci = ClientInstance::get())
+    {
+        lastCscState = !ci->getMouseGrabbed();
+        ci->releaseMouse();
+    }
+    else
+    {
+        lastCscState = false;
+    }
 
     loadFromFile();
     showAllElements();
@@ -196,9 +204,11 @@ void HudEditor::onDisable()
     gFeatureManager->mDispatcher->deafen<KeyEvent, &HudEditor::onKeyEvent>(this);
     gFeatureManager->mDispatcher->deafen<MouseEvent, &HudEditor::onMouseEvent>(this);
 
-    auto ci = ClientInstance::get();
-    if (lastCscState) ci->grabMouse();
-    else ci->releaseMouse();
+    if (auto* ci = ClientInstance::get())
+    {
+        if (lastCscState) ci->grabMouse();
+        else ci->releaseMouse();
+    }
 
     saveToFile();
     hideAllElements();

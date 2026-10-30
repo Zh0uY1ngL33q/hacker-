@@ -88,7 +88,11 @@ public:
     DEFINE_INDEX_FIELD(ClientInstance_grabMouse, "48 8B 01 48 8B ? ? ? ? ? EB ? 48 8B", 3, OffsetType::Index);
     DEFINE_INDEX_FIELD(ClientInstance_releaseMouse, "48 8B ? ? ? ? ? 48 8B ? FF 15 ? ? ? ? 48 85 ? 74 ? 48 8B ? 48 8B ? 48 8B", 3, OffsetType::Index);
     DEFINE_INDEX_FIELD(ClientInstance_mMinecraftSim, "48 8B 89 ? ? ? ? 48 85 C9 74 0C 48 8B 89 ? ? ? ? E9 ? ? ? ? 0F 57 C0", 3, OffsetType::FieldOffset);
-    DEFINE_INDEX_FIELD(ClientInstance_mLevelRenderer, "48 8B 89 ? ? ? ? 48 85 C9 74 11 E8 ? ? ?", 3, OffsetType::FieldOffset);
+    // 1.21.120: three-candidate ambiguity adjudicated offline (0x1A26D50 access
+    // shape, xref pick and baseline value all agree on 0xF0); the runtime scan
+    // stays ambiguous and would otherwise pin 0, making getLevelRenderer report
+    // the vtable as the object.
+    DEFINE_FIELD(ClientInstance_mLevelRenderer, 0xF0);
     DEFINE_INDEX_FIELD(ClientInstance_mPacketSender, "48 8B ? ? ? ? ? FF 15 ? ? ? ? 4C 8B C0 48 8B ? 48 8B ? 10 48 8B ? 49 8B ? FF 15 ? ? ? ?", 3, OffsetType::FieldOffset);
     //DEFINE_INDEX_FIELD(ClientInstance_mGuiData, "48 8B ? ? ? ? ? 48 8B ? 48 85 ? 74 ? 33 C9 48 89 ? 48 89 ? ? 48 8B ? ? 48 85 ? 74 ? F0 FF ? ? 48 8B ? ? 48 8B ? ? 48 8B ? ? 48 89 ? 48 89 ? ? 48 85 ? 74 ? E8 ? ? ? ? 48 8B ? 48 85 ? 74 ? 48 83 38 ? 74 ? 48 8B ? 48 83 C4 ? 5B C3 E8 ? ? ? ? CC CC CC CC CC CC CC CC CC CC CC CC 48 8B ? ? ? ? ? C3 CC CC CC CC CC CC CC CC 48 89 ? ? ? 57", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(MinecraftGame_playUi, "48 8B 49 08 48 8B 01 48 8B 80 ? ? ? ? FF 15 ? ? ? ? 48 83 C4 38", 3, OffsetType::Index);
