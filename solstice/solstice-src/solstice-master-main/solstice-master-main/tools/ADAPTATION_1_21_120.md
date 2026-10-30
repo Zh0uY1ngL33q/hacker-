@@ -203,3 +203,20 @@ RTTI and call-graph classification are not used to identify these targets.
   components and options whose layouts are not yet verified. Merely fixing
   the address must not make those consumers run automatically. This is entry
   recovery, not working actor-render events or complete visual adaptation.
+
+## Player tick and FastEat candidates
+
+- The old Actor_baseTick pattern starts at 0x593C6B2 (inside a function
+  prologue). Reading its byte 3 as an index is invalid. The full function
+  starts at 0x593C6B0, calls 0x58F1A80 with the same RCX, and occupies slot
+  29 in a vtable installed by the constructor at 0x5937905. Its base
+  constructor installs another vtable whose slot 29 is 0x58F1A80. A
+  still-earlier constructor initializes a layout compatible with the
+  project's EntityContext at +0x08. These facts motivate a tick candidate,
+  but do not prove the runtime LocalPlayer vtable has the same slot or that
+  automatic BaseTick event consumers are safe; do not publish index 29 yet.
+- Player FastEat uniquely matches 0x6A01A4B, whose first eight bytes are
+  `FF C0 89 87 B4 00 00 00` (increment, store to +0xB4). Its hard-coded
+  trampoline instead decrements and stores to +0x7C8. These cannot be the
+  same patch contract. The wrapper now refuses this mismatch and allocation
+  failure; the genuine item-use site remains unlocated.

@@ -10,9 +10,27 @@
 #include <SDK/OffsetProvider.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
 #include <SDK/Minecraft/InstanceLocator.hpp>
+#include <Utils/Buffer.hpp>
 #include <SDK/Minecraft/Inventory/PlayerInventory.hpp>
 #include <SDK/Minecraft/Network/LoopbackPacketSender.hpp>
 #include <SDK/Minecraft/Rendering/GuiData.hpp>
+
+namespace {
+    // Keep the read in a leaf without destructible C++ objects for MSVC SEH.
+    void* checkedBaseTickTarget(Actor* player, int index)
+    {
+        if (!player || index < 2 || index >= 4096) return nullptr;
+        __try {
+            auto table = player->vtable;
+            if (!table || !InstanceLocator::isReadableMemory(table + index, sizeof(void*)))
+                return nullptr;
+            void* target = reinterpret_cast<void*>(table[index]);
+            return IsExecutableAddress(target) ? target : nullptr;
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+            return nullptr;
+        }
+    }
+}
 
 std::unique_ptr<Detour> BaseTickHook::mDetour = nullptr;
 
@@ -72,6 +90,11 @@ void BaseTickHook::init()
         spdlog::warn("Actor::baseTick skipped -- no LocalPlayer yet");
         return;
     }
-    mDetour = std::make_unique<Detour>("Actor::baseTick", reinterpret_cast<void*>(localPlayer->vtable[OffsetProvider::Actor_baseTick]), &BaseTickHook::onBaseTick);
+    auto* target = checkedBaseTickTarget(localPlayer, OffsetProvider::Actor_baseTick);
+    if (!target) {
+        spdlog::warn("Actor::baseTick skipped -- unresolved index or non-executable target");
+        return;
+    }
+    mDetour = std::make_unique<Detour>("Actor::baseTick", target, &BaseTickHook::onBaseTick);
     mDetour->enable();
 }
