@@ -16,14 +16,22 @@ public:
 
     EnumSettingT<Mode> mMode = EnumSettingT<Mode>(
         "Mode",
-        "LegitCriticals 动作（仅改发出的 PAI 包，不碰本地状态）：Sneaking=下蹲(出暴击)；StopSprinting=只断疾跑(不暴击)；Both=两者都（均仅在空中生效）",
+        "LegitCriticals 动作（空中生效，真实下蹲+断疾跑）：Sneaking=真实下蹲(出暴击)；StopSprinting=只断疾跑(不暴击)；Both=两者都",
         Mode::Sneaking,
         "Sneaking",
         "StopSprinting",
         "Both");
 
+    // PushDown：暴击窗口内每 tick 把下落速度压到 -0.1，维持 fallDistance>0，
+    // 使跳跃顶点/上升段也暴击（对齐 z1yr addon 的 SetMotion(-0.1)）。
+    // 独立开关：若怀疑被检测或只在真正下落段打人，可关闭。
+    BoolSetting mPushDown = BoolSetting(
+        "PushDown",
+        "暴击期间每 tick 压低下落速度(-0.1)维持 fallDistance>0，保证顶点/上升段也暴击；不需要可关",
+        true);
+
     LegitCriticals() : ModuleBase("LegitCriticals", "Legit critical hits: cancel sprint and crouch before attacking while airborne", ModuleCategory::Combat, 0, false) {
-        addSettings(&mMode);
+        addSettings(&mMode, &mPushDown);
 
         mNames = {
             {Lowercase, "legitcriticals"},
