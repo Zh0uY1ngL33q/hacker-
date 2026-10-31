@@ -10,10 +10,15 @@ public:
     enum class Animation {
         Default,
         Blocking,
-        Test
+        Test,
+        Test2
     };
-    EnumSettingT<Animation> mAnimation = EnumSettingT("Animation", "The animation to use", Animation::Blocking, "Default", "Blocking", "Test");
+    EnumSettingT<Animation> mAnimation = EnumSettingT("Animation", "The animation to use", Animation::Blocking, "Default", "Blocking", "Test", "Test2");
     NumberSetting mSwingTime = NumberSetting("Swing Time", "The time it takes to swing your arm", 6.f, 0.f, 20.0f, 1.f);
+    // Test2 only: the three settings below are the whole options list for that mode.
+    NumberSetting mSwingSpeed2 = NumberSetting("Swing Speed", "Test2: ticks per full swing (lower swings faster)", 6.f, 1.f, 20.f, 1.f);
+    NumberSetting mRotAngle2 = NumberSetting("Rotation Angle", "Test2: peak pitch of the blade, in degrees", 45.f, 0.f, 180.f, 1.f);
+    BoolSetting mSmoothRot2 = BoolSetting("Smooth Rotation", "Test2: ease the rotation instead of sweeping it linearly", true);
     BoolSetting mNoSwitchAnimation = BoolSetting("No Switch Animation", "Disables the switch animation", true);
     BoolSetting mFluxSwing = BoolSetting("Flux Swing", "Flux Client styled swinging", true);
     BoolSetting mThirdPersonBlock = BoolSetting("3rd person", "Displays 3rd person animations", false);
@@ -31,6 +36,9 @@ public:
         addSettings(
             &mAnimation,
             &mSwingTime,
+            &mSwingSpeed2,
+            &mRotAngle2,
+            &mSmoothRot2,
             &mNoSwitchAnimation,
             &mFluxSwing,
             &mThirdPersonBlock,
@@ -43,8 +51,19 @@ public:
             &mSmallItems
         );
 
-        VISIBILITY_CONDITION(mOnlyOnBlock, mCustomSwingAngle.mValue);
-        VISIBILITY_CONDITION(mSwingAngleSetting, mCustomSwingAngle.mValue);
+        // Test2 owns the held item outright, so it exposes exactly three knobs and
+        // hides everything that belongs to the other modes.
+        VISIBILITY_CONDITION(mSwingSpeed2, mAnimation.mValue == Animation::Test2);
+        VISIBILITY_CONDITION(mRotAngle2, mAnimation.mValue == Animation::Test2);
+        VISIBILITY_CONDITION(mSmoothRot2, mAnimation.mValue == Animation::Test2);
+        VISIBILITY_CONDITION(mSwingTime, mAnimation.mValue != Animation::Test2);
+        VISIBILITY_CONDITION(mNoSwitchAnimation, mAnimation.mValue != Animation::Test2);
+        VISIBILITY_CONDITION(mFluxSwing, mAnimation.mValue != Animation::Test2);
+        VISIBILITY_CONDITION(mThirdPersonBlock, mAnimation.mValue != Animation::Test2);
+        VISIBILITY_CONDITION(mCustomSwingAngle, mAnimation.mValue != Animation::Test2);
+        VISIBILITY_CONDITION(mOnlyOnBlock, mCustomSwingAngle.mValue && mAnimation.mValue != Animation::Test2);
+        VISIBILITY_CONDITION(mSwingAngleSetting, mCustomSwingAngle.mValue && mAnimation.mValue != Animation::Test2);
+        VISIBILITY_CONDITION(mSmallItems, mAnimation.mValue != Animation::Test2);
 
         mNames = {
             {Lowercase, "animations"},
@@ -58,6 +77,9 @@ public:
     int mOldSwingDuration = 0.f;
     float* mSwingAngle = nullptr;
     bool mShouldBlock = false;
+    // Test2 phase in [0,1). Integrated from the frame delta: the engine's own
+    // swing-progress fields are read through offsets that no longer line up.
+    float mTest2Phase = 0.f;
 
     void onEnable() override;
     void onDisable() override;

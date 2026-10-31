@@ -18,6 +18,8 @@
 
 #include <Windows.h> // GetAsyncKeyState for the physical right mouse button
 
+#include <algorithm>
+#include <cmath>
 #include <string_view>
 
 std::vector<unsigned char> gNoSwitchAnimation = {
@@ -172,6 +174,21 @@ namespace {
         if (!ImGui::GetCurrentContext()) return rightDown;
         return ImGui::IsMouseDown(ImGuiMouseButton_Right);
     }
+
+    // Test2: the blade is turned broadside to the camera, then pitched up and down
+    // around the point where grip meets blade. kPivotZ is the pivot position along
+    // the item's own axis (item space); it is the only constant that may need a
+    // visual pass, everything else is exposed as a setting.
+    constexpr float kTest2PivotZ = -0.35f;
+
+    // Both profiles peak at phase 0.5 and return to 0 at 1.0; the toggle only
+    // changes the speed profile (linear triangle vs eased sine), never the range.
+    float test2Shape(float phase, bool smooth)
+    {
+        constexpr float kPi = 3.14159265358979f;
+        if (smooth) return std::sin(phase * kPi);
+        return phase < 0.5f ? phase * 2.f : (1.f - phase) * 2.f;
+    }
 }
 
 void Animations::onEnable()
@@ -218,7 +235,10 @@ void Animations::onBaseTickEvent(BaseTickEvent& event)
     patchDefaultSwing(mAnimation.mValue == Animation::Test);
     patchDefaultSwing2(mAnimation.mValue == Animation::Test);
 
-    if (mOnlyOnBlock.mValue && mSwingAngle)
+    // Test2 drives its own rotation, so leave the engine's swing-angle constant
+    // (TapSwingAnim) untouched for that mode instead of overwriting it globally.
+    const bool drivesOwnSwing = mAnimation.mValue == Animation::Test2;
+    if (!drivesOwnSwing && mOnlyOnBlock.mValue && mSwingAngle)
     {
         if (mShouldBlock)
         {
@@ -227,7 +247,7 @@ void Animations::onBaseTickEvent(BaseTickEvent& event)
         {
             *mSwingAngle = glm::radians(-80.f);
         }
-    } else if (mSwingAngle)
+    } else if (!drivesOwnSwing && mSwingAngle)
     {
         *mSwingAngle = glm::radians(mCustomSwingAngle.mValue ? mSwingAngleSetting.as<float>() : -80.f);
     }
@@ -244,7 +264,9 @@ void Animations::onSwingDurationEvent(SwingDurationEvent& event)
     // `divss` into mSwingProgress), and 0 would make the division meaningless
     // (the engine guards it by zeroing progress, i.e. the arm freezes). Clamp to
     // one tick and leave the game's own value when the slider sits at 0.
-    const int configured = mSwingTime.as<int>();
+    const int configured = mAnimation.mValue == Animation::Test2
+        ? mSwingSpeed2.as<int>()
+        : mSwingTime.as<int>();
     if (configured > 0)
         event.mSwingDuration = configured;
 }
@@ -289,6 +311,43 @@ void Animations::onBoneRenderEvent(BoneRenderEvent& event)
 void Animations::onBobHurtEvent(BobHurtEvent& event)
 {
     auto matrix = event.mMatrix;
+
+    if (mAnimation.mValue == Animation::Test2)
+    {
+        auto* ci = ClientInstance::get();
+        auto* player = ci ? ci->getLocalPlayer() : nullptr;
+        if (!player) return;
+
+        // Self-integrated phase: Actor::getSwingProgress() reads Actor_mSwinging+4,
+        // which is not the tick counter on 1.21.120 (the real ones are +0x880 int
+        // and +0x87C float, confirmed in the swing updater at RVA 0x590D270), so
+        // the engine's value cannot drive this.
+        const float deltaTime = ImRenderUtils::getDeltaTime();
+        const float swingSeconds = std::max(0.05f, mSwingSpeed2.as<float>() / 20.f);
+        if (player->isSwinging())
+        {
+            mTest2Phase += deltaTime / swingSeconds;
+            mTest2Phase -= std::floor(mTest2Phase); // loop while the swing repeats
+        }
+        else
+        {
+            mTest2Phase = 0.f;
+        }
+
+        const float angle = glm::radians(mRotAngle2.as<float>())
+                          * test2Shape(mTest2Phase, mSmoothRot2.mValue);
+
+        glm::mat4 m = *matrix;
+        // Pitch around the guard (grip/blade junction), then turn the blade
+        // broadside so it faces the player.
+        m = glm::translate(m, glm::vec3(0.f, 0.f, kTest2PivotZ));
+        m = glm::rotate(m, angle, glm::vec3(1.f, 0.f, 0.f));
+        m = glm::translate(m, glm::vec3(0.f, 0.f, -kTest2PivotZ));
+        m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f));
+        *matrix = m;
+        return;
+    }
+
     if (mSmallItems.mValue) *matrix = glm::translate(*matrix, glm::vec3(0.5f, -0.2f, -0.6f));
 
     auto player = ClientInstance::get()->getLocalPlayer();
