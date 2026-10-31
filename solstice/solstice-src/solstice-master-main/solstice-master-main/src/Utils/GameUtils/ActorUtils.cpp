@@ -33,7 +33,18 @@ std::vector<struct Actor *> ActorUtils::getActorList(bool playerOnly, bool exclu
 
     try
     {
-        if (antibot->mEntitylistMode.mValue == AntiBot::EntitylistMode::EnttView)
+        // The RuntimeActorList getter is only usable when its signature actually
+        // resolves to the real function. On 1.21.120 Level_getRuntimeActorList
+        // matches a string-copy routine (see Level::isRuntimeActorListAvailable),
+        // so it is permanently unavailable there. Without a fallback, every
+        // entity-dependent module (Aura, TargetHUD, Scaffold, ...) is left with
+        // zero targets and Aura never attacks. Fall back to the entt-registry
+        // view, which is stable across versions, whenever RuntimeActorList is
+        // selected but unavailable.
+        bool useRuntimeList = antibot->mEntitylistMode.mValue == AntiBot::EntitylistMode::RuntimeActorList
+                             && Level::isRuntimeActorListAvailable();
+
+        if (!useRuntimeList)
         {
             for (auto &&[entId, moduleOwner, type, ridc, balls]: player->mContext.mRegistry->view<ActorOwnerComponent, ActorTypeComponent, RuntimeIDComponent, AABBShapeComponent>().each())
             {
@@ -59,11 +70,9 @@ std::vector<struct Actor *> ActorUtils::getActorList(bool playerOnly, bool exclu
                 if (type.mType == ActorType::Player && playerOnly || !playerOnly)
                     actors.push_back(moduleOwner.mActor);
             }
-        } else if (antibot->mEntitylistMode.mValue == AntiBot::EntitylistMode::RuntimeActorList)
+        }
+        else
         {
-            // Check before reading the unverified Actor_mLevel field or
-            // invoking a member on its possibly invalid result.
-            if (!Level::isRuntimeActorListAvailable()) return actors;
             auto* level = player->getLevel();
             if (!level) return actors;
             auto tactors = level->getRuntimeActorList();
