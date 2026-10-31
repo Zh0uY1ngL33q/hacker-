@@ -19,6 +19,7 @@
 #include <SDK/Minecraft/Actor/Actor.hpp>
 #include <Utils/GameUtils/ActorUtils.hpp>
 #include <Utils/MiscUtils/RenderUtils.hpp>
+#include <SDK/Minecraft/Rendering/LevelRenderer.hpp>
 
 #include <Windows.h> // GetAsyncKeyState for the physical right mouse button
 
@@ -371,8 +372,21 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
         if (attackStarted)
         {
             constexpr float kReach = 4.5f; // melee reach, a little generous
-            const glm::vec3 origin = RenderUtils::transform.mOrigin;
-            const glm::vec3 back = glm::vec3(RenderUtils::transform.mMatrix[2]);
+
+            // RenderUtils::transform is fed only from the D3D Present hook, which
+            // never runs on this client's GL path - on GL it stays zeroed forever
+            // (probe log: origin=(0,0,0) backLen=0). Take the same data
+            // SetupAndRenderHook pushes every frame straight from the source.
+            glm::vec3 origin = RenderUtils::transform.mOrigin;
+            glmatrixf view = RenderUtils::transform.mMatrix;
+            if (glm::dot(view[2], view[2]) < 1e-6f)
+            {
+                if (auto* lr = ci->getLevelRenderer())
+                    if (auto* rp = lr->getRendererPlayer())
+                        origin = *rp->getCameraPos();
+                view = ci->getViewMatrix();
+            }
+            const glm::vec3 back = glm::vec3(view[2]);
 
             static int sProbes = 0;
             int candidates = 0;
