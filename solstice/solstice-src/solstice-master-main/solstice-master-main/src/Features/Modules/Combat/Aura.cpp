@@ -12,6 +12,7 @@
 #include <Features/Events/PacketOutEvent.hpp>
 #include <Features/Events/RenderEvent.hpp>
 #include <Features/Modules/Misc/Friends.hpp>
+#include <Features/Modules/Combat/LegitCriticals.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
 #include <SDK/Minecraft/Options.hpp>
 #include <Utils/GameUtils/ActorUtils.hpp>
@@ -472,6 +473,14 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
         if (mRotateMode.mValue == RotateMode::Flick)
         {
             rotate(actor);
+        }
+
+        // LegitCriticals 协作：发出攻击包前打开暴击窗口（断疾跑/下蹲），
+        // 下一 tick 由 LegitCriticals 自动恢复。仅空中生效。
+        if (auto* legitCrit = gFeatureManager->mModuleManager->getModule<LegitCriticals>()) {
+            if (legitCrit->mEnabled && !player->isOnGround()) {
+                legitCrit->arm();
+            }
         }
 
         // 1.21.120: Level::getHitResult() 的偏移是 ambiguous（4 处匹配）的 SUSPECT 签名，
