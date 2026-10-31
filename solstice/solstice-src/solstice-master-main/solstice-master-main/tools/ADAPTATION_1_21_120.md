@@ -236,3 +236,12 @@ RTTI and call-graph classification are not used to identify these targets.
   (HudEditor grid/custom elements, TargetHUD without its D3D skin head).
   Modules that need D3D11 resources degrade themselves through
   `OpenGLGui::isActive()` instead of being silently invisible.
+- First live-tick evidence (build 68efe4f): the pad now logs
+  `Actor::baseTick hook installed: slot 29 -> ...+0x58F1A80` and the GL HUD
+  dispatch runs. The very first BaseTickEvent then crashed in
+  `IrcClient::onBaseTickEvent -> Actor::getLocalName`, i.e. `Actor_mLocalName`
+  (hard-coded 0xCB0) is not a valid std::string on 1.21.120. The same applies
+  to `Actor_mEntityIdentifier` and to `Actor_getNameTag`, whose "found"
+  address is outside the image. Name access now validates the MSVC string
+  layout and the executable address before use, returning empty/Mob instead
+  of copying arbitrary memory.

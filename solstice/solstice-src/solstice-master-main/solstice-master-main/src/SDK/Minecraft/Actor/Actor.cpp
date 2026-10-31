@@ -7,11 +7,13 @@
 #include <SDK/OffsetProvider.hpp>
 #include <SDK/SigManager.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
+#include <SDK/Minecraft/InstanceLocator.hpp>
 #include <SDK/Minecraft/MinecraftSim.hpp>
 #include <SDK/Minecraft/Network/LoopbackPacketSender.hpp>
 #include <SDK/Minecraft/Network/MinecraftPackets.hpp>
 #include <SDK/Minecraft/World/Level.hpp>
 #include <Utils/MiscUtils/RenderUtils.hpp>
+#include <Utils/Buffer.hpp>
 #include "SerializedSkin.hpp"
 
 #include "ActorType.hpp"
@@ -21,6 +23,34 @@
 #include "Components/FallDistanceComponent.hpp"
 #include "Components/ActorGameTypeComponent.hpp"
 #include <SDK/Minecraft/Network/Packets/SetPlayerGameTypePacket.hpp>
+
+#include <cstring>
+
+namespace {
+    // Copies a std::string member only when the MSVC layout at that offset is
+    // plausible. Several actor fields (local name, entity identifier) are still
+    // hard-coded offsets for 1.21.120; reading one at the wrong offset turns the
+    // copy into a memcpy from arbitrary memory (IrcClient crashed that way on
+    // the first live BaseTickEvent).
+    bool copyActorStringAt(const void* owner, int offset, std::string& out)
+    {
+        if (!owner) return false;
+        const auto base = reinterpret_cast<const unsigned char*>(owner) + offset;
+        if (!InstanceLocator::isReadableMemory(base, 0x20)) return false;
+        size_t size = 0, capacity = 0;
+        std::memcpy(&size, base + 0x10, sizeof(size));
+        std::memcpy(&capacity, base + 0x18, sizeof(capacity));
+        // MSVC x64 std::string: buffer/pointer at +0, size at +0x10, capacity at
+        // +0x18; capacities above 0xF mean the buffer is heap allocated.
+        if (capacity < size || capacity > 0x10000) return false;
+        const char* chars = nullptr;
+        if (capacity <= 0xF) chars = reinterpret_cast<const char*>(base);
+        else std::memcpy(&chars, base, sizeof(chars));
+        if (size != 0 && (!chars || !InstanceLocator::isReadableMemory(chars, size))) return false;
+        out.assign(size != 0 ? chars : "", size);
+        return true;
+    }
+}
 
 #define COMPONENT_GET_FUNC(funcName, componentType) \
 componentType* Actor::funcName() \
@@ -346,17 +376,27 @@ std::string Actor::getRawName()
 
     if (actorType->mType != ActorType::Player)
     {
-        // mEntityIdentifier will be used as fallback
-        return mEntityIdentifier;
+        // mEntityIdentifier is a hard-coded offset; fall back to a literal
+        // instead of copying whatever lives there.
+        std::string identifier;
+        return copyActorStringAt(this, OffsetProvider::Actor_mEntityIdentifier, identifier)
+            ? identifier : std::string("Mob");
     }
-    auto player = ClientInstance::get()->getLocalPlayer();
+
+    auto* client = ClientInstance::get();
+    auto* player = client ? client->getLocalPlayer() : nullptr;
     uint64_t uniqueId = actorUniqueID->mUniqueID;
 
-    for (auto& [id, entry] : *player->getLevel()->getPlayerList())
+    // Level_getPlayerList is unresolved on 1.21.120 and now returns null.
+    auto* playerList = (player && player->getLevel()) ? player->getLevel()->getPlayerList() : nullptr;
+    if (playerList)
     {
-        if (entry.mId == uniqueId)
+        for (auto& [id, entry] : *playerList)
         {
-            return entry.mName;
+            if (entry.mId == uniqueId)
+            {
+                return entry.mName;
+            }
         }
     }
 
@@ -369,7 +409,13 @@ std::string Actor::getRawName()
 const std::string& Actor::getNameTag()
 {
     static auto func = SigManager::Actor_getNameTag;
-    return *MemUtils::callFastcall<std::string*>(func, this);
+    static const std::string empty;
+    // The advertised address for this signature is outside the image on
+    // 1.21.120, so treat a non-executable target as unresolved.
+    if (!IsExecutableAddress(reinterpret_cast<LPVOID>(func))) return empty;
+    auto* result = MemUtils::callFastcall<std::string*>(func, this);
+    if (!result || !InstanceLocator::isReadableMemory(result, sizeof(std::string))) return empty;
+    return *result;
 }
 
 void Actor::setNametag(const std::string& name)
@@ -434,12 +480,24 @@ bool Actor::isOnFire()
 
 std::string Actor::getLocalName()
 {
-    auto result = hat::member_at<std::string>(this, OffsetProvider::Actor_mLocalName);
-    return result.empty() ? getRawName() : result;
+    // Actor_mLocalName is a hard-coded offset that is not verified for
+    // 1.21.120. A wrong offset used to memcpy from arbitrary memory and killed
+    // IrcClient on its first live BaseTickEvent.
+    std::string name;
+    if (copyActorStringAt(this, OffsetProvider::Actor_mLocalName, name)) return name;
+    static bool warned = false;
+    if (!warned) {
+        warned = true;
+        spdlog::warn("Actor::getLocalName: Actor_mLocalName (0x{:X}) is not a plausible std::string on this build; returning empty",
+            OffsetProvider::Actor_mLocalName);
+    }
+    return {};
 }
 
 void Actor::setLocalName(std::string newLocalName)
 {
+    std::string current;
+    if (!copyActorStringAt(this, OffsetProvider::Actor_mLocalName, current)) return;
     auto& localName = hat::member_at<std::string>(this, OffsetProvider::Actor_mLocalName);
     localName = newLocalName;
 }
