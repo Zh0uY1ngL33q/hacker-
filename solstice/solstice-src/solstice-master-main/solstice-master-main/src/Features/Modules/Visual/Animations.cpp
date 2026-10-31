@@ -322,6 +322,74 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
 {
     auto matrix = event.mMatrix;
 
+    if (mAnimation.mValue == Animation::Test3)
+    {
+        auto* ci = ClientInstance::get();
+        auto* player = ci ? ci->getLocalPlayer() : nullptr;
+        if (!player) return;
+
+        const bool triggered = isBlockingInput() || event.mDoBlockAnimation;
+        if (!triggered)
+        {
+            mTest2Phase = 0.f;
+            return;
+        }
+
+        // Straight copy of the Blocking chain. Blocking is the one pose that is
+        // known to look right, so Test3 starts from those exact operations instead
+        // of sharing a helper or reconstructing anything in view space.
+        *matrix = glm::translate(*matrix, glm::vec3(0.4, 0.0, -0.15));
+        *matrix = glm::translate(*matrix, glm::vec3(-0.1f, 0.15f, -0.2f));
+        *matrix = glm::translate(*matrix, glm::vec3(-0.24F, 0.25f, -0.20F));
+        *matrix = glm::rotate(*matrix, -1.98F, glm::vec3(0.0F, 1.0F, 0.0F));
+        *matrix = glm::rotate(*matrix, 1.30F, glm::vec3(4.0F, 0.0F, 0.0F));
+        *matrix = glm::rotate(*matrix, 59.9F, glm::vec3(0.0F, 1.0F, 0.0F));
+        *matrix = glm::translate(*matrix, glm::vec3(0.0f, -0.1f, 0.15f));
+        *matrix = glm::translate(*matrix, glm::vec3(0.08f, 0.0f, 0.0f));
+        *matrix = glm::scale(*matrix, glm::vec3(1.05f, 1.05f, 1.05f));
+
+        if (player->isSwinging())
+        {
+            const float deltaTime = ImRenderUtils::getDeltaTime();
+            const float swingSeconds = std::max(0.05f, mSwingSpeed2.as<float>() / 20.f);
+            mTest2Phase += deltaTime / swingSeconds;
+            mTest2Phase -= std::floor(mTest2Phase);
+            const float angle = glm::radians(mRotAngle2.as<float>())
+                              * test2Shape(mTest2Phase, mSmoothRot2.mValue);
+
+            // Spin about the item's OWN axis, right-multiplied like every other op in
+            // this chain: the centre of rotation is then the item's origin and the
+            // sword physically cannot orbit a point off the screen. Which axis is the
+            // "steering wheel" one is decided from the current pose: the local axis
+            // whose direction points at the camera (column closest to the view axis).
+            const glm::vec3 view(0.f, 0.f, 1.f);
+            const auto unitCol = [](glm::vec3 v) {
+                const float len = glm::length(v);
+                return len > 1e-6f ? v / len : glm::vec3(0.f);
+            };
+            glm::vec3 localAxis(0.f, 0.f, 1.f);
+            float best = std::fabs(glm::dot(unitCol(glm::vec3((*matrix)[2])), view));
+            const float alongX = std::fabs(glm::dot(unitCol(glm::vec3((*matrix)[0])), view));
+            if (alongX > best) { best = alongX; localAxis = glm::vec3(1.f, 0.f, 0.f); }
+            const float alongY = std::fabs(glm::dot(unitCol(glm::vec3((*matrix)[1])), view));
+            if (alongY > best) { best = alongY; localAxis = glm::vec3(0.f, 1.f, 0.f); }
+
+            static bool loggedAxis = false;
+            if (!loggedAxis) {
+                loggedAxis = true;
+                spdlog::warn("[Test3] spin axis=({:.0f}, {:.0f}, {:.0f}) alignment={:.3f}",
+                    localAxis.x, localAxis.y, localAxis.z, best);
+            }
+
+            *matrix = glm::rotate(*matrix, angle, localAxis);
+        }
+        else
+        {
+            mTest2Phase = 0.f;
+        }
+        return;
+    }
+
     if (mAnimation.mValue == Animation::Test2)
     {
         auto* ci = ClientInstance::get();
