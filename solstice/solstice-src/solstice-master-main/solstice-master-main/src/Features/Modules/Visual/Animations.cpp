@@ -314,40 +314,64 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
 
     if (mAnimation.mValue == Animation::Test2)
     {
+        // Test2 must be invisible until it is actually triggered: no right mouse
+        // and no external trigger (Aura/Scaffold set mDoBlockAnimation) means the
+        // matrix is left completely untouched, i.e. identical to having the module
+        // off. Everything below only runs inside the trigger window.
+        if (!isBlockingInput() && !event.mDoBlockAnimation)
+        {
+            mTest2Phase = 0.f;
+            return;
+        }
+
         auto* ci = ClientInstance::get();
         auto* player = ci ? ci->getLocalPlayer() : nullptr;
         if (!player) return;
 
-        // Self-integrated phase: Actor::getSwingProgress() reads Actor_mSwinging+4,
-        // which is not the tick counter on 1.21.120 (the real ones are +0x880 int
-        // and +0x87C float, confirmed in the swing updater at RVA 0x590D270), so
-        // the engine's value cannot drive this.
+        // Phase advances with wall time instead of Actor::getSwingProgress(): that
+        // getter reads Actor_mSwinging+4, which is not the tick counter on
+        // 1.21.120 (the real pair is +0x880 int / +0x87C float, see the swing
+        // updater at RVA 0x590D270), and the trigger here is the right mouse
+        // button, not the engine's swing state.
         const float deltaTime = ImRenderUtils::getDeltaTime();
         const float swingSeconds = std::max(0.05f, mSwingSpeed2.as<float>() / 20.f);
-        if (player->isSwinging())
-        {
-            mTest2Phase += deltaTime / swingSeconds;
-            mTest2Phase -= std::floor(mTest2Phase); // loop while the swing repeats
-        }
-        else
-        {
-            mTest2Phase = 0.f;
-        }
+        mTest2Phase += deltaTime / swingSeconds;
+        mTest2Phase -= std::floor(mTest2Phase); // loop for as long as the trigger is held
 
         const float angle = glm::radians(mRotAngle2.as<float>())
                           * test2Shape(mTest2Phase, mSmoothRot2.mValue);
 
-        // Pivot around the guard only. An earlier version also yawed the item 90
-        // degrees to "face the camera", but that rotates about the item's local
-        // origin (the bottom of the grip) and, at first-person scale, throws the
-        // whole blade off the left edge of the screen - even at rest, because the
-        // rotation is applied regardless of phase. Facing is handled separately
-        // once we know which local axis runs along the blade.
-        glm::mat4 m = *matrix;
-        m = glm::translate(m, glm::vec3(0.f, 0.f, kTest2PivotZ));
-        m = glm::rotate(m, angle, glm::vec3(1.f, 0.f, 0.f));
-        m = glm::translate(m, glm::vec3(0.f, 0.f, -kTest2PivotZ));
-        *matrix = m;
+        // Rotate about the guard, not about the item's local origin. glm::rotate
+        // right-multiplies, which spins the geometry about the local origin (the
+        // bottom of the grip) inside the view-space pose -- at first-person scale
+        // that threw the blade off the left edge of the screen. So build the
+        // rotation explicitly in view space and left-multiply it instead.
+        const glm::mat4 current = *matrix;
+        // The incoming matrix can be translation-only; a zero column would make
+        // glm::normalize produce NaN and poison the whole transform.
+        const auto unit = [](glm::vec3 axis, glm::vec3 fallback) {
+            const float len = glm::length(axis);
+            return len > 1e-6f ? axis / len : fallback;
+        };
+        const glm::vec3 localX = unit(glm::vec3(current[0]), glm::vec3(1.f, 0.f, 0.f));
+        const glm::vec3 localY = unit(glm::vec3(current[1]), glm::vec3(0.f, 1.f, 0.f));
+        const glm::vec3 localZ = unit(glm::vec3(current[2]), glm::vec3(0.f, 0.f, 1.f));
+        const glm::vec3 guard = glm::vec3(current[3]) + localZ * kTest2PivotZ;
+
+        // The blade's long axis is the local axis that points most "up" in view
+        // space (a held sword is essentially vertical); rolling about it turns the
+        // flat side towards the player without moving the blade anywhere.
+        glm::vec3 bladeAxis = localX;
+        if (std::fabs(localY.y) > std::fabs(bladeAxis.y)) bladeAxis = localY;
+        if (std::fabs(localZ.y) > std::fabs(bladeAxis.y)) bladeAxis = localZ;
+
+        glm::mat4 rotation(1.f);
+        rotation = glm::rotate(rotation, angle, localX);              // pitch up/down
+        rotation = glm::rotate(rotation, glm::radians(90.f), bladeAxis); // roll: face the player
+
+        const glm::mat4 aboutGuard =
+            glm::translate(glm::mat4(1.f), guard) * rotation * glm::translate(glm::mat4(1.f), -guard);
+        *matrix = aboutGuard * current;
         return;
     }
 
