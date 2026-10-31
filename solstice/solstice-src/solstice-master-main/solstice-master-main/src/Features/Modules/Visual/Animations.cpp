@@ -337,13 +337,16 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
         const float angle = glm::radians(mRotAngle2.as<float>())
                           * test2Shape(mTest2Phase, mSmoothRot2.mValue);
 
+        // Pivot around the guard only. An earlier version also yawed the item 90
+        // degrees to "face the camera", but that rotates about the item's local
+        // origin (the bottom of the grip) and, at first-person scale, throws the
+        // whole blade off the left edge of the screen - even at rest, because the
+        // rotation is applied regardless of phase. Facing is handled separately
+        // once we know which local axis runs along the blade.
         glm::mat4 m = *matrix;
-        // Pitch around the guard (grip/blade junction), then turn the blade
-        // broadside so it faces the player.
         m = glm::translate(m, glm::vec3(0.f, 0.f, kTest2PivotZ));
         m = glm::rotate(m, angle, glm::vec3(1.f, 0.f, 0.f));
         m = glm::translate(m, glm::vec3(0.f, 0.f, -kTest2PivotZ));
-        m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f));
         *matrix = m;
         return;
     }
