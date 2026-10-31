@@ -12,6 +12,9 @@
 #include <SDK/Minecraft/MinecraftSim.hpp>
 #include <SDK/Minecraft/Actor/ActorPartModel.hpp>
 #include <SDK/Minecraft/Inventory/PlayerInventory.hpp>
+#include <SDK/Minecraft/Inventory/ItemStack.hpp>
+#include <SDK/Minecraft/Inventory/Item.hpp>
+#include <SDK/Minecraft/InstanceLocator.hpp>
 
 std::vector<unsigned char> gNoSwitchAnimation = {
     0x0F, 0x57, 0xC0, // xorps xmm0, xmm0
@@ -22,6 +25,52 @@ DEFINE_PATCH_FUNC(patchNoSwitchAnimation, SigManager::ItemInHandRenderer_render_
 DEFINE_NOP_PATCH_FUNC(patchFluxSwing, SigManager::FluxSwing, 0x5);
 DEFINE_NOP_PATCH_FUNC(patchDefaultSwing, SigManager::ItemInHandRenderer_renderItem_bytepatch, 0x8);
 DEFINE_NOP_PATCH_FUNC(patchDefaultSwing2, SigManager::ItemInHandRenderer_renderItem_bytepatch+11, 0x8);
+
+namespace {
+    // 1.21.120: the held-item chain (supplies -> container -> ItemStack -> *mItem
+    // -> Item) walks several pointer indirections whose member offsets can drift
+    // between game versions. A drifted offset yields a wild Item** / Item* and the
+    // final *mItem deref or virtual call becomes an access violation — this is the
+    // crash we hit the moment Animations was enabled (onBobHurtEvent ran this chain
+    // unconditionally every frame). Validate every pointer before dereferencing and
+    // silently report "not holding a sword" on any doubt, so the block pose simply
+    // does not apply instead of corrupting memory.
+    bool isHoldingSwordSafe(Actor* actor)
+    {
+        // One-shot diagnostics: a single log line tells us whether the held-item
+        // chain resolved (block pose can apply) or bailed at some stage (silently
+        // disabled because an offset drifted in 1.21.120). Not spammy: each path
+        // is logged at most once.
+        static bool sBailLogged = false;
+        static bool sResolvedLogged = false;
+
+        auto bail = [&](const char* stage) -> bool {
+            if (!sBailLogged) {
+                sBailLogged = true;
+                spdlog::warn("[Animations] isHoldingSwordSafe bailed at stage '{}' (block pose disabled)", stage);
+            }
+            return false;
+        };
+
+        if (!actor) return bail("actor");
+        auto* supplies = actor->getSupplies();
+        if (!supplies || !InstanceLocator::isReadableMemory(supplies, 0x200)) return bail("supplies");
+        auto* container = supplies->getContainer();
+        if (!container || !InstanceLocator::isReadableMemory(container, 0x200)) return bail("container");
+        auto* heldItem = container->getItem(supplies->mInHandSlot);
+        if (!heldItem || !InstanceLocator::isReadableMemory(heldItem, 0x100)) return bail("heldItem");
+        auto** itemRef = heldItem->mItem;
+        if (!itemRef || !InstanceLocator::isReadableMemory(itemRef, sizeof(Item*))) return bail("itemRef");
+        Item* item = *itemRef;
+        if (!item || !InstanceLocator::isReadableMemory(item, 0x100)) return bail("item");
+        bool sword = item->isSword();
+        if (!sResolvedLogged) {
+            sResolvedLogged = true;
+            spdlog::warn("[Animations] isHoldingSwordSafe resolved (block pose available); holdingSword={}", sword);
+        }
+        return sword;
+    }
+}
 
 void Animations::onEnable()
 {
@@ -103,8 +152,7 @@ void Animations::onBoneRenderEvent(BoneRenderEvent& event)
 
     if (bone->mBoneStr == "rightarm" && mThirdPersonBlock.mValue)
     {
-        auto heldItem = player->getSupplies()->getContainer()->getItem(player->getSupplies()->mInHandSlot);
-        bool isHoldingSword = heldItem && heldItem->mItem && heldItem->getItem()->isSword();
+        bool isHoldingSword = isHoldingSwordSafe(player);
         if ((!ClientInstance::get()->getMouseGrabbed() && ImGui::IsMouseDown(ImGuiMouseButton_Right) && isHoldingSword || event.mDoBlockAnimation && isHoldingSword) && mAnimation.mValue != Animation::Default)
         {
             float xRot = mXRot.mValue;
@@ -138,8 +186,7 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
     auto player = ClientInstance::get()->getLocalPlayer();
     if (!player) return;
 
-    auto heldItem = player->getSupplies()->getContainer()->getItem(player->getSupplies()->mInHandSlot);
-    bool isHoldingSword = heldItem && heldItem->mItem && heldItem->getItem()->isSword();
+    bool isHoldingSword = isHoldingSwordSafe(player);
     if ((!ClientInstance::get()->getMouseGrabbed() && ImGui::IsMouseDown(ImGuiMouseButton_Right) && isHoldingSword || event.mDoBlockAnimation && isHoldingSword) && mAnimation.mValue != Animation::Default)
     {
         mShouldBlock = true;
