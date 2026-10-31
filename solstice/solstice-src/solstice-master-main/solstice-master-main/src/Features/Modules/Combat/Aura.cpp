@@ -474,7 +474,13 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
             rotate(actor);
         }
 
-        player->getLevel()->getHitResult()->mType = HitType::ENTITY;
+        // 1.21.120: Level::getHitResult() 是 SUSPECT 签名（vtable index 越界）恒返回 nullptr，
+        // 直接解引用会崩。加 null 守卫；解析正常时再写 ENTITY 类型。
+        if (auto* level = player->getLevel()) {
+            if (auto* hitResult = level->getHitResult()) {
+                hitResult->mType = HitType::ENTITY;
+            }
+        }
 
 
         if (mAttackMode.mValue == AttackMode::Synched)

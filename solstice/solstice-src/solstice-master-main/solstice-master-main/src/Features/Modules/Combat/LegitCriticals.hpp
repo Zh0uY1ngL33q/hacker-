@@ -9,16 +9,18 @@
 class LegitCriticals : public ModuleBase<LegitCriticals> {
 public:
     enum class Mode {
-        Sneaking,   // crouch + cancel sprint only while rising (vy > 0); falling -> unchanged
-        Full        // crouch + cancel sprint regardless of rising/falling, while airborne
+        Sneaking,       // 只下蹲（置 sneak 标志），不动疾跑
+        StopSprinting,  // 只阻断疾跑（清 sprint 标志），不下蹲
+        Both            // 下蹲 + 阻断疾跑
     };
 
     EnumSettingT<Mode> mMode = EnumSettingT<Mode>(
         "Mode",
-        "When to crouch for a legit crit: Sneaking = only while rising; Full = always while airborne",
+        "LegitCriticals 动作：Sneaking=只下蹲；StopSprinting=只断疾跑；Both=两者都做（均需在空中）",
         Mode::Sneaking,
         "Sneaking",
-        "Full");
+        "StopSprinting",
+        "Both");
 
     LegitCriticals() : ModuleBase("LegitCriticals", "Legit critical hits: cancel sprint and crouch before attacking while airborne", ModuleCategory::Combat, 0, false) {
         addSettings(&mMode);
@@ -34,4 +36,8 @@ public:
     void onEnable() override;
     void onDisable() override;
     void onPacketOutEvent(class PacketOutEvent& event);
+
+    std::string getSettingDisplay() override {
+        return mMode.mValues[mMode.as<int>()];
+    }
 };
