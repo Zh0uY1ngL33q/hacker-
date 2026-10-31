@@ -246,7 +246,14 @@ void OpenGLGui::render(HDC dc) try
     }
     io.DisplaySize = ImVec2(static_cast<float>(clientRect.right - clientRect.left),
                             static_cast<float>(clientRect.bottom - clientRect.top));
-    const bool capturing = gui->mWantedState && GetForegroundWindow() == window;
+    // HudEditor owns its own GL overlay; when it is enabled we must capture
+    // input (software cursor + swallow events via MouseHook + ClipCursor) just
+    // like ClickGUI, otherwise the mouse still rotates the camera while editing
+    // the HUD. The previous condition only engaged capture for ClickGUI's
+    // mWantedState, so an open HudEditor never set capturing and the camera
+    // kept tracking the pointer.
+    const bool hudEditorActive = HudEditor::gInstance && HudEditor::gInstance->mEnabled;
+    const bool capturing = (gui->mWantedState || hudEditorActive) && GetForegroundWindow() == window;
     // The local Win32 backend also omits its mouse-position fallback. Poll in
     // the foreground so the software cursor has a position even before a
     // WM_MOUSEMOVE is delivered after opening the menu.
