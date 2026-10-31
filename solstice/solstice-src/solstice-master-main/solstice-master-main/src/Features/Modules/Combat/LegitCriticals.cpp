@@ -7,8 +7,9 @@
 //     1) 真实下蹲：置本地 MoveInputComponent::mIsSneakDown（让玩家进入真实下蹲状态机，
 //        类比 z1yr 的 ChangeSneakState），并同步改写发出的 PAI 包的 SNEAK 标志；
 //     2) 断疾跑（StopSprinting/Both）：清本地 mIsSprinting + 置 PAI 的 STOP_SPRINTING；
-//     3) 强制下坠（PushDown 开关，默认开）：每 tick 把 StateVectorComponent::mVelocity.y
-//        压到 -0.1，维持 fallDistance>0（对齐 z1yr 的 SetMotion(-0.1)），使跳跃顶点/上升段也暴击。
+//     3) 强制下坠（PushDown 开关，默认开）：仅在"尚未下落"(vy>=-0.05) 时把 StateVectorComponent::mVelocity.y
+//        压到 -0.1，维持 fallDistance>0（对齐 z1yr 的 SetMotion(-0.1)），使跳跃顶点/上升段也暴击；
+//        已在下落时不碰，避免把正常下落限速变慢。
 //
 // 防卡蹲：onBaseTickEvent 每 tick 校正本地状态——窗口关闭(落地)时无条件把 mIsSneakDown 清 false；
 // onDisable 也无条件清一次，保证关模块后本地零残留、可正常行走。
@@ -63,10 +64,16 @@ void LegitCriticals::onBaseTickEvent(BaseTickEvent& event) {
         // 断疾跑：仅 StopSprinting/Both 才清本地疾跑；否则不动，交给游戏/Sprint。
         if (doStopSprint) moveInput->mIsSprinting = false;
 
-        // 强制下坠：每 tick 压 Y 速度为 -0.1，维持 fallDistance>0（对齐 z1yr SetMotion(-0.1)）。
+        // 强制下坠（PushDown 开关，默认开）：仅当"尚未在下落"(vy >= -0.05) 时把 Y 速度压到 -0.1，
+        // 维持 fallDistance>0（对齐 z1yr SetMotion(-0.1)），使跳跃顶点/上升段也能暴击。
+        //   - 上升/顶点(vy>=0)：压成 -0.1，削跳、起慢落 -> 顶点暴击生效；
+        //   - 已在下落(vy<-0.05)：不动，让重力自然加速、fallDistance 自然累积 -> 暴击照样生效，
+        //     且不再有"限速变慢"的副作用（这就是之前无条件写 -0.1 会让正常下落变慢的原因）。
         if (mPushDown.mValue) {
             if (auto* state = player->getStateVectorComponent()) {
-                state->mVelocity.y = -0.1f;
+                if (state->mVelocity.y >= -0.05f) {
+                    state->mVelocity.y = -0.1f;
+                }
             }
         }
     } else {
