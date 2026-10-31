@@ -64,7 +64,9 @@ void TargetHUD::onDisable()
 
 void TargetHUD::onBaseTickEvent(BaseTickEvent& event)
 {
-    validateTextures();
+    // Textures only exist on the D3D path; validating them here would walk an
+    // ECS registry that this path never populated.
+    if (!OpenGLGui::isActive()) validateTextures();
     if (mHealthCalculation.mValue) calculateHealths();
 
     if (Aura::sHasTarget && Aura::sTarget && Aura::sTarget->getMobHurtTimeComponent())
