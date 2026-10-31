@@ -59,7 +59,7 @@ void* AnimationHooks::doBobHurt(void* _this, glm::mat4* matrix)
         if (!reportedInvocation) {
             reportedInvocation = true;
             spdlog::warn("[AnimationHooks] doBobHurt invoked (BobHurt sig={:#x}); matrix={} plausible={}",
-                         reinterpret_cast<uintptr_t>(SigManager::BobHurt),
+                         SigManager::BobHurt,
                          reinterpret_cast<const void*>(matrix),
                          isPlausibleMat4(matrix));
         }
