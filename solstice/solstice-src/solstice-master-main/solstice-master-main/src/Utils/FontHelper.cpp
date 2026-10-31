@@ -17,7 +17,13 @@ void FontHelper::load()
 void FontHelper::pushPrefFont(bool large, bool bold, bool mForcePSans)
 {
     auto font = getFont(large, bold, mForcePSans);
-    if (!font) return;
+    // A font belongs to the ImGui context whose atlas built it. The OpenGL and
+    // D3D paths own separate contexts, so never push a foreign pointer; keep the
+    // Push/Pop pairing intact by falling back to the current font.
+    if (!font || font->ContainerAtlas != ImGui::GetIO().Fonts) {
+        ImGui::PushFont(ImGui::GetFont());
+        return;
+    }
     ImGui::PushFont(font);
 }
 

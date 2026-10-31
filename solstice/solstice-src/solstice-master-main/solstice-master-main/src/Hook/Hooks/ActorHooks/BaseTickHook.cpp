@@ -37,7 +37,8 @@ std::unique_ptr<Detour> BaseTickHook::mDetour = nullptr;
 void BaseTickHook::onBaseTick(Actor* actor)
 {
     auto oFunc = mDetour->getOriginal<&onBaseTick>();
-    if (actor != ClientInstance::get()->getLocalPlayer()) return oFunc(actor);
+    auto* client = ClientInstance::get();
+    if (!client || actor != client->getLocalPlayer()) return oFunc(actor);
 
     mQueueMutex.lock();
     auto messages = mQueuedMessages;
@@ -45,7 +46,7 @@ void BaseTickHook::onBaseTick(Actor* actor)
     {
         std::string messageStr = "";
         for (auto& message : messages) messageStr += message + "\n";
-        ClientInstance::get()->getGuiData()->displayClientMessage(messageStr);
+        if (auto* guiData = client->getGuiData()) guiData->displayClientMessage(messageStr);
         mQueuedMessages.clear();
     }
     mQueueMutex.unlock();
@@ -97,4 +98,6 @@ void BaseTickHook::init()
     }
     mDetour = std::make_unique<Detour>("Actor::baseTick", target, &BaseTickHook::onBaseTick);
     mDetour->enable();
+    spdlog::info("Actor::baseTick hook installed: slot {} -> 0x{:X}", OffsetProvider::Actor_baseTick,
+        reinterpret_cast<uintptr_t>(target));
 }

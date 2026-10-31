@@ -220,3 +220,19 @@ RTTI and call-graph classification are not used to identify these targets.
   trampoline instead decrements and stores to +0x7C8. These cannot be the
   same patch contract. The wrapper now refuses this mismatch and allocation
   failure; the genuine item-use site remains unlocated.
+
+## Runtime convergence for Actor::baseTick (2026-10-31)
+
+- Cross-class RTTI vtable sweep of the 1.21.120 image: slot 29 is 0x58F1A80
+  in 13 of 14 Actor-family vtables (Actor, Mob, Player, LocalPlayer,
+  Monster, Zombie, Creeper, Pig, Skeleton, Spider, Villager, Sheep, Chicken,
+  Warden). LocalPlayer's primary vtable is at RVA 0x8F1B8A0.
+- This is the same target the constructor-side evidence named, so the project
+  now pins `Actor_baseTick` with `DEFINE_FIELD(..., 29)` and drops the broken
+  in-prologue pattern. Slots 35 (0x577AFA0, a stepping thunk) and 52
+  (0x59003E0, a bool predicate) were checked and are not baseTick.
+- Consequence: the GL presentation path, which permanently short-circuits
+  D3D present, now also dispatches the ImGui-only RenderEvent consumers
+  (HudEditor grid/custom elements, TargetHUD without its D3D skin head).
+  Modules that need D3D11 resources degrade themselves through
+  `OpenGLGui::isActive()` instead of being silently invisible.

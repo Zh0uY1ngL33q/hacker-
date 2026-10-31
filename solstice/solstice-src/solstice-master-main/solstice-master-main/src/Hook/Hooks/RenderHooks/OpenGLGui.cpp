@@ -15,6 +15,8 @@
 #include <Features/Events/RenderEvent.hpp>
 #include <Features/Events/WindowResizeEvent.hpp>
 #include <Features/Modules/Visual/ClickGui.hpp>
+#include <Features/Modules/Visual/HudEditor.hpp>
+#include <Features/Modules/Visual/TargetHUD.hpp>
 #include <Utils/FontHelper.hpp>
 #include <Utils/Keyboard.hpp>
 #include <Utils/MiscUtils/MathUtils.hpp>
@@ -272,7 +274,35 @@ void OpenGLGui::render(HDC dc) try
     MathUtils::displaySize = {io.DisplaySize.x, io.DisplaySize.y};
     ImGui::NewFrame();
     RenderEvent event;
-    gui->onRenderEvent(event); // original UI; no DX-only module dispatch here
+    gui->onRenderEvent(event); // original UI
+    // Once this GL path is active, D3DHook::present() returns the original
+    // present immediately, so the D3D RenderEvent dispatch never runs. Draw the
+    // ImGui-only HUD modules here; modules that need D3D resources degrade
+    // themselves via OpenGLGui::isActive(). ImGui::NewFrame leaves no current
+    // window and this ImGui fork's PushFont writes to it, so give the
+    // dispatchers a fullscreen click-through window first.
+    if (gFeatureManager && gFeatureManager->mModuleManager) {
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(io.DisplaySize);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+        const ImGuiWindowFlags hudFlags = ImGuiWindowFlags_NoDecoration |
+            ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoInputs |
+            ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus;
+        ImGui::Begin("##solstice_hud", nullptr, hudFlags);
+        static bool loggedHudDispatch = false;
+        if (!loggedHudDispatch) {
+            loggedHudDispatch = true;
+            spdlog::info("[GUI probe] GL HUD dispatch active (HudEditor/TargetHUD)");
+        }
+        if (auto* hudEditor = gFeatureManager->mModuleManager->getModule<HudEditor>()) {
+            hudEditor->onRenderEvent(event);
+            hudEditor->onCustomRenderEvent(event);
+        }
+        if (auto* targetHud = gFeatureManager->mModuleManager->getModule<TargetHUD>())
+            targetHud->onRenderEvent(event);
+        ImGui::End();
+        ImGui::PopStyleVar();
+    }
     ImGui::Render();
     // SwapBuffers may arrive with an offscreen draw FBO still bound. Draw on
     // the window's default framebuffer, then restore the game's FBO selection.

@@ -214,6 +214,9 @@ CameraPresetComponent* Actor::getCameraPresetComponent()
 
 ContainerManagerModel* Actor::getContainerManagerModel()
 {
+    // Unresolved offset is 0; member_at(this, 0) would hand consumers a fake
+    // non-null pointer into the vtable. Refuse instead.
+    if (OffsetProvider::Actor_mContainerManagerModel == 0) return nullptr;
     return hat::member_at<ContainerManagerModel*>(this, OffsetProvider::Actor_mContainerManagerModel);
 }
 

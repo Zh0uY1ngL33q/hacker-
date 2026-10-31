@@ -8,6 +8,7 @@
 #include <Features/Events/PacketInEvent.hpp>
 #include <Features/Modules/Combat/Aura.hpp>
 #include <Hook/Hooks/RenderHooks/D3DHook.hpp>
+#include <Hook/Hooks/RenderHooks/OpenGLGui.hpp>
 #include <SDK/Minecraft/Actor/SerializedSkin.hpp>
 #include <SDK/Minecraft/Actor/Components/ActorOwnerComponent.hpp>
 #include <SDK/Minecraft/Network/Packets/ActorEventPacket.hpp>
@@ -255,7 +256,9 @@ void TargetHUD::onRenderEvent(RenderEvent& event)
         mMaxAbsorption = target->getMaxAbsorption();
         mLastPlayerName = target->getRawName();
         mLastHurtTime = mHurtTime;
-        mHurtTime = target->getMobHurtTimeComponent()->mHurtTime;
+        // The hurt-time component offset is unresolved on 1.21.120 (the getter
+        // returns null); reading through it would null-deref in sample mode.
+        if (auto* hurt = target->getMobHurtTimeComponent()) mHurtTime = hurt->mHurtTime;
     }
 
     static float anim = 0.f;
@@ -335,7 +338,9 @@ void TargetHUD::onRenderEvent(RenderEvent& event)
 
     ID3D11ShaderResourceView* texture = nullptr;
     static bool loaded = false;
-    texture = getActorSkinTex(target);
+    // The GL swap path has no D3D11 device (createTextureFromData would be
+    // called with a null gDevice11); degrade to a headless HUD there.
+    if (!OpenGLGui::isActive()) texture = getActorSkinTex(target);
     loaded = true;
 
 

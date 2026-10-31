@@ -102,7 +102,11 @@ public:
     DEFINE_INDEX_FIELD(MinecraftGame_mProfanityContext, "49 8B ? ? ? ? ? ? 49 8B ? 48 8B ? ? ? ? ? FF 15 ? ? ? ? 48 8D ? ? E8", 4, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(MinecraftGame_mMouseGrabbed, "45 ? ? 0F 85 ? ? ? ? 41 C6 ? ? ? ? ?", 2, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(MainView_bedrockPlatform, "48 8B ? ? ? ? ? 48 8B ? B2 ? 48 8B ? ? ? ? ? FF 15 ? ? ? ? 84 C0", 3, OffsetType::FieldOffset);
-    DEFINE_INDEX_FIELD(Actor_baseTick, "48 83 EC 20 48 8B F9 E8 ? ? ? ? 48 8B 07 48 8B", 3, OffsetType::Index);
+    // The old pattern started inside the function body (0x593C6B2), so byte 3
+    // was an instruction byte, not a vtable displacement. Offline convergence:
+    // 13 of 14 Actor-family RTTI vtables (LocalPlayer/Player/Mob/Monster/...)
+    // install 0x58F1A80 at slot 29 and the ctor at 0x5937905 installs it too.
+    DEFINE_FIELD(Actor_baseTick, 29);
     DEFINE_INDEX_FIELD(MinecraftSim_mGameSim, "49 8B 85 ? ? ? ? 8B 40", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(MinecraftSim_mRenderSim, "48 8B ? ? ? ? ? F3 0F ? ? ? F3 41 ? ? ? ? 48 8D", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(MinecraftSim_mGameSession, "48 8B 99 ? ? ? ? 48 85 DB 74 ? 48 8D ? ? E8 ? ? ? ? 84 C0 74", 3, OffsetType::FieldOffset);
