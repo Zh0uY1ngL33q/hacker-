@@ -329,14 +329,15 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
         auto* player = ci ? ci->getLocalPlayer() : nullptr;
         if (!player) return;
 
-        // Hit detection: a swing that starts while an entity sits under the
-        // crosshair. That is the same signal TriggerBot uses, so no extra hook.
-        const bool swinging = player->isSwinging();
-        static bool sWasSwinging = false;
-        const bool swingStarted = swinging && !sWasSwinging;
-        sWasSwinging = swinging;
+        // Hit detection cannot use the swing flag here: while blocking it is forced
+        // off below. Use the physical left button rising edge plus the crosshair
+        // target instead (the same Level::getHitResult() TriggerBot reads).
+        static bool sWasAttackDown = false;
+        const bool attackDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+        const bool attackStarted = attackDown && !sWasAttackDown;
+        sWasAttackDown = attackDown;
 
-        if (swingStarted)
+        if (attackStarted)
         {
             auto* level = player->getLevel();
             auto* hitResult = level ? level->getHitResult() : nullptr;
@@ -353,6 +354,14 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
 
         if (triggered)
         {
+            // Hold the swing completely still while blocking: zero the engine's swing
+            // tick counter (+0x880) and progress (+0x87C) every frame. Both offsets
+            // come from the swing updater at RVA 0x590D270, which reads the counter
+            // and writes progress = counter / duration.
+            const uintptr_t base = reinterpret_cast<uintptr_t>(player);
+            *reinterpret_cast<int*>(base + 0x880) = 0;
+            *reinterpret_cast<float*>(base + 0x87C) = 0.f;
+
             *matrix = glm::translate(*matrix, glm::vec3(0.4, 0.0, -0.15));
             *matrix = glm::translate(*matrix, glm::vec3(-0.1f, 0.15f, -0.2f));
             *matrix = glm::translate(*matrix, glm::vec3(-0.24F, 0.25f, -0.20F));
