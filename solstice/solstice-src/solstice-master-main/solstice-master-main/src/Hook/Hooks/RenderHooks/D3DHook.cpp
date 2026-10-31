@@ -439,6 +439,10 @@ HRESULT D3DHook::present(IDXGISwapChain3* swapChain, UINT syncInterval, UINT fla
             gDevice11->GetImmediateContext(gContext11.put());
             DXGI_SWAP_CHAIN_DESC sd;
             swapChain->GetDesc(&sd);
+            // The swap chain's output window is the authoritative game window;
+            // hand it to ProcUtils so nothing else has to guess from the title.
+            wnd = sd.OutputWindow;
+            ProcUtils::setMinecraftWindow(wnd);
             swapChain->GetBuffer(0, IID_PPV_ARGS(mBackBuffer11Tex.at(0).put()));
             gDevice11->CreateRenderTargetView(mBackBuffer11Tex.at(0).get(), NULL, mBackBuffer11Rtv.at(0).put());
         } else {
@@ -446,6 +450,7 @@ HRESULT D3DHook::present(IDXGISwapChain3* swapChain, UINT syncInterval, UINT fla
             DXGI_SWAP_CHAIN_DESC sd;
             CHECK_HR(swapChain->GetDesc(&sd));
             wnd = sd.OutputWindow;
+            ProcUtils::setMinecraftWindow(wnd);
 
             D3D11_RESOURCE_FLAGS backBuffer11Flags = {};
             backBuffer11Flags.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
@@ -579,7 +584,8 @@ void D3DHook::initImGui(ID3D11Device* device, ID3D11DeviceContext* deviceContext
         onc = true;
     }
 
-    ImGui_ImplWin32_Init(ProcUtils::getMinecraftWindow());
+    const HWND gameWindow = wnd ? wnd : ProcUtils::getMinecraftWindow();
+    ImGui_ImplWin32_Init(gameWindow);
     ImGui_ImplDX11_Init(device, deviceContext);
 
     ImGuiIO& io = ImGui::GetIO();

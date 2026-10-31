@@ -170,6 +170,16 @@ void OpenGLGui::render(HDC dc) try
     std::lock_guard<std::recursive_mutex> lock(glGuiMutex);
     const HGLRC current = wglGetCurrentContext();
     const HWND window = WindowFromDC(dc);
+    // One-shot proof of which presentation path is live. Without this the log
+    // cannot distinguish "DX Present never reached" from "GL swap reached but
+    // the window was rejected".
+    static bool loggedSwapEntry = false;
+    if (!loggedSwapEntry) {
+        loggedSwapEntry = true;
+        spdlog::info("[GUI probe] GL swap entry: context=0x{:X} dcWindow=0x{:X} clickGui={}",
+            reinterpret_cast<uintptr_t>(current), reinterpret_cast<uintptr_t>(window),
+            glClickGui() != nullptr);
+    }
     if (!current || !window) return;
 
     if (glGuiContext && (glGuiStop.load() || Solstice::mRequestEject)) {
@@ -181,7 +191,13 @@ void OpenGLGui::render(HDC dc) try
     if (!glGuiContext) {
         DWORD pid = 0;
         GetWindowThreadProcessId(window, &pid);
-        if (pid != GetCurrentProcessId() || window != ProcUtils::getMinecraftWindow()) return;
+        if (pid != GetCurrentProcessId()) return;
+        // The window behind this DC is the target we are drawing into, so it is
+        // the game window by definition. Requiring it to equal the
+        // title-derived ProcUtils::getMinecraftWindow() silently disabled the
+        // whole overlay whenever that heuristic missed (localised / repackaged
+        // clients), which also produced one log line per frame.
+        ProcUtils::setMinecraftWindow(window);
         // Never replace an ImGui context already owned by the DX renderer.
         if (ImGui::GetCurrentContext()) return;
         glGuiContext = ImGui::CreateContext();
