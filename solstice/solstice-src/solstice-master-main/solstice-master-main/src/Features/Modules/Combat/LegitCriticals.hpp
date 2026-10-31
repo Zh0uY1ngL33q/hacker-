@@ -16,8 +16,8 @@ public:
 
     EnumSettingT<Mode> mMode = EnumSettingT<Mode>(
         "Mode",
-        "LegitCriticals 动作：Sneaking=只下蹲；StopSprinting=只断疾跑；Both=两者都做（均需在空中）",
-        Mode::StopSprinting,
+        "LegitCriticals 动作（仅改发出的 PAI 包，不碰本地状态）：Sneaking=下蹲(出暴击)；StopSprinting=只断疾跑(不暴击)；Both=两者都（均仅在空中生效）",
+        Mode::Sneaking,
         "Sneaking",
         "StopSprinting",
         "Both");
@@ -39,11 +39,12 @@ public:
     void onPacketOutEvent(class PacketOutEvent& event);
     void applyInput(class PlayerAuthInputPacket& paip);
 
-    // 攻击协作接口（由 Aura 在发出攻击包前调用，冗余保险；持续模型由 onBaseTickEvent 主导）：
-    //   arm()   —— 立即应用一次本地状态（断疾跑/下蹲），仅当玩家在空中时生效。
-    //   disarm()—— 恢复本地疾跑/下蹲（落地或关模块时由 onBaseTickEvent 调用）。
+    // 攻击协作接口（由 Aura 在发出攻击包前调用，冗余保险）：
+    //   立即标记暴击窗口开启（仅空中生效），让本 tick 的攻击必骑在已改写的
+    //   PlayerAuthInput 上。持续-空中模型由 onBaseTickEvent 主导。
+    //   本模块【不修改本地 MoveInputComponent】，只改写发出的 PAI 包，因此不会
+    //   卡本地下蹲、关模块后本地状态零残留。
     void arm();
-    void disarm();
 
     std::string getSettingDisplay() override {
         return mMode.mValues[mMode.as<int>()];
@@ -51,6 +52,4 @@ public:
 
 private:
     bool mArmed = false;          // 暴击窗口是否激活（= 玩家在空中且模块启用）
-
-    void applyLocal(class Actor* player);
 };
