@@ -89,7 +89,20 @@ void AnimationHooks::init()
     uintptr_t func = SigManager::Mob_getCurrentSwingDuration;
     mSwingDetour = std::make_unique<Detour>("Mob::getCurrentSwingDuration", reinterpret_cast<void*>(func), &getCurrentSwingDuration);
 
-    // TODO: Replace this with a better method of doing matrix translation
-    func = SigManager::BobHurt;
-    mBobHurtDetour = std::make_unique<Detour>("bobHurt", reinterpret_cast<void*>(func), &doBobHurt);
+    // The 1.21.120 BobHurt sig resolves to a false-positive string builder
+    // (RVA 0xCE0260); its second register is not a glm::mat4*. Installing this
+    // detour would route a real game call into a garbage target (crash/corrupt),
+    // so the safe choice is to NOT install it until the real held-item matrix
+    // hook lands (see ItemInHandRenderer_applyTransform @ 0x2DA7BC4 /
+    // GameRenderer_bobHurt @ 0x2D72340 RE). ViewModel/Animations bob-hurt stay
+    // inert rather than crashing. Flip kEnableBobHurtHook once wired.
+    constexpr bool kEnableBobHurtHook = false;
+    if (kEnableBobHurtHook) {
+        func = SigManager::BobHurt;
+        mBobHurtDetour = std::make_unique<Detour>("bobHurt", reinterpret_cast<void*>(func), &doBobHurt);
+    } else {
+        spdlog::warn("[AnimationHooks] BobHurt detour DISABLED: 1.21.120 sig is a "
+                     "false positive (string builder @ 0xCE0260). ViewModel/Animations "
+                     "bob-hurt is inert until a real held-item matrix hook lands.");
+    }
 }
