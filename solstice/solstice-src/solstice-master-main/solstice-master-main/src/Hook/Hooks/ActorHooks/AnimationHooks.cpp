@@ -13,12 +13,12 @@
 #include <windows.h>
 
 namespace {
-    // A real held-item ModelView matrix (glm::mat4) is 16 finite floats. On
-    // 1.21.120 SigManager::BobHurt resolves to a false-positive string-builder
-    // (0xCE0260) whose second register is not a matrix, so the pointer handed to
-    // doBobHurt is garbage. Gate the event behind a plausibility check so we
-    // never write through a non-matrix pointer (ViewModel/Animations would
-    // otherwise corrupt memory or do nothing).
+    // A real held-item ModelView matrix (glm::mat4) is 16 finite floats. The
+    // 1.21.120 held-item bob/block matrix now comes from GameRenderer_bobHurt
+    // (RVA 0x2D72340) — its rdx is a mat4* output. We still gate the event
+    // behind a plausibility check so we never write through a non-matrix pointer
+    // if that sig ever drifts back to a false positive (ViewModel/Animations
+    // would otherwise corrupt memory or do nothing).
     bool isPlausibleMat4(const glm::mat4* m)
     {
         if (!m) return false;
@@ -50,18 +50,16 @@ int AnimationHooks::getCurrentSwingDuration(Actor* actor)
 
 void* AnimationHooks::doBobHurt(void* _this, glm::mat4* matrix)
 {
-    // One-time diagnostic, logged BEFORE touching the target so that a crash
-    // inside the (possibly false-positive) original still leaves a trace in
-    // solstice.log. This confirms whether the 1.21.120 BobHurt sig is actually
-    // a held-item/bob matrix transform. On the current dump SigManager::BobHurt
-    // resolves to 0xCE0260 (a string builder), so expect plausible=false until
-    // a real sig is found and ViewModel/Animations will stay inert.
+    // One-time diagnostic, logged right after the original fills the matrix.
+    // Confirms at runtime that GameRenderer_bobHurt's rdx really is a held-item
+    // bob/block mat4 (plausible=true). If the sig ever drifts to a false positive
+    // again, plausible=false and the event below is skipped — no corruption.
     {
         static bool reportedInvocation = false;
         if (!reportedInvocation) {
             reportedInvocation = true;
-            spdlog::warn("[AnimationHooks] doBobHurt invoked (BobHurt sig={:#x}); matrix={} plausible={}",
-                         SigManager::BobHurt,
+            spdlog::warn("[AnimationHooks] doBobHurt invoked (GameRenderer_bobHurt={:#x}); matrix={} plausible={}",
+                         SigManager::GameRenderer_bobHurt,
                          reinterpret_cast<const void*>(matrix),
                          isPlausibleMat4(matrix));
         }
@@ -111,21 +109,23 @@ void AnimationHooks::init()
     uintptr_t func = SigManager::Mob_getCurrentSwingDuration;
     mSwingDetour = std::make_unique<Detour>("Mob::getCurrentSwingDuration", reinterpret_cast<void*>(func), &getCurrentSwingDuration);
 
-    // The 1.21.120 BobHurt sig resolves to a false-positive string builder
-    // (RVA 0xCE0260); its second register is not a glm::mat4*. Installing this
-    // detour would route a real game call into a garbage target (crash/corrupt),
-    // so the safe choice is to NOT install it until the real held-item matrix
-    // hook lands (see ItemInHandRenderer_applyTransform @ 0x2DA7BC4 /
-    // GameRenderer_bobHurt @ 0x2D72340 RE). ViewModel/Animations bob-hurt stay
-    // inert rather than crashing. Flip kEnableBobHurtHook once wired.
-    constexpr bool kEnableBobHurtHook = false;
+    // 1.21.120: the legacy SigManager::BobHurt sig now resolves to a false-positive
+    // string builder (0xCE0260) and is unusable. The correct, verified replacement
+    // is GameRenderer_bobHurt (RVA 0x2D72340): standard prologue, and a clean
+    // layout — rcx = _this, rdx = glm::mat4* OUTPUT (the held-item bob/block
+    // matrix: 16 floats written into it at 0x2D7244E..0x2D724A7), xmm2 = scalar.
+    // doBobHurt calls the original first (filling rdx), then fires BobHurtEvent
+    // with that matrix, so ViewModel (translate) and Animations (small-items /
+    // sword-guard block pose) can modify the held item. isPlausibleMat4 still gates
+    // the event so we never write through a non-matrix pointer if the sig drifts.
+    constexpr bool kEnableBobHurtHook = true;
     if (kEnableBobHurtHook) {
-        func = SigManager::BobHurt;
-        mBobHurtDetour = std::make_unique<Detour>("bobHurt", reinterpret_cast<void*>(func), &doBobHurt);
-    } else {
-        spdlog::warn("[AnimationHooks] BobHurt detour DISABLED: 1.21.120 sig is a "
-                     "false positive (string builder @ 0xCE0260). ViewModel/Animations "
-                     "bob-hurt is inert until a real held-item matrix hook lands.");
+        func = SigManager::GameRenderer_bobHurt;
+        if (func) {
+            mBobHurtDetour = std::make_unique<Detour>("GameRenderer_bobHurt", reinterpret_cast<void*>(func), &doBobHurt);
+        } else {
+            spdlog::warn("[AnimationHooks] GameRenderer_bobHurt sig unresolved; BobHurtEvent stays inert.");
+        }
     }
 
     // TEMP TRACE (1.21.120): hook the hand-render swing function to capture its
