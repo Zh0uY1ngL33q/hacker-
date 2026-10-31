@@ -17,7 +17,7 @@ public:
     EnumSettingT<Mode> mMode = EnumSettingT<Mode>(
         "Mode",
         "LegitCriticals 动作：Sneaking=只下蹲；StopSprinting=只断疾跑；Both=两者都做（均需在空中）",
-        Mode::Sneaking,
+        Mode::StopSprinting,
         "Sneaking",
         "StopSprinting",
         "Both");
@@ -35,7 +35,9 @@ public:
 
     void onEnable() override;
     void onDisable() override;
+    void onBaseTickEvent(class BaseTickEvent& event);
     void onPacketOutEvent(class PacketOutEvent& event);
+    void applyInput(class PlayerAuthInputPacket& paip);
 
     std::string getSettingDisplay() override {
         return mMode.mValues[mMode.as<int>()];

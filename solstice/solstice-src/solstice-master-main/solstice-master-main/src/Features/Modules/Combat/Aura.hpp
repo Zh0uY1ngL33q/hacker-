@@ -39,7 +39,7 @@ public:
     };
 
     EnumSettingT<Mode> mMode = EnumSettingT("Mode", "The mode of the aura", Mode::Switch, "Single", "Multi", "Switch");
-    EnumSettingT<AttackMode> mAttackMode = EnumSettingT("Attack Mode", "The mode of attack", AttackMode::Earliest, "Earliest", "Synched");
+    EnumSettingT<AttackMode> mAttackMode = EnumSettingT("Attack Mode", "The mode of attack", AttackMode::Synched, "Earliest", "Synched");
     EnumSettingT<RotateMode> mRotateMode = EnumSettingT("Rotate Mode", "The mode of rotation", RotateMode::Normal, "None", "Normal", "Flick");
     EnumSettingT<SwitchMode> mSwitchMode = EnumSettingT("Switch Mode", "The mode of switching", SwitchMode::None, "None", "Full", "Spoof");
     EnumSettingT<BypassMode> mBypassMode = EnumSettingT("Bypass Mode", "The type of bypass", BypassMode::Raycast, "None", "FlareonV2", "Raycast");

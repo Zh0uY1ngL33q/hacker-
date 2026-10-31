@@ -474,13 +474,9 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
             rotate(actor);
         }
 
-        // 1.21.120: Level::getHitResult() 是 SUSPECT 签名（vtable index 越界）恒返回 nullptr，
-        // 直接解引用会崩。加 null 守卫；解析正常时再写 ENTITY 类型。
-        if (auto* level = player->getLevel()) {
-            if (auto* hitResult = level->getHitResult()) {
-                hitResult->mType = HitType::ENTITY;
-            }
-        }
+        // 1.21.120: Level::getHitResult() 的偏移是 ambiguous（4 处匹配）的 SUSPECT 签名，
+        // 即使非空也可能返回野指针，写 mType 必崩。攻击包自带目标 runtime ID，服务器以攻击
+        // 事务为准，根本不需要本地 hitResult。这里整段删除，不要碰它。
 
 
         if (mAttackMode.mValue == AttackMode::Synched)
@@ -676,7 +672,9 @@ Actor* Aura::findObstructingActor(Actor* player, Actor* target)
             float range = mDynamicRange.mValue && !isMoving ? mDynamicRangeValue.mValue : mRange.mValue;
             if (actor->distanceTo(player) > range) continue;
 
-            auto hitbox = *actor->getAABBShapeComponent();
+            auto* aabb = actor->getAABBShapeComponent();
+            if (!aabb) continue;
+            auto hitbox = *aabb;
             actorHitboxes[actor] = hitbox;
 
             if (MathUtils::rayIntersectsAABB(currentRayPos, rayEnd, hitbox.mMin, hitbox.mMax))
@@ -707,8 +705,10 @@ Actor* Aura::findObstructingActor(Actor* player, Actor* target)
             if (distance > 3.f) continue;
 
             std::string id = actor->mEntityIdentifier;
-            float hitboxWidth = actor->getAABBShapeComponent()->mWidth;
-            float hitboxHeight = actor->getAABBShapeComponent()->mHeight;
+            auto* aabb = actor->getAABBShapeComponent();
+            if (!aabb) continue;
+            float hitboxWidth = aabb->mWidth;
+            float hitboxHeight = aabb->mHeight;
 
             if (id == "hivecommon:shadow" && distance < 3.f && mBypassMode.mValue == BypassMode::FlareonV2)
             {
