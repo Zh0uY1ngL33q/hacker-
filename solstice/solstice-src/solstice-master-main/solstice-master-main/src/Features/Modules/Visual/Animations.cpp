@@ -318,18 +318,17 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
         auto* player = ci ? ci->getLocalPlayer() : nullptr;
         if (!player) return;
 
-        // Two independent behaviours:
-        //   right mouse / Aura / Scaffold -> the blade turns to face the player;
-        //   swinging                     -> it spins like a steering wheel.
-        // With neither, the matrix is left untouched, i.e. exactly as if the
-        // module were off.
-        const bool facePlayer = isBlockingInput() || event.mDoBlockAnimation;
-        const bool swinging = player->isSwinging();
-        if (!facePlayer && !swinging)
+        // Right mouse / Aura / Scaffold is the only gate for this mode. Outside that
+        // window nothing at all happens -- not even the swing spin -- so the item
+        // looks exactly as if the module were off.
+        const bool triggered = isBlockingInput() || event.mDoBlockAnimation;
+        if (!triggered)
         {
             mTest2Phase = 0.f;
             return;
         }
+
+        const bool swinging = player->isSwinging();
 
         const glm::mat4 current = *matrix;
         // Transform the pivot point itself instead of offsetting along a normalised
@@ -345,20 +344,18 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
 
         glm::mat4 rotation(1.f);
 
-        if (facePlayer)
-        {
-            // Roll 90 degrees about the blade's long axis so its flat side faces the
-            // camera. The long axis is the local axis lying most in the screen plane
-            // (the face normal points roughly at the camera instead).
-            const glm::vec3 viewDir(0.f, 0.f, 1.f);
-            const auto inPlane = [&](const glm::vec3& axis) {
-                return 1.f - std::fabs(glm::dot(axis, viewDir));
-            };
-            glm::vec3 bladeAxis = localX;
-            if (inPlane(localY) > inPlane(bladeAxis)) bladeAxis = localY;
-            if (inPlane(localZ) > inPlane(bladeAxis)) bladeAxis = localZ;
-            rotation = glm::rotate(rotation, glm::radians(90.f), bladeAxis);
-        }
+        // Inside the trigger window the blade always faces the player; the spin is
+        // layered on top only while the swing is actually running.
+        // The long axis is the local axis lying most in the screen plane (the face
+        // normal points roughly at the camera instead), so rolling about it turns the
+        // flat side towards the player.
+        const glm::vec3 viewDir(0.f, 0.f, 1.f);
+        const auto inPlane = [&](const glm::vec3& axis) {
+            return 1.f - std::fabs(glm::dot(axis, viewDir));
+        };
+        glm::vec3 bladeAxis = localX;
+        if (inPlane(localY) > inPlane(bladeAxis)) bladeAxis = localY;
+        rotation = glm::rotate(rotation, glm::radians(90.f), bladeAxis);
 
         if (swinging)
         {
