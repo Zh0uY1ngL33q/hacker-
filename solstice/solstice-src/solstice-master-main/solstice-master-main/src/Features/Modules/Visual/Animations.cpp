@@ -175,12 +175,6 @@ namespace {
         return ImGui::IsMouseDown(ImGuiMouseButton_Right);
     }
 
-    // Test2: the blade is turned broadside to the camera, then pitched up and down
-    // around the point where grip meets blade. kPivotZ is the pivot position along
-    // the item's own axis (item space); it is the only constant that may need a
-    // visual pass, everything else is exposed as a setting.
-    constexpr float kTest2PivotZ = -0.35f;
-
     // The known-good sword-guard pose: Blocking mode has always used this chain, so
     // Test2 reuses it for its right-click pose instead of inventing an axis to roll
     // the blade around (the first attempt looked nothing like a held sword).
@@ -353,12 +347,25 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
 
         if (swinging)
         {
-            // Steering-wheel spin on top of it: rotate about the camera's forward
-            // axis, which preserves every vertex's depth, so the item can never move
-            // towards or away from the camera. Speed comes from Swing Speed,
-            // amplitude from Rotation Angle, Smooth Rotation only changes the profile.
             const glm::mat4 current = *matrix;
-            const glm::vec3 guard = glm::vec3(current * glm::vec4(0.f, 0.f, kTest2PivotZ, 1.f));
+            // Pivot at the item's own position. The previous version pushed the
+            // pivot along the local Z axis by a constant, which put the centre of
+            // rotation off the sword: an off-plane pivot makes the item orbit in
+            // depth, i.e. it looks like it flies towards and away from the camera
+            // instead of turning in place.
+            const glm::vec3 pivot = glm::vec3(current[3]);
+
+            // Axis stays the view direction: the blocking chain translates this pose
+            // by (x, y, z) = (right, up, depth) and looks correct on screen, so this
+            // space is camera-aligned and Z is the screen normal.
+            const glm::vec3 axis(0.f, 0.f, 1.f);
+
+            static bool loggedPivot = false;
+            if (!loggedPivot) {
+                loggedPivot = true;
+                spdlog::warn("[Test2] spin pivot=({:.3f}, {:.3f}, {:.3f}) |p|={:.3f}",
+                    pivot.x, pivot.y, pivot.z, glm::length(pivot));
+            }
 
             const float deltaTime = ImRenderUtils::getDeltaTime();
             const float swingSeconds = std::max(0.05f, mSwingSpeed2.as<float>() / 20.f);
@@ -367,9 +374,9 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
             const float angle = glm::radians(mRotAngle2.as<float>())
                               * test2Shape(mTest2Phase, mSmoothRot2.mValue);
 
-            const glm::mat4 spin = glm::rotate(glm::mat4(1.f), angle, glm::vec3(0.f, 0.f, 1.f));
-            *matrix = glm::translate(glm::mat4(1.f), guard) * spin
-                    * glm::translate(glm::mat4(1.f), -guard) * current;
+            const glm::mat4 spin = glm::rotate(glm::mat4(1.f), angle, axis);
+            *matrix = glm::translate(glm::mat4(1.f), pivot) * spin
+                    * glm::translate(glm::mat4(1.f), -pivot) * current;
         }
         else
         {
