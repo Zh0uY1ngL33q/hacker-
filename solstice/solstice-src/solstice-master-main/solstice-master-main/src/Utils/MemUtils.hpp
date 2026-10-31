@@ -119,8 +119,12 @@ public:
         void name(bool patch) { \
             static std::vector<unsigned char> ogBytes = { bytes }; \
             static bool wasPatched = false; \
+            static bool reportedInvalid = false; \
             if (addr == 0) { \
-                spdlog::error("Failed to patch {} at 0x{:X} [Invalid address]", #name, addr); \
+                if (!reportedInvalid) { \
+                    reportedInvalid = true; \
+                    spdlog::error("Failed to patch {} at 0x{:X} [Invalid address]", #name, addr); \
+                } \
                 return; \
             } \
             if (patch) { \
@@ -152,8 +156,12 @@ public:
         void name(bool patch) { \
             static std::vector<unsigned char> ogBytes; \
             static bool wasPatched = false; \
+            static bool reportedInvalid = false; \
             if (addr == 0) { \
-                spdlog::error("Failed to patch {} at 0x{:X} [Invalid address]", #name, addr); \
+                if (!reportedInvalid) { \
+                    reportedInvalid = true; \
+                    spdlog::error("Failed to patch {} at 0x{:X} [Invalid address]", #name, addr); \
+                } \
                 return; \
             } \
             if (patch) { \
