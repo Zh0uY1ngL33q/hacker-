@@ -18,6 +18,8 @@
 
 #include <Windows.h> // GetAsyncKeyState for the physical right mouse button
 
+#include <string_view>
+
 std::vector<unsigned char> gNoSwitchAnimation = {
     0x0F, 0x57, 0xC0, // xorps xmm0, xmm0
     0x90, 0x90, 0x90, 0x90, 0x90 // nop
@@ -29,14 +31,38 @@ DEFINE_NOP_PATCH_FUNC(patchDefaultSwing, SigManager::ItemInHandRenderer_renderIt
 DEFINE_NOP_PATCH_FUNC(patchDefaultSwing2, SigManager::ItemInHandRenderer_renderItem_bytepatch+11, 0x8);
 
 namespace {
+    // Item::mName is the last dereference in the chain and the only one that can
+    // walk a pointer we have not validated: isSword() -> std::string::ends_with().
+    // MSVC x64 std::string: buffer +0x0 (SSO when capacity <= 15), size +0x10,
+    // capacity +0x18. Validate all three before reading a single byte.
+    bool itemNameView(Item* item, std::string_view& out)
+    {
+        const uintptr_t name = reinterpret_cast<uintptr_t>(item) + 0xD0; // Item::mName
+        const size_t size = *reinterpret_cast<const size_t*>(name + 0x10);
+        const size_t capacity = *reinterpret_cast<const size_t*>(name + 0x18);
+        if (size == 0 || size > 64 || capacity < size || capacity > 4096) return false;
+        const char* data = capacity > 15
+            ? *reinterpret_cast<const char* const*>(name)
+            : reinterpret_cast<const char*>(name);
+        if (!data || !InstanceLocator::isReadableMemory(const_cast<char*>(data), size)) return false;
+        out = std::string_view(data, size);
+        return true;
+    }
+
+    bool isSwordSafe(Item* item)
+    {
+        std::string_view name;
+        return itemNameView(item, name) && name.size() >= 6 && name.ends_with("_sword");
+    }
+
     // One-shot layout probe driven by the real chain instead of by "first frame".
     // The previous one-shot diagnostics fired on the very first call, which is
     // usually before the player holds anything, so a bail there proved nothing.
     // This waits until the chain actually resolves (an item is in hand) and only
     // reports a failure after ~600 evaluations; on failure it dumps the first
     // nine container slots so the drifted field can be identified from one log.
-    void probeHeldItem(PlayerInventory* supplies, Container* container,
-                       bool stackReadable, bool refReadable, bool itemReadable)
+    void probeHeldItem(PlayerInventory* supplies, Container* container, int usedSlot,
+                       bool stackReadable, bool refReadable, bool itemReadable, Item* item)
     {
         static int frames = 0;
         static bool reported = false;
@@ -44,8 +70,13 @@ namespace {
 
         if (itemReadable) {
             reported = true;
-            spdlog::warn("[Animations][probe] held-item chain resolved after {} frame(s): mInHandSlot={} mSelectedSlot={}",
-                frames, supplies->mInHandSlot, supplies->mSelectedSlot);
+            std::string_view name;
+            const std::string shown = itemNameView(item, name)
+                ? std::string(name.substr(0, 40)) : std::string("<unreadable>");
+            spdlog::warn("[Animations][probe] held-item chain resolved after {} frame(s): slot={} "
+                         "mInHandSlot={} mSelectedSlot={} item='{}' isSword={}",
+                frames, usedSlot, supplies->mInHandSlot, supplies->mSelectedSlot, shown,
+                isSwordSafe(item));
             return;
         }
 
@@ -53,8 +84,8 @@ namespace {
         reported = true;
 
         spdlog::warn("[Animations][probe] held-item chain never resolved in {} frames: "
-                     "mInHandSlot={} mSelectedSlot={} stackReadable={} itemRefReadable={} itemReadable={}",
-            frames, supplies->mInHandSlot, supplies->mSelectedSlot,
+                     "mInHandSlot={} mSelectedSlot={} slot={} stackReadable={} itemRefReadable={} itemReadable={}",
+            frames, supplies->mInHandSlot, supplies->mSelectedSlot, usedSlot,
             stackReadable, refReadable, itemReadable);
 
         for (int slot = 0; slot < 9; ++slot) {
@@ -90,18 +121,35 @@ namespace {
         auto* container = supplies->getContainer();
         if (!container || !InstanceLocator::isReadableMemory(container, 0x200)) return false;
 
-        auto* heldItem = container->getItem(supplies->mInHandSlot);
-        const bool stackReadable = heldItem && InstanceLocator::isReadableMemory(heldItem, 0x100);
-        auto** itemRef = stackReadable ? heldItem->mItem : nullptr;
-        const bool refReadable = itemRef && InstanceLocator::isReadableMemory(itemRef, sizeof(Item*));
-        Item* item = refReadable ? *itemRef : nullptr;
-        const bool itemReadable = item && InstanceLocator::isReadableMemory(item, 0x100);
+        // mInHandSlot is the container slot the engine reports; mSelectedSlot is
+        // the hotbar index. They agree on a healthy build, so only fall back to
+        // the second one when the first slot holds nothing -- that keeps a sane
+        // "no sword in hand" result instead of inventing one.
+        const int slots[2] = { supplies->mInHandSlot, supplies->mSelectedSlot };
+        bool stackReadable = false, refReadable = false, itemReadable = false;
+        Item* item = nullptr;
+        int usedSlot = slots[0];
 
-        probeHeldItem(supplies, container, stackReadable, refReadable, itemReadable);
+        for (int attempt = 0; attempt < 2; ++attempt) {
+            const int slot = slots[attempt];
+            if (slot < 0 || slot > 0x40) continue;
+            if (attempt == 1 && slot == slots[0]) continue;
+
+            auto* stack = container->getItem(slot);
+            stackReadable = stack && InstanceLocator::isReadableMemory(stack, 0x100);
+            auto** itemRef = stackReadable ? stack->mItem : nullptr;
+            refReadable = itemRef && InstanceLocator::isReadableMemory(itemRef, sizeof(Item*));
+            item = refReadable ? *itemRef : nullptr;
+            itemReadable = item && InstanceLocator::isReadableMemory(item, 0x100);
+            usedSlot = slot;
+            if (itemReadable) break;
+        }
+
+        probeHeldItem(supplies, container, usedSlot, stackReadable, refReadable, itemReadable, item);
 
         if (!itemReadable) return false;
 
-        const bool sword = item->isSword();
+        const bool sword = isSwordSafe(item);
         if (!sResolvedLogged) {
             sResolvedLogged = true;
             spdlog::warn("[Animations] isHoldingSwordSafe resolved (block pose available); holdingSword={}", sword);

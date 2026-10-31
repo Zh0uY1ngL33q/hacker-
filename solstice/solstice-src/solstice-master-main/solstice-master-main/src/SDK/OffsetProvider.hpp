@@ -120,7 +120,16 @@ public:
     DEFINE_INDEX_FIELD(Actor_mGameMode, "49 8B 8E ? ? ? ? 45 84 FF 74 ? E8 07", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(Actor_mSupplies, "48 8B ? ? ? ? ? 80 BA 18 01 00 00 ? 75 ? 48 8B ? ? ? ? ? 8B 52 ? 48 8B ? 48 8B ? ? 48 FF ? ? ? ? ? 48 8D ? ? ? ? ? C3 8B 81", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(PlayerInventory_mContainer, "48 8B 89 ? ? ? ? 8B 52 ? 48 8B 01 48 8B 40 ? 48 FF 25 ? ? ? ? 48 8D 05 ? ? ? ?", 3, OffsetType::FieldOffset);
-    DEFINE_INDEX_FIELD_TYPED(uint8_t, Container_getItem, "49 8B B6 ? ? ? ? 48 8B 0E 48 8B B9 ? ? ? ? 45 8B C5 49 8B D4 48 8D 4C 24 ? E8 ? ? ? ? 48 8B D8 45 8B C7", 3, OffsetType::Index);
+    // 1.21.120: the old pattern captured the displacement of a field load
+    // (`mov rsi,[r14+0x1230]`) rather than a vtable slot, so the derived index
+    // became 0x1230/8 = 582 and Container::getItem() called vtable[582], which
+    // reads unrelated data -- every slot returned the same module pointer.
+    // Offline: RTTI ".?AVInventory@@" -> vtable 0x91DE118 (ImageBase 0x7FF714E80000),
+    // slot 8 is `test edx,edx / js / mov r8,[rcx+0x198] / mov rax,[rcx+0x1a0] /
+    // sar rax,8 / cmp edx,eax / movsxd rax,edx / shl rax,8 / add rax,r8 / ret`,
+    // i.e. `return &mItemStacks[slot]` over a 0x100-byte element vector.
+    // getItem is a Container virtual, so the slot is shared by all subclasses.
+    DEFINE_FIELD(Container_getItem, 8);
     DEFINE_INDEX_FIELD(LevelRenderer_mRendererPlayer, "48 8B ? ? ? ? ? F3 0F ? ? ? ? ? ? 0F AF", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(LevelRendererPlayer_mCameraPos, "F3 0F ? ? ? ? ? ? F3 0F ? ? F3 0F ? ? F3 0F ? ? F3 0F ? ? F3 0F ? ? F3 0F ? ? 0F 2F ? ? ? ? ? 0F 83 ? ? ? ? 80 BB 63 13 00 00", 4, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(LevelRendererPlayer_mFovX, "0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 80 B9 58 0F 00 00", 3, OffsetType::FieldOffset);
