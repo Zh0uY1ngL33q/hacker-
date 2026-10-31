@@ -314,45 +314,71 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
 
     if (mAnimation.mValue == Animation::Test2)
     {
-        // Test2 must be invisible until it is actually triggered: no right mouse
-        // and no external trigger (Aura/Scaffold set mDoBlockAnimation) means the
-        // matrix is left completely untouched, i.e. identical to having the module
-        // off. Everything below only runs inside the trigger window.
-        if (!isBlockingInput() && !event.mDoBlockAnimation)
+        auto* ci = ClientInstance::get();
+        auto* player = ci ? ci->getLocalPlayer() : nullptr;
+        if (!player) return;
+
+        // Two independent behaviours:
+        //   right mouse / Aura / Scaffold -> the blade turns to face the player;
+        //   swinging                     -> it spins like a steering wheel.
+        // With neither, the matrix is left untouched, i.e. exactly as if the
+        // module were off.
+        const bool facePlayer = isBlockingInput() || event.mDoBlockAnimation;
+        const bool swinging = player->isSwinging();
+        if (!facePlayer && !swinging)
         {
             mTest2Phase = 0.f;
             return;
         }
 
-        auto* ci = ClientInstance::get();
-        auto* player = ci ? ci->getLocalPlayer() : nullptr;
-        if (!player) return;
-
-        // Phase advances with wall time instead of Actor::getSwingProgress(): that
-        // getter reads Actor_mSwinging+4, which is not the tick counter on
-        // 1.21.120 (the real pair is +0x880 int / +0x87C float, see the swing
-        // updater at RVA 0x590D270), and the trigger here is the right mouse
-        // button, not the engine's swing state.
-        const float deltaTime = ImRenderUtils::getDeltaTime();
-        const float swingSeconds = std::max(0.05f, mSwingSpeed2.as<float>() / 20.f);
-        mTest2Phase += deltaTime / swingSeconds;
-        mTest2Phase -= std::floor(mTest2Phase); // loop for as long as the trigger is held
-
-        const float angle = glm::radians(mRotAngle2.as<float>())
-                          * test2Shape(mTest2Phase, mSmoothRot2.mValue);
-
-        // One motion only: spin like a steering wheel, i.e. about the camera's
-        // forward axis through the guard. Rotating about a view-space axis that is
-        // parallel to the view direction preserves every vertex's depth, so the
-        // item can never drift towards or away from the camera -- it just turns in
-        // the screen plane. No pitch, no roll, nothing else.
         const glm::mat4 current = *matrix;
         // Transform the pivot point itself instead of offsetting along a normalised
-        // axis: that keeps it correct even when the pose matrix carries scale, and
-        // it needs no division (a zero column would have to be special-cased).
+        // axis: stays correct when the pose matrix carries scale.
         const glm::vec3 guard = glm::vec3(current * glm::vec4(0.f, 0.f, kTest2PivotZ, 1.f));
 
-        const glm::mat4 rotation = glm::rotate(glm::mat4(1.f), angle, glm::vec3(0.f, 0.f, 1.f));
+        const auto unit = [](glm::vec3 axis, glm::vec3 fallback) {
+            const float len = glm::length(axis);
+            return len > 1e-6f ? axis / len : fallback;
+        };
+        const glm::vec3 localX = unit(glm::vec3(current[0]), glm::vec3(1.f, 0.f, 0.f));
+        const glm::vec3 localY = unit(glm::vec3(current[1]), glm::vec3(0.f, 1.f, 0.f));
+
+        glm::mat4 rotation(1.f);
+
+        if (facePlayer)
+        {
+            // Roll 90 degrees about the blade's long axis so its flat side faces the
+            // camera. The long axis is the local axis lying most in the screen plane
+            // (the face normal points roughly at the camera instead).
+            const glm::vec3 viewDir(0.f, 0.f, 1.f);
+            const auto inPlane = [&](const glm::vec3& axis) {
+                return 1.f - std::fabs(glm::dot(axis, viewDir));
+            };
+            glm::vec3 bladeAxis = localX;
+            if (inPlane(localY) > inPlane(bladeAxis)) bladeAxis = localY;
+            if (inPlane(localZ) > inPlane(bladeAxis)) bladeAxis = localZ;
+            rotation = glm::rotate(rotation, glm::radians(90.f), bladeAxis);
+        }
+
+        if (swinging)
+        {
+            // Steering-wheel spin: rotate about the camera's forward axis, which
+            // preserves every vertex's depth, so the item can never move towards or
+            // away from the camera. Speed comes from Swing Speed, amplitude from
+            // Rotation Angle, and Smooth Rotation only changes the speed profile.
+            const float deltaTime = ImRenderUtils::getDeltaTime();
+            const float swingSeconds = std::max(0.05f, mSwingSpeed2.as<float>() / 20.f);
+            mTest2Phase += deltaTime / swingSeconds;
+            mTest2Phase -= std::floor(mTest2Phase);
+            const float angle = glm::radians(mRotAngle2.as<float>())
+                              * test2Shape(mTest2Phase, mSmoothRot2.mValue);
+            rotation = glm::rotate(glm::mat4(1.f), angle, glm::vec3(0.f, 0.f, 1.f)) * rotation;
+        }
+        else
+        {
+            mTest2Phase = 0.f;
+        }
+
         const glm::mat4 aboutGuard =
             glm::translate(glm::mat4(1.f), guard) * rotation * glm::translate(glm::mat4(1.f), -guard);
         *matrix = aboutGuard * current;
