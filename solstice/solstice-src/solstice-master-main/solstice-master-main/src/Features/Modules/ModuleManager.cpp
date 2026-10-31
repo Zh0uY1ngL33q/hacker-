@@ -9,6 +9,7 @@
 #include "Combat/Aura.hpp"
 #include "Combat/AutoClicker.hpp"
 #include "Combat/Criticals.hpp"
+#include "Combat/LegitCriticals.hpp"
 #include "Combat/InfiniteAura.hpp"
 #include "Combat/Reach.hpp"
 #include "Combat/TriggerBot.hpp"
@@ -149,6 +150,7 @@ void ModuleManager::init()
     mModules.emplace_back(std::make_shared<AutoClicker>());
     mModules.emplace_back(std::make_shared<Reach>());
     mModules.emplace_back(std::make_shared<Criticals>());
+    mModules.emplace_back(std::make_shared<LegitCriticals>());
     mModules.emplace_back(std::make_shared<InfiniteAura>());
 
 
