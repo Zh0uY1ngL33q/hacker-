@@ -181,6 +181,22 @@ namespace {
     // visual pass, everything else is exposed as a setting.
     constexpr float kTest2PivotZ = -0.35f;
 
+    // The known-good sword-guard pose: Blocking mode has always used this chain, so
+    // Test2 reuses it for its right-click pose instead of inventing an axis to roll
+    // the blade around (the first attempt looked nothing like a held sword).
+    void applyBlockingPose(glm::mat4* matrix)
+    {
+        *matrix = glm::translate(*matrix, glm::vec3(0.4, 0.0, -0.15));
+        *matrix = glm::translate(*matrix, glm::vec3(-0.1f, 0.15f, -0.2f));
+        *matrix = glm::translate(*matrix, glm::vec3(-0.24F, 0.25f, -0.20F));
+        *matrix = glm::rotate(*matrix, -1.98F, glm::vec3(0.0F, 1.0F, 0.0F));
+        *matrix = glm::rotate(*matrix, 1.30F, glm::vec3(4.0F, 0.0F, 0.0F));
+        *matrix = glm::rotate(*matrix, 59.9F, glm::vec3(0.0F, 1.0F, 0.0F));
+        *matrix = glm::translate(*matrix, glm::vec3(0.0f, -0.1f, 0.15f));
+        *matrix = glm::translate(*matrix, glm::vec3(0.08f, 0.0f, 0.0f));
+        *matrix = glm::scale(*matrix, glm::vec3(1.05f, 1.05f, 1.05f));
+    }
+
     // Both profiles peak at phase 0.5 and return to 0 at 1.0; the toggle only
     // changes the speed profile (linear triangle vs eased sine), never the range.
     float test2Shape(float phase, bool smooth)
@@ -330,55 +346,35 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
 
         const bool swinging = player->isSwinging();
 
-        const glm::mat4 current = *matrix;
-        // Transform the pivot point itself instead of offsetting along a normalised
-        // axis: stays correct when the pose matrix carries scale.
-        const glm::vec3 guard = glm::vec3(current * glm::vec4(0.f, 0.f, kTest2PivotZ, 1.f));
-
-        const auto unit = [](glm::vec3 axis, glm::vec3 fallback) {
-            const float len = glm::length(axis);
-            return len > 1e-6f ? axis / len : fallback;
-        };
-        const glm::vec3 localX = unit(glm::vec3(current[0]), glm::vec3(1.f, 0.f, 0.f));
-        const glm::vec3 localY = unit(glm::vec3(current[1]), glm::vec3(0.f, 1.f, 0.f));
-
-        glm::mat4 rotation(1.f);
-
-        // Inside the trigger window the blade always faces the player; the spin is
-        // layered on top only while the swing is actually running.
-        // The long axis is the local axis lying most in the screen plane (the face
-        // normal points roughly at the camera instead), so rolling about it turns the
-        // flat side towards the player.
-        const glm::vec3 viewDir(0.f, 0.f, 1.f);
-        const auto inPlane = [&](const glm::vec3& axis) {
-            return 1.f - std::fabs(glm::dot(axis, viewDir));
-        };
-        glm::vec3 bladeAxis = localX;
-        if (inPlane(localY) > inPlane(bladeAxis)) bladeAxis = localY;
-        rotation = glm::rotate(rotation, glm::radians(90.f), bladeAxis);
+        // Right-click pose = the same transform Blocking applies. That pose is
+        // already tuned to look like a held, guard-up sword, so it beats any axis
+        // picked heuristically to roll the blade with.
+        applyBlockingPose(matrix);
 
         if (swinging)
         {
-            // Steering-wheel spin: rotate about the camera's forward axis, which
-            // preserves every vertex's depth, so the item can never move towards or
-            // away from the camera. Speed comes from Swing Speed, amplitude from
-            // Rotation Angle, and Smooth Rotation only changes the speed profile.
+            // Steering-wheel spin on top of it: rotate about the camera's forward
+            // axis, which preserves every vertex's depth, so the item can never move
+            // towards or away from the camera. Speed comes from Swing Speed,
+            // amplitude from Rotation Angle, Smooth Rotation only changes the profile.
+            const glm::mat4 current = *matrix;
+            const glm::vec3 guard = glm::vec3(current * glm::vec4(0.f, 0.f, kTest2PivotZ, 1.f));
+
             const float deltaTime = ImRenderUtils::getDeltaTime();
             const float swingSeconds = std::max(0.05f, mSwingSpeed2.as<float>() / 20.f);
             mTest2Phase += deltaTime / swingSeconds;
             mTest2Phase -= std::floor(mTest2Phase);
             const float angle = glm::radians(mRotAngle2.as<float>())
                               * test2Shape(mTest2Phase, mSmoothRot2.mValue);
-            rotation = glm::rotate(glm::mat4(1.f), angle, glm::vec3(0.f, 0.f, 1.f)) * rotation;
+
+            const glm::mat4 spin = glm::rotate(glm::mat4(1.f), angle, glm::vec3(0.f, 0.f, 1.f));
+            *matrix = glm::translate(glm::mat4(1.f), guard) * spin
+                    * glm::translate(glm::mat4(1.f), -guard) * current;
         }
         else
         {
             mTest2Phase = 0.f;
         }
-
-        const glm::mat4 aboutGuard =
-            glm::translate(glm::mat4(1.f), guard) * rotation * glm::translate(glm::mat4(1.f), -guard);
-        *matrix = aboutGuard * current;
         return;
     }
 
@@ -391,16 +387,7 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
     if ((isBlockingInput() || event.mDoBlockAnimation) && isHoldingSword && mAnimation.mValue != Animation::Default)
     {
         mShouldBlock = true;
-
-        *matrix = glm::translate(*matrix, glm::vec3(0.4, 0.0, -0.15));
-        *matrix = glm::translate(*matrix, glm::vec3(-0.1f, 0.15f, -0.2f));
-        *matrix = glm::translate(*matrix, glm::vec3(-0.24F, 0.25f, -0.20F));
-        *matrix = glm::rotate(*matrix, -1.98F, glm::vec3(0.0F, 1.0F, 0.0F));
-        *matrix = glm::rotate(*matrix, 1.30F, glm::vec3(4.0F, 0.0F, 0.0F));
-        *matrix = glm::rotate(*matrix, 59.9F, glm::vec3(0.0F, 1.0F, 0.0F));
-        *matrix = glm::translate(*matrix, glm::vec3(0.0f, -0.1f, 0.15f));
-        *matrix = glm::translate(*matrix, glm::vec3(0.08f, 0.0f, 0.0f));
-        *matrix = glm::scale(*matrix, glm::vec3(1.05f, 1.05f, 1.05f));
+        applyBlockingPose(matrix);
     } else
     {
         mShouldBlock = false;
