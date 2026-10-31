@@ -22,7 +22,7 @@ public:
     NumberSetting mRotAngle2 = NumberSetting("Rotation Angle", "Peak rotation of the swing, in degrees", 45.f, 0.f, 180.f, 1.f);
     BoolSetting mSmoothRot2 = BoolSetting("Smooth Rotation", "Ease the rotation instead of sweeping it linearly", true);
     // Test4 only: how far the sword dips when an attack connects.
-    NumberSetting mHitDrop = NumberSetting("Hit Drop", "How far the sword moves down when a hit lands", 0.25f, 0.f, 1.f, 0.01f);
+    NumberSetting mHitDrop = NumberSetting("Hit Drop", "How far the sword moves down when a hit lands", 0.35f, 0.f, 1.f, 0.01f);
     BoolSetting mNoSwitchAnimation = BoolSetting("No Switch Animation", "Disables the switch animation", true);
     BoolSetting mFluxSwing = BoolSetting("Flux Swing", "Flux Client styled swinging", true);
     BoolSetting mThirdPersonBlock = BoolSetting("3rd person", "Displays 3rd person animations", false);

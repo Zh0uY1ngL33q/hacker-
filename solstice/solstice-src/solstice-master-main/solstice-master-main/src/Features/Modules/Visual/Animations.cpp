@@ -16,6 +16,9 @@
 #include <SDK/Minecraft/Inventory/Item.hpp>
 #include <SDK/Minecraft/InstanceLocator.hpp>
 #include <SDK/Minecraft/World/HitResult.hpp>
+#include <SDK/Minecraft/Actor/Actor.hpp>
+#include <Utils/GameUtils/ActorUtils.hpp>
+#include <Utils/MiscUtils/RenderUtils.hpp>
 
 #include <Windows.h> // GetAsyncKeyState for the physical right mouse button
 
@@ -192,6 +195,33 @@ namespace {
         *matrix = glm::scale(*matrix, glm::vec3(1.05f, 1.05f, 1.05f));
     }
 
+    // Test4: pick the crosshair target without Level::getHitResult(). That
+    // signature is SUSPECT on 1.21.120 and every call returns null, which is why
+    // the dip never fired. Instead cast a ray from the camera along the view
+    // direction against a box per actor.
+    // glmatrixf stores Minecraft's row-major matrix in glm's column-major layout,
+    // so m[2] is the third row: the view-space Z axis. Its negation is forward
+    // (OWorldToScreen rejects z > 0, i.e. anything behind the camera).
+    bool rayHitsBox(const glm::vec3& origin, const glm::vec3& dir,
+                    const glm::vec3& bmin, const glm::vec3& bmax, float maxDist)
+    {
+        float tmin = 0.f;
+        float tmax = maxDist;
+        for (int i = 0; i < 3; ++i)
+        {
+            // A zero component would make 1/d infinite and 0*inf a NaN.
+            const float d = std::fabs(dir[i]) < 1e-6f ? 1e-6f : dir[i];
+            const float inv = 1.f / d;
+            float t1 = (bmin[i] - origin[i]) * inv;
+            float t2 = (bmax[i] - origin[i]) * inv;
+            if (t1 > t2) std::swap(t1, t2);
+            tmin = std::max(tmin, t1);
+            tmax = std::min(tmax, t2);
+            if (tmin > tmax) return false;
+        }
+        return true;
+    }
+
     // Both profiles peak at phase 0.5 and return to 0 at 1.0; the toggle only
     // changes the speed profile (linear triangle vs eased sine), never the range.
     float test2Shape(float phase, bool smooth)
@@ -329,9 +359,10 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
         auto* player = ci ? ci->getLocalPlayer() : nullptr;
         if (!player) return;
 
-        // Hit detection cannot use the swing flag here: while blocking it is forced
-        // off below. Use the physical left button rising edge plus the crosshair
-        // target instead (the same Level::getHitResult() TriggerBot reads).
+        // Hit detection cannot use the swing flag: while blocking it is forced off
+        // below. It also cannot use Level::getHitResult(), which is a SUSPECT
+        // signature on 1.21.120 and always returns null - that is why the dip never
+        // fired before. So: physical left button rising edge, then a raycast below.
         static bool sWasAttackDown = false;
         const bool attackDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
         const bool attackStarted = attackDown && !sWasAttackDown;
@@ -339,10 +370,46 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
 
         if (attackStarted)
         {
-            auto* level = player->getLevel();
-            auto* hitResult = level ? level->getHitResult() : nullptr;
-            if (hitResult && hitResult->mType == HitType::ENTITY)
-                mTest4Phase = 1e-4f; // start the dip
+            constexpr float kReach = 4.5f; // melee reach, a little generous
+            const glm::vec3 origin = RenderUtils::transform.mOrigin;
+            const glm::vec3 back = glm::vec3(RenderUtils::transform.mMatrix[2]);
+
+            static int sProbes = 0;
+            int candidates = 0;
+            bool hit = false;
+
+            if (glm::dot(back, back) > 1e-6f)
+            {
+                const glm::vec3 dir = glm::normalize(-back);
+                for (auto* actor : ActorUtils::getActorList(false, true))
+                {
+                    if (!actor || actor == player) continue;
+                    auto* pos = actor->getPos();
+                    if (!pos) continue;
+                    if (glm::distance(*pos, origin) > kReach) continue;
+                    ++candidates;
+                    // Built from the render position instead of getAABB(): that
+                    // path needs two component offsets that are also unresolved.
+                    const glm::vec3 bmin = *pos - glm::vec3(0.6f, 0.2f, 0.6f);
+                    const glm::vec3 bmax = *pos + glm::vec3(0.6f, 1.8f, 0.6f);
+                    if (rayHitsBox(origin, dir, bmin, bmax, kReach))
+                    {
+                        hit = true;
+                        break;
+                    }
+                }
+            }
+
+            if (hit) mTest4Phase = 1e-4f; // start the dip
+
+            if (sProbes < 5)
+            {
+                ++sProbes;
+                spdlog::warn("[Test4] probe #{} origin=({:.2f}, {:.2f}, {:.2f}) "
+                             "backLen={:.3f} candidates={} hit={}",
+                             sProbes, origin.x, origin.y, origin.z,
+                             glm::length(back), candidates, hit);
+            }
         }
 
         const bool triggered = isBlockingInput() || event.mDoBlockAnimation;
@@ -383,9 +450,14 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
             }
             else
             {
-                // Down and back up, pure translation on this pose's own Y axis.
+                // Down and back up. Left-multiplied on purpose: every other op in
+                // this file is right-multiplied, which means it happens in the
+                // item's own frame, and that frame has already been rotated by the
+                // blocking chain, so "down" there is the blade's axis, not the
+                // screen's. Multiplying from the left translates in the space the
+                // pose starts in (the hand/view space), where -Y is screen down.
                 const float dip = std::sin(mTest4Phase * kPi) * mHitDrop.as<float>();
-                *matrix = glm::translate(*matrix, glm::vec3(0.f, -dip, 0.f));
+                *matrix = glm::translate(glm::mat4(1.f), glm::vec3(0.f, -dip, 0.f)) * *matrix;
             }
         }
         return;
