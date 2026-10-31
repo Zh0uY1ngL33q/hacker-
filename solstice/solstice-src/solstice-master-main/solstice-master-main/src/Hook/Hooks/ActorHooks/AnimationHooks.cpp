@@ -41,11 +41,16 @@ int AnimationHooks::getCurrentSwingDuration(Actor* actor)
     auto original = mSwingDetour->getOriginal<&getCurrentSwingDuration>();
     int result = original(actor);
 
+    // Only the local player's swing is configurable, and this getter runs for
+    // every animating entity. Skipping the rest keeps the detour off the hot
+    // path -- dispatching would allocate an event holder per actor per tick.
+    auto* ci = ClientInstance::get();
+    auto* local = ci ? ci->getLocalPlayer() : nullptr;
+    if (!actor || actor != local) return result;
+
     auto holder = nes::make_holder<SwingDurationEvent>(result);
     gFeatureManager->mDispatcher->trigger(holder);
-    result = holder->mSwingDuration;
-
-    return result;
+    return holder->mSwingDuration;
 }
 
 void* AnimationHooks::doBobHurt(void* _this, glm::mat4* matrix)
@@ -107,7 +112,28 @@ void AnimationHooks::swingTraceEntry(void* _this, void* a1, void* a2, void* a3)
 void AnimationHooks::init()
 {
     uintptr_t func = SigManager::Mob_getCurrentSwingDuration;
-    mSwingDetour = std::make_unique<Detour>("Mob::getCurrentSwingDuration", reinterpret_cast<void*>(func), &getCurrentSwingDuration);
+    if (!func) {
+        // 1.21.120: the function was recompiled, so the 1.21.44 pattern no longer
+        // matches and the detour died with MH_ERROR_NOT_EXECUTABLE at 0x0.
+        // Verified offline against the runtime image (ImageBase 0x7FF714E80000):
+        //   RVA 0x58FCE90 -- prologue `48 89 5C 24 10 48 89 74 24 18 57 48 83 EC 40`,
+        //   returns the duration in eax (`cvttss2si eax, xmm0 ; ret`) and keys off
+        //   the precomputed HashedString constants for haste / mining fatigue,
+        //   which is what Bedrock's swing-duration getter depends on.
+        //   Its consumer is the swing-progress updater at RVA 0x590D270:
+        //     call 0x58FCE90                 ; eax = duration
+        //     mov edx,[rbx+0x880] / inc edx  ; swing tick counter
+        //     cmp edx,eax / jl ...           ; wrap when finished
+        //     cvtdq2ps / divss / movss [rbx+0x87C], xmm1   ; mSwingProgress = tick/duration
+        //   so overriding the return value is exactly "swing speed".
+        const auto moduleBase = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
+        func = moduleBase + 0x58FCE90;
+        spdlog::warn("[AnimationHooks] Mob::getCurrentSwingDuration sig unresolved; using verified RVA 0x58FCE90 (base {:#x})", moduleBase);
+    }
+    if (func)
+        mSwingDetour = std::make_unique<Detour>("Mob::getCurrentSwingDuration", reinterpret_cast<void*>(func), &getCurrentSwingDuration);
+    else
+        spdlog::warn("[AnimationHooks] swing-duration hook unavailable; the swing time setting stays inert.");
 
     // 1.21.120: the legacy SigManager::BobHurt sig now resolves to a false-positive
     // string builder (0xCE0260) and is unusable. The correct, verified replacement
@@ -128,13 +154,8 @@ void AnimationHooks::init()
         }
     }
 
-    // TEMP TRACE (1.21.120): hook the hand-render swing function to capture its
-    // caller. getCurrentSwingDuration is inlined there, so the caller is where the
-    // swing-duration is actually computed. The bytepatch sig resolves to 0x58EB4EC
-    // (inside this function); the function start is 0x10C bytes earlier (0x58EB3E0).
-    constexpr bool kTraceSwingCaller = true;
-    if (kTraceSwingCaller && SigManager::ItemInHandRenderer_render_bytepatch) {
-        uintptr_t swingFn = SigManager::ItemInHandRenderer_render_bytepatch - 0x10C;
-        mSwingTraceDetour = std::make_unique<Detour>("handRenderSwingTrace", reinterpret_cast<void*>(swingFn), &swingTraceEntry);
-    }
+    // The 1.21.120 swing-trace detour that used to live here (hooking
+    // ItemInHandRenderer_render_bytepatch - 0x10C) never fired in any test session
+    // and the duration getter is now located directly, so the probe is gone rather
+    // than leaving a detour on a function that turns out not to be on the path.
 }

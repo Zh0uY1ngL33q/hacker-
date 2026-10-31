@@ -240,7 +240,13 @@ void Animations::onBaseTickEvent(BaseTickEvent& event)
 
 void Animations::onSwingDurationEvent(SwingDurationEvent& event)
 {
-    event.mSwingDuration = mSwingTime.as<int>();
+    // The consumer divides a tick counter by this value (RVA 0x590D270:
+    // `divss` into mSwingProgress), and 0 would make the division meaningless
+    // (the engine guards it by zeroing progress, i.e. the arm freezes). Clamp to
+    // one tick and leave the game's own value when the slider sits at 0.
+    const int configured = mSwingTime.as<int>();
+    if (configured > 0)
+        event.mSwingDuration = configured;
 }
 
 void Animations::onBoneRenderEvent(BoneRenderEvent& event)
