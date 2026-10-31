@@ -67,6 +67,12 @@ message(STATUS "Build branch: ${SOLSTICE_BUILD_BRANCH}")
 solstice_git(SOLSTICE_BUILD_COMMIT_MESSAGE "unknown" log -1 --pretty=%B)
 string(REGEX REPLACE "\n.*" "" SOLSTICE_BUILD_COMMIT_MESSAGE "${SOLSTICE_BUILD_COMMIT_MESSAGE}")
 string(REPLACE "\"" "\\\"" SOLSTICE_BUILD_COMMIT_MESSAGE "${SOLSTICE_BUILD_COMMIT_MESSAGE}")
+# Defense: drop any byte outside printable ASCII (0x20-0x7E), including newlines,
+# CR and high bytes from a UTF-8 (e.g. Chinese) commit message. Under the GBK
+# codepage (936) those bytes used to produce C2001 "newline in string literal"
+# / C4819 inside this macro. This keeps the macro a clean single-line ASCII
+# string regardless of the commit message language.
+string(REGEX REPLACE "[^ -~]" "" SOLSTICE_BUILD_COMMIT_MESSAGE "${SOLSTICE_BUILD_COMMIT_MESSAGE}")
 file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_BUILD_COMMIT_MESSAGE \"${SOLSTICE_BUILD_COMMIT_MESSAGE}\"\n")
 message(STATUS "Build commit message: ${SOLSTICE_BUILD_COMMIT_MESSAGE}")
 
