@@ -15,6 +15,7 @@
 #include <SDK/Minecraft/Inventory/ItemStack.hpp>
 #include <SDK/Minecraft/Inventory/Item.hpp>
 #include <SDK/Minecraft/InstanceLocator.hpp>
+#include <SDK/Minecraft/World/HitResult.hpp>
 
 #include <Windows.h> // GetAsyncKeyState for the physical right mouse button
 
@@ -321,6 +322,65 @@ void Animations::onBoneRenderEvent(BoneRenderEvent& event)
 void Animations::onBobHurtEvent(BobHurtEvent& event)
 {
     auto matrix = event.mMatrix;
+
+    if (mAnimation.mValue == Animation::Test4)
+    {
+        auto* ci = ClientInstance::get();
+        auto* player = ci ? ci->getLocalPlayer() : nullptr;
+        if (!player) return;
+
+        // Hit detection: a swing that starts while an entity sits under the
+        // crosshair. That is the same signal TriggerBot uses, so no extra hook.
+        const bool swinging = player->isSwinging();
+        static bool sWasSwinging = false;
+        const bool swingStarted = swinging && !sWasSwinging;
+        sWasSwinging = swinging;
+
+        if (swingStarted)
+        {
+            auto* level = player->getLevel();
+            auto* hitResult = level ? level->getHitResult() : nullptr;
+            if (hitResult && hitResult->mType == HitType::ENTITY)
+                mTest4Phase = 1e-4f; // start the dip
+        }
+
+        const bool triggered = isBlockingInput() || event.mDoBlockAnimation;
+
+        // Right click keeps the blocking pose (that is what "Test" looked like when
+        // it was triggered); the dip below is independent of it, because an attack
+        // does not require holding the right mouse button.
+        if (!triggered && mTest4Phase <= 0.f) return;
+
+        if (triggered)
+        {
+            *matrix = glm::translate(*matrix, glm::vec3(0.4, 0.0, -0.15));
+            *matrix = glm::translate(*matrix, glm::vec3(-0.1f, 0.15f, -0.2f));
+            *matrix = glm::translate(*matrix, glm::vec3(-0.24F, 0.25f, -0.20F));
+            *matrix = glm::rotate(*matrix, -1.98F, glm::vec3(0.0F, 1.0F, 0.0F));
+            *matrix = glm::rotate(*matrix, 1.30F, glm::vec3(4.0F, 0.0F, 0.0F));
+            *matrix = glm::rotate(*matrix, 59.9F, glm::vec3(0.0F, 1.0F, 0.0F));
+            *matrix = glm::translate(*matrix, glm::vec3(0.0f, -0.1f, 0.15f));
+            *matrix = glm::translate(*matrix, glm::vec3(0.08f, 0.0f, 0.0f));
+            *matrix = glm::scale(*matrix, glm::vec3(1.05f, 1.05f, 1.05f));
+        }
+
+        if (mTest4Phase > 0.f)
+        {
+            constexpr float kPi = 3.14159265358979f;
+            mTest4Phase += ImRenderUtils::getDeltaTime() / 0.25f; // ~250 ms dip
+            if (mTest4Phase >= 1.f)
+            {
+                mTest4Phase = 0.f;
+            }
+            else
+            {
+                // Down and back up, pure translation on this pose's own Y axis.
+                const float dip = std::sin(mTest4Phase * kPi) * mHitDrop.as<float>();
+                *matrix = glm::translate(*matrix, glm::vec3(0.f, -dip, 0.f));
+            }
+        }
+        return;
+    }
 
     if (mAnimation.mValue == Animation::Test3)
     {

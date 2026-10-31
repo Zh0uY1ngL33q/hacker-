@@ -12,14 +12,17 @@ public:
         Blocking,
         Test,
         Test2,
-        Test3
+        Test3,
+        Test4
     };
-    EnumSettingT<Animation> mAnimation = EnumSettingT("Animation", "The animation to use", Animation::Blocking, "Default", "Blocking", "Test", "Test2", "Test3");
+    EnumSettingT<Animation> mAnimation = EnumSettingT("Animation", "The animation to use", Animation::Blocking, "Default", "Blocking", "Test", "Test2", "Test3", "Test4");
     NumberSetting mSwingTime = NumberSetting("Swing Time", "The time it takes to swing your arm", 6.f, 0.f, 20.0f, 1.f);
     // Test2 / Test3 only: the three settings below are the whole options list.
     NumberSetting mSwingSpeed2 = NumberSetting("Swing Speed", "Ticks per full swing (lower swings faster)", 6.f, 1.f, 20.f, 1.f);
     NumberSetting mRotAngle2 = NumberSetting("Rotation Angle", "Peak rotation of the swing, in degrees", 45.f, 0.f, 180.f, 1.f);
     BoolSetting mSmoothRot2 = BoolSetting("Smooth Rotation", "Ease the rotation instead of sweeping it linearly", true);
+    // Test4 only: how far the sword dips when an attack connects.
+    NumberSetting mHitDrop = NumberSetting("Hit Drop", "How far the sword moves down when a hit lands", 0.25f, 0.f, 1.f, 0.01f);
     BoolSetting mNoSwitchAnimation = BoolSetting("No Switch Animation", "Disables the switch animation", true);
     BoolSetting mFluxSwing = BoolSetting("Flux Swing", "Flux Client styled swinging", true);
     BoolSetting mThirdPersonBlock = BoolSetting("3rd person", "Displays 3rd person animations", false);
@@ -40,6 +43,7 @@ public:
             &mSwingSpeed2,
             &mRotAngle2,
             &mSmoothRot2,
+            &mHitDrop,
             &mNoSwitchAnimation,
             &mFluxSwing,
             &mThirdPersonBlock,
@@ -57,14 +61,15 @@ public:
         VISIBILITY_CONDITION(mSwingSpeed2, usesCustomRotation());
         VISIBILITY_CONDITION(mRotAngle2, usesCustomRotation());
         VISIBILITY_CONDITION(mSmoothRot2, usesCustomRotation());
-        VISIBILITY_CONDITION(mSwingTime, !usesCustomRotation());
-        VISIBILITY_CONDITION(mNoSwitchAnimation, !usesCustomRotation());
-        VISIBILITY_CONDITION(mFluxSwing, !usesCustomRotation());
-        VISIBILITY_CONDITION(mThirdPersonBlock, !usesCustomRotation());
-        VISIBILITY_CONDITION(mCustomSwingAngle, !usesCustomRotation());
-        VISIBILITY_CONDITION(mOnlyOnBlock, mCustomSwingAngle.mValue && !usesCustomRotation());
-        VISIBILITY_CONDITION(mSwingAngleSetting, mCustomSwingAngle.mValue && !usesCustomRotation());
-        VISIBILITY_CONDITION(mSmallItems, !usesCustomRotation());
+        VISIBILITY_CONDITION(mHitDrop, usesHitDrop());
+        VISIBILITY_CONDITION(mSwingTime, !usesSpecialLayout());
+        VISIBILITY_CONDITION(mNoSwitchAnimation, !usesSpecialLayout());
+        VISIBILITY_CONDITION(mFluxSwing, !usesSpecialLayout());
+        VISIBILITY_CONDITION(mThirdPersonBlock, !usesSpecialLayout());
+        VISIBILITY_CONDITION(mCustomSwingAngle, !usesSpecialLayout());
+        VISIBILITY_CONDITION(mOnlyOnBlock, mCustomSwingAngle.mValue && !usesSpecialLayout());
+        VISIBILITY_CONDITION(mSwingAngleSetting, mCustomSwingAngle.mValue && !usesSpecialLayout());
+        VISIBILITY_CONDITION(mSmallItems, !usesSpecialLayout());
 
         mNames = {
             {Lowercase, "animations"},
@@ -80,6 +85,10 @@ public:
         return mAnimation.mValue == Animation::Test2 || mAnimation.mValue == Animation::Test3;
     }
 
+    bool usesHitDrop() const { return mAnimation.mValue == Animation::Test4; }
+
+    bool usesSpecialLayout() const { return usesCustomRotation() || usesHitDrop(); }
+
     int mSwingDuration = 0.f;
     int mOldSwingDuration = 0.f;
     float* mSwingAngle = nullptr;
@@ -87,6 +96,8 @@ public:
     // Test2 phase in [0,1). Integrated from the frame delta: the engine's own
     // swing-progress fields are read through offsets that no longer line up.
     float mTest2Phase = 0.f;
+    // Test4: 0 = idle, otherwise the dip progress in (0,1].
+    float mTest4Phase = 0.f;
 
     void onEnable() override;
     void onDisable() override;
