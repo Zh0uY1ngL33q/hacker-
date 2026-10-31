@@ -1,20 +1,21 @@
 //
 // LegitCriticals - legit (non-sprint, crouched) critical hits while airborne.
 //
-// Timing model (the fix for the race with the attack packet):
-//   A Bedrock critical hit is decided by the player's sprint/sneak state, which
-//   the server learns from the most recent PlayerAuthInput packet. Patching only
-//   the outgoing PlayerAuthInput used to race with Aura's attack: depending on
-//   BaseTickEvent listener order, Aura could send the attack before this module
-//   had dropped sprint, so the server still saw a sprinting player -> no crit.
+// Timing model (reference: z1yr addon module/combat/criticals.py):
+//   A Bedrock crit is decided by the player's falling/sneak state, which the
+//   server learns from the most recent PlayerAuthInput. Patching a SINGLE
+//   outgoing PAI used to race with Aura's attack: depending on BaseTickEvent
+//   listener order the attack could go out before the PAI was patched, so the
+//   server still saw a sprinting, non-sneaking player -> no crit (the "和攻击同
+//   时发生 / 攻击完成才执行" symptom).
 //
-//   Now Aura explicitly drives the sequence: right before it sends an attack it
-//   calls arm(), which opens a "crit window" (drops the local sprint flag and,
-//   per Mode, crouches), and the outgoing PlayerAuthInput is patched while that
-//   window is open. onBaseTickEvent auto-closes the window on the NEXT tick
-//   (disarm), restoring normal sprint/jump. This makes the ordering deterministic
-//   instead of relying on listener registration order. The window is also force-
-//   closed immediately when the player lands.
+//   The robust fix, copied from the proven addon, is to HOLD the modified input
+//   state CONTINUOUSLY while the player is airborne: every airborne tick the
+//   local MoveInputComponent is set AND the outgoing PAI is patched, so the
+//   attack always rides on a correctly-modified input no matter the order. On
+//   landing the state is restored (disarm), recovering normal sprint/jump. The
+//   previous 1-tick window is gone. arm() (called by Aura before an attack) is
+//   now just a redundant immediate re-apply; onBaseTickEvent is the authority.
 
 #include "LegitCriticals.hpp"
 
@@ -25,8 +26,6 @@
 #include <SDK/Minecraft/Actor/Actor.hpp>
 #include <SDK/Minecraft/Actor/Components/MoveInputComponent.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
-
-uint64_t LegitCriticals::sTick = 0;
 
 void LegitCriticals::onEnable() {
     gFeatureManager->mDispatcher->listen<BaseTickEvent, &LegitCriticals::onBaseTickEvent>(this);
@@ -39,54 +38,42 @@ void LegitCriticals::onDisable() {
     disarm(); // 关闭模块时恢复本地疾跑/下蹲，避免卡在断疾跑状态
 }
 
-// 每 tick 递增计数器；并在下一 tick 自动关闭上一 tick 打开的暴击窗口。
+// 持续模型：空中则维持暴击窗口（每 tick 重新应用本地状态，抵消 Sprint 模块每 tick 把
+// mIsSprinting 置 true），落地则恢复疾跑/下蹲。
 void LegitCriticals::onBaseTickEvent(BaseTickEvent& event) {
-    sTick++;
-
-    auto player = event.mActor;
+    auto* player = event.mActor; // 本地玩家
     if (!player) return;
 
-    // 落地立即恢复，且不再维持窗口。
     if (player->isOnGround()) {
-        if (mArmed) disarm();
+        if (mArmed) disarm();   // 落地恢复疾跑/下蹲（即"恢复正常疾跑跳跃"）
         return;
     }
 
-    // 窗口持续到下一 tick 自动恢复（避免持续压制疾跑）。
-    if (mArmed && sTick > mArmTick) {
-        disarm();
-        return;
-    }
-
-    // 窗口仍激活：每 tick 重新应用本地状态，抵消 Sprint 模块每 tick 把 mIsSprinting 置 true。
-    if (mArmed) applyLocal(player);
-}
-
-// 攻击前由 Aura 调用：进入暴击窗口。仅空中生效。
-void LegitCriticals::arm() {
-    auto player = ClientInstance::get()->getLocalPlayer();
-    if (!player) return;
-    if (player->isOnGround()) return; // 地面无法暴击，不打开窗口
-
+    // 空中：打开/维持暴击窗口，每 tick 重新应用本地状态。
     mArmed = true;
-    mArmTick = sTick;
     applyLocal(player);
 }
 
-// 下一 tick 自动调用（或落地/关模块时）：恢复本地疾跑与下蹲。
+// 攻击前由 Aura 调用（冗余保险）：立即应用一次本地状态；真正维持由 onBaseTickEvent 负责。
+void LegitCriticals::arm() {
+    auto* player = ClientInstance::get()->getLocalPlayer();
+    if (!player || player->isOnGround()) return;
+    mArmed = true;
+    applyLocal(player);
+}
+
+// 落地/关模块时：恢复本地疾跑与下蹲。
 void LegitCriticals::disarm() {
     if (!mArmed) return;
     mArmed = false;
 
-    auto player = ClientInstance::get()->getLocalPlayer();
+    auto* player = ClientInstance::get()->getLocalPlayer();
     if (!player) return;
 
     if (auto* moveInput = player->getMoveInputComponent()) {
-        // 恢复疾跑：允许本地重新疾跑（若开了 Sprint 模块，它会自行重新置 true）。
-        moveInput->mIsSprinting = true;
-        // 恢复下蹲：清除本地下蹲位。
+        moveInput->mIsSprinting = true;                       // 恢复疾跑
         if (mMode.mValue == Mode::Sneaking || mMode.mValue == Mode::Both) {
-            moveInput->mIsSneakDown = false;
+            moveInput->mIsSneakDown = false;                  // 恢复下蹲
         }
     }
 }
@@ -104,12 +91,12 @@ void LegitCriticals::applyLocal(Actor* player) {
     }
 }
 
-// 网络侧：仅在暴击窗口内改写发出的 PlayerAuthInput。
+// 网络侧：窗口内（即空中）改写发出的 PlayerAuthInput，与本地状态一致。
 void LegitCriticals::onPacketOutEvent(PacketOutEvent& event) {
     if (!mArmed) return;
     if (event.mPacket->getId() != PacketID::PlayerAuthInput) return;
 
-    auto player = ClientInstance::get()->getLocalPlayer();
+    auto* player = ClientInstance::get()->getLocalPlayer();
     if (!player) return;
     if (player->isOnGround()) return; // 额外保险
 

@@ -39,10 +39,9 @@ public:
     void onPacketOutEvent(class PacketOutEvent& event);
     void applyInput(class PlayerAuthInputPacket& paip);
 
-    // 攻击协作接口（由 Aura 在发出攻击包前调用）：
-    //   arm()   —— 进入暴击窗口：断疾跑（StopSprinting/Both）+ 下蹲（Sneaking/Both），
-    //              仅当玩家在空中时生效；窗口持续到下一 tick 自动 disarm()。
-    //   disarm()—— 离开窗口，恢复本地疾跑/下蹲（由 onBaseTickEvent 在下一 tick 自动调用）。
+    // 攻击协作接口（由 Aura 在发出攻击包前调用，冗余保险；持续模型由 onBaseTickEvent 主导）：
+    //   arm()   —— 立即应用一次本地状态（断疾跑/下蹲），仅当玩家在空中时生效。
+    //   disarm()—— 恢复本地疾跑/下蹲（落地或关模块时由 onBaseTickEvent 调用）。
     void arm();
     void disarm();
 
@@ -51,9 +50,7 @@ public:
     }
 
 private:
-    bool mArmed = false;          // 暴击窗口是否激活
-    uint64_t mArmTick = 0;        // 进入窗口的 tick 计数（用于下一 tick 自动恢复）
-    static uint64_t sTick;        // 全局 tick 计数（每 BaseTickEvent +1）
+    bool mArmed = false;          // 暴击窗口是否激活（= 玩家在空中且模块启用）
 
     void applyLocal(class Actor* player);
 };

@@ -475,8 +475,8 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
             rotate(actor);
         }
 
-        // LegitCriticals 协作：发出攻击包前打开暴击窗口（断疾跑/下蹲），
-        // 下一 tick 由 LegitCriticals 自动恢复。仅空中生效。
+        // LegitCriticals 协作：发出攻击包前立即应用一次本地状态（断疾跑/下蹲），
+        // 仅冗余保险；真正的"空中持续、落地恢复"由 LegitCriticals::onBaseTickEvent 主导。仅空中生效。
         if (auto* legitCrit = gFeatureManager->mModuleManager->getModule<LegitCriticals>()) {
             if (legitCrit->mEnabled && !player->isOnGround()) {
                 legitCrit->arm();
