@@ -256,106 +256,53 @@ bool BlockUtils::isValidPlacePos(glm::ivec3 blockPos)
 void BlockUtils::placeBlock(glm::vec3 pos, int side)
 {
     auto player = ClientInstance::get()->getLocalPlayer();
+    if (!player) return;
     glm::ivec3 blockPos = pos;
     if (side == -1) side = getBlockPlaceFace(blockPos);
+    if (side == -1) return;
 
-    glm::vec3 vec = blockPos;
-
-    if (side != -1) vec += blockFaceOffsets[side] * 0.5f;
-
-    HitResult* res = player->getLevel()->getHitResult();
-
-    vec += blockFaceOffsets[side] * 0.5f;
-
-    res->mBlockPos = vec;
-    res->mFacing = side;
-
-    res->mType = HitType::BLOCK;
-    res->mIndirectHit = false;
-    res->mRayDir = vec;
-    res->mPos = blockPos;
-
-    bool oldSwinging = player->isSwinging();
-    int oldSwingProgress = player->getSwingProgress();
-    player->getGameMode()->buildBlock(blockPos + glm::ivec3(blockFaceOffsets[side]) , side, true);
-    player->setSwinging(oldSwinging);
-    player->setSwingProgress(oldSwingProgress);
-
-    vec += blockFaceOffsets[side] * 0.5f;
-
-    res->mBlockPos = vec;
-    res->mFacing = side;
-
-    res->mType = HitType::BLOCK;
-    res->mIndirectHit = false;
-    res->mRayDir = vec;
-    res->mPos = blockPos;
-
-
-    /*auto transac = MinecraftPackets::createPacket<InventoryTransactionPacket>();
+    // 1.21.120: getHitResult() returns null (signature broken) and buildBlock relies on it,
+    // so placement now goes through an ItemUseInventoryTransaction(Place) packet instead.
+    auto transac = MinecraftPackets::createPacket<InventoryTransactionPacket>();
 
     auto cit = std::make_unique<ItemUseInventoryTransaction>();
     cit->mActionType = ItemUseInventoryTransaction::ActionType::Place;
     int slot = player->getSupplies()->mSelectedSlot;
     cit->mSlot = slot;
-    cit->mItemInHand = *player->getSupplies()->getContainer()->getItem(slot);
-    cit->mBlockPos = blockPos + glm::ivec3(blockFaceOffsets[side]);
+    cit->mItemInHand = NetworkItemStackDescriptor(*player->getSupplies()->getContainer()->getItem(slot));
+    cit->mBlockPos = blockPos;
     cit->mFace = side;
     cit->mTargetBlockRuntimeId = 0;
     cit->mPlayerPos = *player->getPos();
 
-    glm::vec3 pPos = *player->getPos() - glm::vec3(0, PLAYER_HEIGHT, 0);
-    glm::vec3 clickPos = glm::vec3(blockPos) - pPos;
-
-
-    cit->mClickPos = clickPos;
+    // clickPos is re-written on the outgoing packet by Scaffold::onPacketOutEvent;
+    // seed it with the face-appropriate default so it is well-formed before send.
+    cit->mClickPos = clickPosOffsets[side];
 
     transac->mTransaction = std::move(cit);
     PacketUtils::queueSend(transac, false);
 
+    // local prediction so the block appears immediately
     ItemStack* item = player->getSupplies()->getContainer()->getItem(slot);
-    if (!item->mItem) return;
+    if (!item || !item->mItem) return;
     if (!item->mBlock) return;
 
-    setBlock(blockPos, item->mBlock);*/
-
+    setBlock(blockPos, item->mBlock);
 }
 
 void BlockUtils::startDestroyBlock(glm::vec3 pos, int side)
 {
     auto player = ClientInstance::get()->getLocalPlayer();
+    if (!player) return;
     glm::ivec3 blockPos = pos;
     if (side == -1) side = getExposedFace(blockPos);
+    if (side == -1) return;
 
-    glm::vec3 vec = blockPos;
-
-    if (side != -1) vec += blockFaceOffsets[side] * -0.5f;
-
-    HitResult* res = player->getLevel()->getHitResult();
-
-    vec += blockFaceOffsets[side] * 0.5f;
-
-    res->mBlockPos = vec;
-    res->mFacing = side;
-
-    res->mType = HitType::BLOCK;
-    res->mIndirectHit = false;
-    res->mRayDir = vec;
-    res->mPos = blockPos;
-
+    // 1.21.120: getHitResult() returns null (signature broken) and the legacy code
+    // dereferenced it. startDestroyBlock takes explicit pos+face, so drop the global
+    // hit-result setup entirely and just begin mining on the game side.
     bool isDestroyedOut = false;
     player->getGameMode()->startDestroyBlock(&blockPos, side, isDestroyedOut);
-    //if (!isDestroyedOut) player->getGameMode()->continueDestroyBlock(blockPos, side, *player->getPos(), isDestroyedOut);
-
-    vec += blockFaceOffsets[side] * -0.5f;
-
-    res->mBlockPos = vec;
-    res->mFacing = side;
-
-    res->mType = HitType::BLOCK;
-    res->mIndirectHit = false;
-    res->mRayDir = vec;
-    res->mPos = blockPos;
 }
 
 static constexpr int AIR_RUNTIME_ID = 3690217760;

@@ -77,9 +77,9 @@ public:
     DEFINE_SIG(ItemStack_vTable, "48 8D 0D ? ? ? ? E8 ? ? ? ? 90 48 8D 05 ? ? ? ? 48 89 05 ? ? ?", SigType::RefSig, 3);
     DEFINE_SIG(ItemStack_getCustomName, "48 89 ? ? ? 57 48 83 EC ? 48 8B ? 48 8B ? E8 ? ? ? ? 84 C0 74 ? 48 8B ? 48 8B ? E8 ? ? ? ? 48 8B", SigType::Sig, 0);
     DEFINE_SIG(ItemStack_fromDescriptor, "48 89 ? ? ? 48 89 ? ? ? 48 89 ? ? ? 57 48 83 EC ? 0F 57 ? 48 8B", SigType::Sig, 0);
-    DEFINE_SIG(ItemUseInventoryTransaction_vtable, "48 8D ? ? ? ? ? 48 89 ? 8B 46 ? 89 47 ? 0F B6 ? ? 88 47 ? 8B 56", SigType::RefSig, 3);
+    DEFINE_SIG(ItemUseInventoryTransaction_vtable, "48 8D 05 ? ? ? ? 48 89 06 44 89 76 68 C6 46 6C 00", SigType::RefSig, 3); // 1.21.120: ItemUse ctor derived vtable lea (type=2 branch in ComplexInventoryTransaction::fromType factory)
     DEFINE_SIG(ItemUseOnActorInventoryTransaction_vtable, "48 8D ? ? ? ? ? 48 89 ? 48 89 ? ? 89 6F ? C7 47 74", SigType::RefSig, 3);
-    DEFINE_SIG(ItemReleaseInventoryTransaction_vtable, "48 8D ? ? ? ? ? 48 89 ? ? 40 88 ? ? ? ? ? 89 AF ? ? ? ? 40 88 ? ? ? ? ? 89 AF ? ? ? ? 0F 57 ? 0F 11 ? ? ? ? ? 48 89 ? ? ? ? ? 48 C7 87 C8 00 00 00", SigType::RefSig, 3); // "gamePlayEmote" -> couple of refs -> this 
+    DEFINE_SIG(ItemReleaseInventoryTransaction_vtable, "48 8D 05 ? ? ? ? 48 89 06 89 6E 68 C7 46 6C FF FF FF FF", SigType::RefSig, 3); // 1.21.120: ItemRelease ctor derived vtable lea (type=4 branch in ComplexInventoryTransaction::fromType factory)
     // 1.21.120: key-state table update followed by a 0x1c-byte event enqueue.
     // The old call-site pattern resolved to the CRT-style rand() at RVA 0x402380.
     DEFINE_SIG(Keyboard_feed, "48 83 EC 48 0F B6 C1 4C 8D 05 ? ? ? ? 89 54 24 20 88 4C 24 24 C6 44 24 38 00 41 89 14 80", SigType::Sig, 0);
