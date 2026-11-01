@@ -131,8 +131,24 @@ def find_all(img: Image, pat, mask, limit: int):
 
 SIG_RE = re.compile(
     r"DEFINE_SIG\(\s*(\w+)\s*,\s*\"([^\"]+)\"\s*,\s*SigType::(\w+)\s*,\s*(-?\w+)\s*\)")
-FIELD_RE = re.compile(
-    r"DEFINE_INDEX_FIELD(?:_TYPED)?\(\s*(?:\w+\s*,\s*)?(\w+)\s*,\s*\"([^\"]+)\"\s*,\s*(-?\w+)\s*,\s*OffsetType::(\w+)\s*\)")
+# The two field macros differ in arity and, more importantly, in how wide the
+# displacement is read. DEFINE_INDEX_FIELD reads an int; DEFINE_INDEX_FIELD_TYPED
+# reads whatever the first argument names, and in this tree every such use is
+# uint8_t -- a disp8, one byte. Reading four bytes there invents values like
+# 25905216 for BedrockPlatformUWP_mcGame, which the client never computes.
+_FIELD_TYPED_RE = re.compile(
+    r"DEFINE_INDEX_FIELD_TYPED\(\s*(\w+)\s*,\s*(\w+)\s*,\s*\"([^\"]+)\"\s*,\s*(-?\w+)\s*,\s*OffsetType::(\w+)\s*\)")
+_FIELD_PLAIN_RE = re.compile(
+    r"DEFINE_INDEX_FIELD\(\s*(\w+)\s*,\s*\"([^\"]+)\"\s*,\s*(-?\w+)\s*,\s*OffsetType::(\w+)\s*\)")
+
+# <format char>, size in bytes. Mirrors what the C++ macro dereferences.
+FIELD_WIDTHS = {
+    "uint8_t": ("B", 1), "int8_t": ("b", 1),
+    "uint16_t": ("H", 2), "int16_t": ("h", 2),
+    "uint32_t": ("I", 4), "int32_t": ("i", 4),
+    "int": ("i", 4), "unsigned": ("I", 4),
+    "uintptr_t": ("Q", 8), "intptr_t": ("q", 8),
+}
 
 
 def strip_comments(src: str) -> str:
@@ -179,9 +195,14 @@ def parse_headers(paths):
         for m in SIG_RE.finditer(src):
             sigs.append({"name": m.group(1), "pattern": m.group(2),
                           "type": m.group(3), "offset": m.group(4)})
-        for m in FIELD_RE.finditer(src):
+        for m in _FIELD_TYPED_RE.finditer(src):
+            fields.append({"name": m.group(2), "pattern": m.group(3),
+                           "idx": m.group(4), "kind": m.group(5),
+                           "ctype": m.group(1)})
+        for m in _FIELD_PLAIN_RE.finditer(src):
             fields.append({"name": m.group(1), "pattern": m.group(2),
-                            "idx": m.group(3), "kind": m.group(4)})
+                           "idx": m.group(3), "kind": m.group(4),
+                           "ctype": "int"})
     return sigs, fields
 
 
@@ -212,7 +233,12 @@ def eval_field(img: Image, entry):
     if not hits:
         return {"name": entry["name"], "status": "failed", "matches": 0, "value": None}
     idx = int(entry["idx"], 0)
-    raw = struct.unpack_from("<i", img.buf, hits[0] + idx)[0]
+    # Read with the width the C++ macro dereferences. Everything else about the
+    # scan is identical, but using 4 bytes for a uint8_t field invents values the
+    # client never computes and makes a healthy symbol look like garbage.
+    ctype = entry.get("ctype", "int")
+    fmt = FIELD_WIDTHS.get(ctype, ("i",))[0]
+    raw = struct.unpack_from("<" + fmt, img.buf, hits[0] + idx)[0]
     val = raw // 8 if entry["kind"] == "Index" else raw
     return {"name": entry["name"],
             "status": "ambiguous" if len(hits) > 1 else "ok",
