@@ -92,6 +92,9 @@ public:
     int mSwingDuration = 0.f;
     int mOldSwingDuration = 0.f;
     float* mSwingAngle = nullptr;
+    // Value the swing-angle constant held before we touched it, restored on
+    // disable so switching the module off cannot leave the pose altered.
+    float mSwingAngleOriginal = 0.f;
     bool mShouldBlock = false;
     // Test2 phase in [0,1). Integrated from the frame delta: the engine's own
     // swing-progress fields are read through offsets that no longer line up.

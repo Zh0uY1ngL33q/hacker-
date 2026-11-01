@@ -25,11 +25,22 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <string_view>
 
+// 1.21.120 byte audit: this patch lands on a four-byte instruction and nothing
+// more. The previous eight-byte form
+//     0F 57 C0 90 90 90 90 90   (xorps xmm0,xmm0 + 5 nop)
+// covered mulss at 0x58EB4EC *and* the next four bytes, which in this build are
+//     movaps xmm1, xmm9          (41 0F 28 C9)
+// and xmm1 is then read by `mulss xmm1, xmm9` nine bytes later, inside the same
+// basic block. Overwriting that load leaves xmm1 holding whatever the caller
+// left there, so the patch changed the in-hand rotation term as well as the
+// switch animation. Four bytes (xorps + one nop) zeroes the animation term and
+// leaves the movaps intact.
 std::vector<unsigned char> gNoSwitchAnimation = {
     0x0F, 0x57, 0xC0, // xorps xmm0, xmm0
-    0x90, 0x90, 0x90, 0x90, 0x90 // nop
+    0x90              // nop, padding the 4-byte instruction slot
 };
 
 DEFINE_PATCH_FUNC(patchNoSwitchAnimation, SigManager::ItemInHandRenderer_render_bytepatch, gNoSwitchAnimation);
@@ -38,6 +49,68 @@ DEFINE_NOP_PATCH_FUNC(patchDefaultSwing, SigManager::ItemInHandRenderer_renderIt
 DEFINE_NOP_PATCH_FUNC(patchDefaultSwing2, SigManager::ItemInHandRenderer_renderItem_bytepatch+11, 0x8);
 
 namespace {
+    // The swing angle the engine folds into the in-hand render matrix is a float
+    // *constant in .rdata*, not a field of the renderer.
+    //
+    // The previous code took SigManager::TapSwingAnim as the address of that
+    // constant. On 1.21.120 that signature resolves to 0x8F5A000, whose value is
+    // -0.2443461 rad = exactly -14.000 deg, sitting in the item *pose* table
+    // (-1.50 / -2.00 / -10.54 / -14.00 / -29.79 / -32.09 / -41.25 / -87.73 /
+    // -108.00 deg). Writing -80 there tilted every held item, and because
+    // onDisable() wrote -80 as the "restore" value too, the damage survived the
+    // module being switched off.
+    //
+    // The constant that really is -80.000 deg is the one loaded by the
+    // instruction ItemInHandRenderer_TapSwingAngleRadians matches:
+    //     RVA 0x2D4CAE0: F3 44 0F 59 25 <disp32>   mulss xmm12, [rip+disp32]
+    //     -> RVA 0x8F31EF0: -1.3962634f = -80.000 deg
+    //     (neighbouring table entries are the exact angles -45, -50, -80, -150)
+    // so the operand encodes the address and the signature only has to find the
+    // instruction. Both the instruction bytes and the constant's magnitude are
+    // checked before anything is written: if either is off, the module reports it
+    // and stays out of the way instead of corrupting an unrelated float.
+    float* resolveSwingAngleConstant()
+    {
+        const auto ins = SigManager::ItemInHandRenderer_TapSwingAngleRadians;
+        if (!ins) {
+            spdlog::error("[Animations] swing-angle signature unresolved; custom swing angle disabled");
+            return nullptr;
+        }
+
+        auto* p = reinterpret_cast<uint8_t*>(ins);
+        static constexpr uint8_t kMulssRip[] = { 0xF3, 0x44, 0x0F, 0x59, 0x25 };
+        if (!InstanceLocator::isReadableMemory(p, 9) ||
+            std::memcmp(p, kMulssRip, sizeof(kMulssRip)) != 0) {
+            spdlog::error("[Animations] swing-angle site mismatch at 0x{:X}: "
+                          "{:02X} {:02X} {:02X} {:02X} {:02X} (expected F3 44 0F 59 25)",
+                          ins, p[0], p[1], p[2], p[3], p[4]);
+            return nullptr;
+        }
+
+        int32_t disp = 0;
+        std::memcpy(&disp, p + 5, sizeof(disp));
+        auto* target = reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(p) + 9 + disp);
+        if (!InstanceLocator::isReadableMemory(target, sizeof(float))) {
+            spdlog::error("[Animations] swing-angle constant 0x{:X} unreadable", reinterpret_cast<uintptr_t>(target));
+            return nullptr;
+        }
+
+        const float radians = *target;
+        // 0.5 rad ~ 28.6 deg, 6.5 rad ~ 372 deg: wide enough for any angle the
+        // setting can express, narrow enough to reject pointer-shaped garbage.
+        if (!(std::fabs(radians) >= 0.5f && std::fabs(radians) <= 6.5f)) {
+            spdlog::error("[Animations] swing-angle constant at 0x{:X} is {} rad, "
+                          "outside the plausible range; refusing to patch",
+                          reinterpret_cast<uintptr_t>(target), radians);
+            return nullptr;
+        }
+
+        MemUtils::setProtection(reinterpret_cast<uintptr_t>(target), sizeof(float), PAGE_READWRITE);
+        spdlog::info("[Animations] swing-angle constant 0x{:X} = {:.4f} rad ({:.1f} deg)",
+                     reinterpret_cast<uintptr_t>(target), radians, radians * 57.29578f);
+        return target;
+    }
+
     // Item::mName is the last dereference in the chain and the only one that can
     // walk a pointer we have not validated: isSword() -> std::string::ends_with().
     // MSVC x64 std::string: buffer +0x0 (SSO when capacity <= 15), size +0x10,
@@ -242,8 +315,8 @@ void Animations::onEnable()
 
     if (!mSwingAngle)
     {
-        mSwingAngle = reinterpret_cast<float*>(SigManager::TapSwingAnim);
-        MemUtils::setProtection(reinterpret_cast<uintptr_t>(mSwingAngle), sizeof(float), PAGE_READWRITE);
+        mSwingAngle = resolveSwingAngleConstant();
+        if (mSwingAngle) mSwingAngleOriginal = *mSwingAngle;
     }
 
     patchNoSwitchAnimation(mNoSwitchAnimation.mValue);
@@ -261,7 +334,10 @@ void Animations::onDisable()
     patchNoSwitchAnimation(false);
     patchFluxSwing(false);
 
-    if (mSwingAngle) *mSwingAngle = glm::radians(-80.f);
+    // Restore the value the engine shipped with, not a hardcoded -80 deg. The
+    // hardcoded form was what made the old (wrong) address sticky: it wrote -80
+    // into a -14 deg pose entry and left it there.
+    if (mSwingAngle) *mSwingAngle = mSwingAngleOriginal;
 
     patchDefaultSwing(false);
     patchDefaultSwing2(false);
