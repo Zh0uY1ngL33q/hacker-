@@ -12,6 +12,7 @@
 #include <SDK/Minecraft/InstanceLocator.hpp>
 #include <Utils/Buffer.hpp>
 #include <SDK/Minecraft/Inventory/PlayerInventory.hpp>
+#include <Utils/GameUtils/ActorUtils.hpp>
 #include <SDK/Minecraft/Network/LoopbackPacketSender.hpp>
 #include <SDK/Minecraft/Rendering/GuiData.hpp>
 
@@ -72,6 +73,10 @@ void BaseTickHook::onBaseTick(Actor* actor)
         auto holder = nes::make_holder<BaseTickInitEvent>(actor);
         gFeatureManager->mDispatcher->trigger(holder);
     }
+
+    // Bump the shared tick counter so ActorUtils can memoise the entity list
+    // for the duration of this tick.
+    ActorUtils::gGameTick++;
 
     auto holder = nes::make_holder<BaseTickEvent>(actor);
     gFeatureManager->mDispatcher->trigger(holder);

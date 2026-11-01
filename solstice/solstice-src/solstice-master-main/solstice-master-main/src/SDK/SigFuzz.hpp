@@ -45,9 +45,17 @@ public:
         int              candidates = 0; // equally good candidates; >1 means ambiguous
     };
 
-    /// Records a pattern that did not resolve, together with a near-miss if one
-    /// exists. Called from the OpenMP scan loop, hence the internal lock.
+    /// Records a pattern that did not resolve. The near-miss search itself is
+    /// NOT done here: that is a serial full-section fuzzy scan costing ~0.4 s
+    /// per failed pattern, i.e. ~16 s of CPU right after injection, and it only
+    /// feeds the diagnostics report. Call analyzeAsync() once the signature
+    /// table is complete to run it off the critical path.
     static void onFailed(const char* name, hat::signature_view sig);
+
+    /// Runs the near-miss analysis and writes sigreport.json on a background,
+    /// low-priority thread. Returns immediately: the caller (the init thread)
+    /// must not be blocked by diagnostics.
+    static void analyzeAsync();
 
     /// Writes everything collected during this session to sigreport.json in the
     /// Solstice directory, including the unresolved and ambiguous entries of both

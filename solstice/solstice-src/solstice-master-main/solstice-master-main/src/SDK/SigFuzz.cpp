@@ -9,6 +9,9 @@
 
 #include <nlohmann/json.hpp>
 
+#include <thread>
+#include <Windows.h>
+
 #include <Solstice.hpp>
 #include <SDK/CodeSection.hpp>
 #include <SDK/OffsetProvider.hpp>
@@ -22,6 +25,15 @@ namespace {
 // there are at most a few dozen, so a vector is fine.
 std::vector<SigFuzz::Entry> g_sigFuzzEntries;
 std::mutex                  g_sigFuzzMutex;
+
+// Patterns that failed to resolve, kept for the deferred near-miss analysis.
+// The signature_view points at the static pattern literal in the signature
+// table, so it stays valid for the lifetime of the process.
+struct PendingPattern {
+    std::string        name;
+    hat::signature_view sig;
+};
+std::vector<PendingPattern> g_pendingPatterns;
 
 std::string hexRva(uintptr_t value) {
     char buf[32];
@@ -44,65 +56,93 @@ std::string hexBytes(const std::vector<uint8_t>& bytes) {
 } // namespace
 
 void SigFuzz::onFailed(const char* name, hat::signature_view sig) {
-    Entry entry;
-    entry.name    = name;
-    entry.pattern = hat::to_string(sig);
-
-    // One pass at the largest useful budget. A candidate with fewer differences is
-    // also a candidate at a larger budget, so escalating would only repeat the same
-    // scan over the section; the ranking below keeps the best of what came back.
-    // fuzzyFind scales the budget down for patterns with few concrete bytes, where
-    // a large budget would match almost everywhere.
-    auto hits = CodeSection::fuzzyFind(sig, 6, 8);
-    if (!hits.empty()) {
-        std::stable_sort(hits.begin(), hits.end(),
-                         [](const CodeSection::FuzzyMatch& a, const CodeSection::FuzzyMatch& b) {
-                             return a.diffPositions.size() < b.diffPositions.size();
-                         });
-
-        const auto& best = hits.front();
-        entry.found  = true;
-        entry.rva    = best.rva;
-        entry.actual = hexBytes(best.actual);
-
-        // Two places can match with the same number of differences. That is as
-        // untrustworthy as an ambiguous exact match, so do not hide it.
-        const size_t bestScore = best.diffPositions.size();
-        for (const auto& hit : hits) {
-            if (hit.diffPositions.size() == bestScore) entry.candidates++;
-        }
-
-        for (const int index : best.diffPositions) {
-            Diff diff;
-            diff.at   = index;
-            diff.from = static_cast<int>(sig[static_cast<size_t>(index)].value());
-            diff.to   = static_cast<int>(best.actual[static_cast<size_t>(index)]);
-            entry.diffs.push_back(diff);
-        }
-    }
-
+    // Record only. The near-miss search is a serial full-section fuzzy scan
+    // (~0.4 s per failed pattern on a 139 MB section); running it inline made
+    // every injection burn ~16 s of CPU before the client was even hooked up,
+    // which showed up as a freeze right after injection. It is diagnostics
+    // only, so it runs later on a background thread.
     {
         std::lock_guard lock(g_sigFuzzMutex);
-        g_sigFuzzEntries.push_back(entry);
+        g_pendingPatterns.push_back({name, sig});
     }
+}
 
-    if (!entry.found) {
-        Solstice::console->critical(
-            "[fuzz] {}: no near miss found; the function was probably rewritten or removed",
-            entry.name);
-        return;
-    }
+// Near-miss analysis + report writing, off the critical path and below normal
+// priority so it never competes with the game for CPU time.
+void SigFuzz::analyzeAsync() {
+    std::thread([]() {
+        SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
 
-    std::string detail;
-    for (const auto& diff : entry.diffs) {
-        char buf[32];
-        std::snprintf(buf, sizeof(buf), " %d:%02X>%02X", diff.at, diff.from, diff.to);
-        detail += buf;
-    }
+        std::vector<PendingPattern> pending;
+        {
+            std::lock_guard lock(g_sigFuzzMutex);
+            pending.swap(g_pendingPatterns);
+        }
 
-    Solstice::console->warn("[fuzz] {}: RVA {}, {} byte(s) differ, {} candidate(s){}",
-                            entry.name, hexRva(entry.rva), entry.diffs.size(),
-                            entry.candidates, detail);
+        for (auto& pendingPattern : pending) {
+            Entry entry;
+            entry.name    = pendingPattern.name;
+            entry.pattern = hat::to_string(pendingPattern.sig);
+
+            // One pass at the largest useful budget. A candidate with fewer differences is
+            // also a candidate at a larger budget, so escalating would only repeat the same
+            // scan over the section; the ranking below keeps the best of what came back.
+            // fuzzyFind scales the budget down for patterns with few concrete bytes, where
+            // a large budget would match almost everywhere.
+            auto hits = CodeSection::fuzzyFind(pendingPattern.sig, 6, 8);
+            if (!hits.empty()) {
+                std::stable_sort(hits.begin(), hits.end(),
+                                 [](const CodeSection::FuzzyMatch& a, const CodeSection::FuzzyMatch& b) {
+                                     return a.diffPositions.size() < b.diffPositions.size();
+                                 });
+
+                const auto& best = hits.front();
+                entry.found  = true;
+                entry.rva    = best.rva;
+                entry.actual = hexBytes(best.actual);
+
+                // Two places can match with the same number of differences. That is as
+                // untrustworthy as an ambiguous exact match, so do not hide it.
+                const size_t bestScore = best.diffPositions.size();
+                for (const auto& hit : hits) {
+                    if (hit.diffPositions.size() == bestScore) entry.candidates++;
+                }
+
+                for (const int index : best.diffPositions) {
+                    Diff diff;
+                    diff.at   = index;
+                    diff.from = static_cast<int>(pendingPattern.sig[static_cast<size_t>(index)].value());
+                    diff.to   = static_cast<int>(best.actual[static_cast<size_t>(index)]);
+                    entry.diffs.push_back(diff);
+                }
+            }
+
+            {
+                std::lock_guard lock(g_sigFuzzMutex);
+                g_sigFuzzEntries.push_back(std::move(entry));
+            }
+
+            if (!entry.found) {
+                Solstice::console->critical(
+                    "[fuzz] {}: no near miss found; the function was probably rewritten or removed",
+                    entry.name);
+                continue;
+            }
+
+            std::string detail;
+            for (const auto& diff : entry.diffs) {
+                char buf[32];
+                std::snprintf(buf, sizeof(buf), " %d:%02X>%02X", diff.at, diff.from, diff.to);
+                detail += buf;
+            }
+
+            Solstice::console->warn("[fuzz] {}: RVA {}, {} byte(s) differ, {} candidate(s){}",
+                                    entry.name, hexRva(entry.rva), entry.diffs.size(),
+                                    entry.candidates, detail);
+        }
+
+        writeReport();
+    }).detach();
 }
 
 bool SigFuzz::writeReport() {

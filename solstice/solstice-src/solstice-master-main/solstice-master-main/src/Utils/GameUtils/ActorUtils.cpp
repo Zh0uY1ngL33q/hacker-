@@ -32,6 +32,19 @@ std::vector<struct Actor *> ActorUtils::getActorList(bool playerOnly, bool exclu
     if (!antibot) antibot = gFeatureManager->mModuleManager->getModule<AntiBot>();
     std::vector<struct Actor *> actors;
 
+    // Per-tick memo. The entt fallback below walks the entire registry and calls
+    // VirtualQuery once per entity (isValidPtr); with Aura, ESP, TargetHUD etc.
+    // each calling this every tick that is N modules x M entities of syscalls per
+    // tick. The registry only changes on a tick boundary, so one snapshot per
+    // tick is enough - and callers get their own copy, because some of them sort
+    // the returned vector.
+    static std::vector<Actor*> sCache[4];
+    static uint64_t sCacheTick[4] = {0, 0, 0, 0};
+    const int cacheKey = (playerOnly ? 2 : 0) | (excludeBots ? 1 : 0);
+    // Each parameter combination keeps its own tick stamp: a slot that was not
+    // filled this tick must be recomputed, not served stale.
+    if (sCacheTick[cacheKey] == gGameTick && gGameTick != 0) return sCache[cacheKey];
+
     try
     {
         // The RuntimeActorList getter is only usable when its signature actually
@@ -103,7 +116,8 @@ std::vector<struct Actor *> ActorUtils::getActorList(bool playerOnly, bool exclu
         return {};
     }
 
-
+    sCache[cacheKey] = actors;
+    sCacheTick[cacheKey] = gGameTick;
     return actors;
 }
 

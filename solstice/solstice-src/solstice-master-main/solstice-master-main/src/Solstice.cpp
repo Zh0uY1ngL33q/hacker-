@@ -244,7 +244,11 @@ void Solstice::init(HMODULE hModule)
         //     unresolved entries is small and the runtime tables keep reproducing
         //     the same hits, so a fresh image is only needed when dissecting a
         //     specific new MISSING/SUSPECT entry offline.
-        SigFuzz::writeReport();
+        // Diagnostics only: the near-miss search is a serial full-section scan
+        // that used to burn ~16 s of CPU right after injection, on the init
+        // thread, before the client was fully hooked up. Run it in the
+        // background instead - the report is still written, just later.
+        SigFuzz::analyzeAsync();
 
 #ifdef __DEBUG__
         console->critical("Solstice should not be used in this state.");
