@@ -100,8 +100,19 @@ public:
         // slot 0 would destroy the object while the caller is still using it, so
         // a rejected index has to become a no-op rather than a different crash.
         if (_this == nullptr || index <= 0) {
-            if constexpr (!std::is_void_v<Ret>) { return Ret{}; }
-            else { return; }
+            if constexpr (std::is_void_v<Ret>) {
+                return;
+            } else if constexpr (std::is_reference_v<Ret>) {
+                // A caller can ask for a reference -- ClientInstance::getPlayerName
+                // returns std::string& -- and Ret{} cannot initialise a reference,
+                // which is what C2440 here meant. Return a function-local static
+                // default instead: only the failure path reaches this, and a
+                // reference has to point at something that outlives the call.
+                static std::remove_cv_t<std::remove_reference_t<Ret>> s_fallback{};
+                return static_cast<Ret>(s_fallback);
+            } else {
+                return Ret{};
+            }
         }
         auto vtable = *reinterpret_cast<uintptr_t**>(_this);
         return reinterpret_cast<Fn>(vtable[index])(_this, args...);
