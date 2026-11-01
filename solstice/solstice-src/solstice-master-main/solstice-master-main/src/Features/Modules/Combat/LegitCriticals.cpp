@@ -1,19 +1,12 @@
 //
-// LegitCriticals - attack-driven legit (crouched) critical hits while airborne.
+// LegitCriticals - legit (crouched) critical hits while airborne.
 //
-// 机制（对齐 z1yr addon module/combat/criticals.py，已验证）：
-//   Bedrock 暴击由"真实下蹲状态 + 下落速度(fallDistance>0)"决定，服务器从最近一份
-//   PlayerAuthInput 与 Actor 状态判定。本模块【不空中持续介入】——仅在 Aura 发起攻击
-//   前由 arm() 触发一个短时暴击窗口(CRIT_WINDOW tick)，窗口内：
-//     1) 真实下蹲：置本地 MoveInputComponent::mIsSneakDown（让玩家进入真实下蹲状态机，
-//        类比 z1yr 的 ChangeSneakState），并同步改写发出的 PAI 包的 SNEAK 标志；
-//     2) 断疾跑（StopSprinting/Both）：清本地 mIsSprinting + 置 PAI 的 STOP_SPRINTING；
-//     3) 强制下坠（PushDown 开关，默认开）：仅在"尚未下落"(vy>=-0.05) 时把 StateVectorComponent::mVelocity.y
-//        压到 -0.1，维持 fallDistance>0（对齐 z1yr 的 SetMotion(-0.1)），使跳跃顶点/上升段也暴击；
-//        已在下落时不碰，避免把正常下落限速变慢。PushDown 只在窗口内（攻击时）启用一下。
-//   窗口倒计时结束自动 disarm 恢复本地；无攻击时零干扰（不全局启用），玩家正常行走/跳跃。
-//
-// 防卡蹲：disarm() 无条件把 mIsSneakDown 清 false；onDisable 也调 disarm，保证关模块后本地零残留。
+// 本地输入驱动（local-only）：窗口内置本地 MoveInputComponent::mIsSneakDown（真实蹲），
+//   游戏会把该状态序列化进 PlayerAuthInput 发包——本地与发包同一条状态，天然一致、不会不同步。
+//   冷却节律：窗口结束进入 COOLDOWN 静默，本地恢复，让你能正常跑、跳；不再被常蹲锁死。
+//   攻击驱动：检测任意出站攻击包(InventoryTransaction Attack)才 arm（仅空中 + 冷却就绪），
+//   Aura / TriggerBot / 手动攻击 都能触发，且只在攻击时介入（非全局）。
+//   PushDown 仅窗口内：压下落速度维持 fallDistance>0（顶点/上升段暴击）。
 //
 
 #include "LegitCriticals.hpp"
@@ -36,13 +29,13 @@ void LegitCriticals::onEnable() {
 void LegitCriticals::onDisable() {
     gFeatureManager->mDispatcher->deafen<BaseTickEvent, &LegitCriticals::onBaseTickEvent>(this);
     gFeatureManager->mDispatcher->deafen<PacketOutEvent, &LegitCriticals::onPacketOutEvent>(this);
-    disarm(); // 攻击窗口结束/关模块：恢复本地输入，防卡蹲残留
+    disarm();
 }
 
 void LegitCriticals::disarm() {
     mArmed = false;
     mTtl = 0;
-    // 无条件恢复本地下蹲，防止关模块后卡蹲残留（事件已 deafen，onBaseTickEvent 不再校正）
+    // 恢复本地输入，防残留（事件已 deafen 时不再被 onBaseTickEvent 校正）
     if (auto* ci = ClientInstance::get()) {
         if (auto* player = ci->getLocalPlayer()) {
             if (auto* moveInput = player->getMoveInputComponent()) {
@@ -56,21 +49,31 @@ void LegitCriticals::onBaseTickEvent(BaseTickEvent& event) {
     auto* player = event.mActor; // 本地玩家
     if (!player) return;
 
-    if (!mArmed) return; // 不在攻击窗口内：完全不介入（不全局启用）
+    // 冷却阶段：本地恢复、不蹲，给你跑/跳的窗口；递减冷却后直接返回（不蹲）。
+    if (mCooldown > 0) {
+        mCooldown--;
+        if (auto* mi = player->getMoveInputComponent()) mi->mIsSneakDown = false;
+        return;
+    }
+
+    if (!mArmed) {
+        // 不在窗口内：确保本地不蹲（与发包一致），零干扰。
+        if (auto* mi = player->getMoveInputComponent()) mi->mIsSneakDown = false;
+        return;
+    }
 
     auto* moveInput = player->getMoveInputComponent();
-    if (!moveInput) { mArmed = false; return; }
+    if (!moveInput) { disarm(); return; }
 
     const bool doSneak      = (mMode.mValue == Mode::Sneaking      || mMode.mValue == Mode::Both);
     const bool doStopSprint = (mMode.mValue == Mode::StopSprinting || mMode.mValue == Mode::Both);
 
-    // 窗口内仅在攻击时刻临时下蹲（真实 sneak 状态机），对齐 z1yr ChangeSneakState。
+    // 本地真实下蹲：游戏会序列化进 PAI 发包，本地与发包同源 -> 无不同步。
     moveInput->mIsSneakDown = doSneak;
-    // 断疾跑：仅 StopSprinting/Both 才清本地疾跑；否则不动，交给游戏/Sprint。
     if (doStopSprint) moveInput->mIsSprinting = false;
 
-    // PushDown：只在窗口内（攻击时）启用一下——仅当"尚未在下落"(vy >= -0.05) 时把 Y 速度压到 -0.1，
-    // 维持 fallDistance>0（对齐 z1yr SetMotion(-0.1)），使跳跃顶点/上升段也暴击；已在下落不动，避免限速变慢。
+    // PushDown（仅窗口内）：压下落速度维持 fallDistance>0，顶点/上升段也暴击。
+    // 窗口短且此间你正蹲(本就无法跳)，对移动影响可控。
     if (mPushDown.mValue) {
         if (auto* state = player->getStateVectorComponent()) {
             if (state->mVelocity.y >= -0.05f) {
@@ -79,26 +82,25 @@ void LegitCriticals::onBaseTickEvent(BaseTickEvent& event) {
         }
     }
 
-    // 窗口倒计时：攻击后自动恢复（Aura 持续攻击会续命，无攻击则数 tick 后解除，恢复行走/跳跃）
+    // 窗口倒计时：结束后 disarm 并进入冷却（给你跑/跳的窗口）。
     if (--mTtl <= 0) {
         disarm();
+        mCooldown = COOLDOWN;
     }
 }
 
-// 由 Aura 在发出攻击包前调用：仅在攻击前触发短时暴击窗口（仅空中生效），不空中持续介入。
+// 攻击驱动：任意出站攻击包触发（Aura / TriggerBot / 手动攻击 都算）；内部 guard 仅空中 + 冷却就绪。
 void LegitCriticals::arm() {
     auto* ci = ClientInstance::get();
     if (!ci) return;
     auto* player = ci->getLocalPlayer();
     if (!player || player->isOnGround()) return; // 仅空中
+    if (mCooldown > 0 || mArmed) return;         // 冷却中或已激活：不重复开，避免常蹲锁死
     mArmed = true;
-    mTtl = CRIT_WINDOW; // 攻击触发后保持数 tick，覆盖攻击前后，保证 PAI 带蹲
+    mTtl = CRIT_WINDOW;
 }
 
-// 网络侧：自驱动触发 + 窗口内改写发出的 PlayerAuthInput（服务器信任此包判定蹲伏/疾跑）。
-// 自驱动：检测到任意出站攻击包（InventoryTransactionPacket 的 Attack 事务）即触发暴击窗口，
-// 由 arm() 内部 guard 仅空中生效。这样 Aura / TriggerBot / InfiniteAura / 手动攻击 都能触发，
-// 不再依赖单一模块显式调用（用户要求：攻击启用，而非只有 Aura 启用）。
+// 网络侧：检测攻击包触发窗口；窗口内把 PAI 也显式打上蹲伏/断疾跑标志（与本地一致，双保险）。
 void LegitCriticals::onPacketOutEvent(PacketOutEvent& event) {
     if (event.mPacket->getId() == PacketID::InventoryTransaction) {
         if (auto pkt = event.getPacket<InventoryTransactionPacket>()) {
@@ -106,14 +108,14 @@ void LegitCriticals::onPacketOutEvent(PacketOutEvent& event) {
                 if (cit->type == ComplexInventoryTransaction::Type::ItemUseOnActorInventoryTransaction) {
                     auto* iut = reinterpret_cast<ItemUseOnActorInventoryTransaction*>(cit);
                     if (iut->mActionType == ItemUseOnActorInventoryTransaction::ActionType::Attack) {
-                        arm(); // 内部 guard：仅空中生效
+                        arm(); // 自驱动：仅空中 + 冷却就绪时开窗口
                     }
                 }
             }
         }
     }
 
-    if (!mArmed) return; // 不在攻击窗口内：完全不介入（不全局启用）
+    if (!mArmed) return; // 不在窗口内：不碰 PAI（与本地一致）
     if (event.mPacket->getId() != PacketID::PlayerAuthInput) return;
 
     auto paip = event.getPacket<PlayerAuthInputPacket>();
@@ -127,7 +129,6 @@ void LegitCriticals::applyInput(PlayerAuthInputPacket& paip) {
     const bool doStopSprint = (mMode.mValue == Mode::StopSprinting || mMode.mValue == Mode::Both);
 
     if (doStopSprint) {
-        // 阻断疾跑：显式置 STOP_SPRINTING（告诉服务器停止疾跑），并清除所有"正在疾跑/请求疾跑"位。
         paip.mInputData |= AuthInputAction::STOP_SPRINTING;
         paip.mInputData &= ~AuthInputAction::START_SPRINTING;
         paip.mInputData &= ~AuthInputAction::SPRINTING;
@@ -135,7 +136,6 @@ void LegitCriticals::applyInput(PlayerAuthInputPacket& paip) {
     }
 
     if (doSneak) {
-        // 下蹲：置 sneak 标志，并清 STOP_SNEAKING。服务器据此判定蹲伏，配合下落速度即为合法暴击。
         paip.mInputData |= AuthInputAction::SNEAK_DOWN | AuthInputAction::SNEAKING | AuthInputAction::START_SNEAKING;
         paip.mInputData &= ~AuthInputAction::STOP_SNEAKING;
     }
