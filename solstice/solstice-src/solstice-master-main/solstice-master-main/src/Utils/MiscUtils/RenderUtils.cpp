@@ -22,9 +22,17 @@ void RenderUtils::drawOutlinedAABB(const AABB& aabb, bool filled, const ImColor&
 
 bool RenderUtils::worldToScreen(glm::vec3 pos, ImVec2& screenPos)
 {
+    // Every ESP-style module calls this once per entity per frame, and until now
+    // none of them ran at all (RenderEvent was never dispatched on the GL path).
+    // getGuiData() can be null before the client is fully up, and dereferencing it
+    // here would turn a missing overlay into a crash.
+    auto* ci = ClientInstance::get();
+    if (!ci) return false;
+    auto* guiData = ci->getGuiData();
+    if (!guiData) return false;
     auto corrected = transform.mMatrix;
     glm::vec2 screen;
-    bool result = corrected.OWorldToScreen(transform.mOrigin, pos, screen, transform.mFov, ClientInstance::get()->getGuiData()->mResolution);
+    bool result = corrected.OWorldToScreen(transform.mOrigin, pos, screen, transform.mFov, guiData->mResolution);
     screenPos = ImVec2(screen.x, screen.y);
     return result;
 }

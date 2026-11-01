@@ -18,6 +18,8 @@
 #include <Features/Modules/Visual/HudEditor.hpp>
 #include <Features/Modules/Visual/TargetHUD.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
+#include <SDK/Minecraft/Rendering/LevelRenderer.hpp>
+#include <Utils/MiscUtils/RenderUtils.hpp>
 #include <Utils/FontHelper.hpp>
 #include <Utils/Keyboard.hpp>
 #include <Utils/MiscUtils/MathUtils.hpp>
@@ -296,6 +298,27 @@ void OpenGLGui::render(HDC dc) try
         gui->onWindowResizeEvent(event);
     }
     MathUtils::displaySize = {io.DisplaySize.x, io.DisplaySize.y};
+    // RenderUtils::transform is only ever assigned from D3DHook::present(), and
+    // that present returns the original immediately once this GL path is active.
+    // It is not enough that SetupAndRenderHook also pushes into FrameTransforms:
+    // nothing drains that queue here either. So every world-to-screen consumer --
+    // ESP, Tracers, Nametags, ChinaHat, JumpCircles, ItemESP -- projected through
+    // a zero matrix and drew nothing, whatever their symbols resolved to.
+    // Build the same struct here from the same inputs SetupAndRenderHook uses.
+    if (auto* ci = ClientInstance::get()) {
+        if (auto* player = ci->getLocalPlayer()) {
+            if (auto* lr = ci->getLevelRenderer()) {
+                if (auto* rp = lr->getRendererPlayer()) {
+                    if (auto* cam = rp->getCameraPos()) {
+                        if (auto* rpc = player->getRenderPositionComponent()) {
+                            RenderUtils::transform = FrameTransform{
+                                ci->getViewMatrix(), *cam, rpc->mPosition, ci->getFov() };
+                        }
+                    }
+                }
+            }
+        }
+    }
     ImGui::NewFrame();
     // RenderEvent used to be dispatched only from D3DHook::present(), and that
     // present returns the original immediately once this GL path is active. All
