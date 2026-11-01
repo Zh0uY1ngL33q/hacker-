@@ -16,7 +16,7 @@ public:
 
     EnumSettingT<Mode> mMode = EnumSettingT<Mode>(
         "Mode",
-        "LegitCriticals 动作（空中生效，真实下蹲+断疾跑）：Sneaking=真实下蹲(出暴击)；StopSprinting=只断疾跑(不暴击)；Both=两者都",
+        "Airborne legit crits (real crouch + stop sprint): Sneaking=crouch(crit); StopSprinting=stop sprint only(no crit); Both=both",
         Mode::Sneaking,
         "Sneaking",
         "StopSprinting",
@@ -27,7 +27,7 @@ public:
     // 独立开关：若怀疑被检测或只在真正下落段打人，可关闭。
     BoolSetting mPushDown = BoolSetting(
         "PushDown",
-        "暴击期间每 tick 压低下落速度(-0.1)维持 fallDistance>0，保证顶点/上升段也暴击；不需要可关",
+        "While crit window, force fall speed to -0.1 each tick to keep fallDistance>0 (crit at apex/rising); disable if unneeded",
         true);
 
     LegitCriticals() : ModuleBase("LegitCriticals", "Legit critical hits: cancel sprint and crouch before attacking while airborne", ModuleCategory::Combat, 0, false) {
