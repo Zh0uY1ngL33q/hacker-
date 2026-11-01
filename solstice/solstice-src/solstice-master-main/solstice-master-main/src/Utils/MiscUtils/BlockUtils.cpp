@@ -4,6 +4,8 @@
 
 #include "BlockUtils.hpp"
 
+#include <windows.h>
+
 #include <src/Features/Modules/Player/Regen.hpp>
 #include <src/Features/Modules/Player/OreMiner.hpp>
 
@@ -294,7 +296,14 @@ void BlockUtils::placeBlock(glm::vec3 pos, int side)
     if (!item || !item->mItem) return;
     if (!item->mBlock) return;
 
-    setBlock(blockPos, item->mBlock);
+    // 1.21.120: guard against an obfuscated-layout bad mBlock pointer before
+    // handing it to BlockSource::setBlock (which dereferences it).
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (VirtualQuery(item->mBlock, &mbi, sizeof(mbi)) == sizeof(mbi) &&
+        (mbi.Protect & (PAGE_READONLY | PAGE_READWRITE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE)))
+    {
+        setBlock(blockPos, item->mBlock);
+    }
 }
 
 void BlockUtils::startDestroyBlock(glm::vec3 pos, int side)

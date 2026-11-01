@@ -13,6 +13,75 @@
 #include <SDK/Minecraft/World/Block.hpp>
 #include <SDK/Minecraft/World/BlockLegacy.hpp>
 #include <Utils/StringUtils.hpp>
+#include <windows.h>
+
+// 1.21.120: the obfuscated build's Block / BlockLegacy / ItemStack class layout
+// offsets (Block_mLegacy 0x30, BlockLegacy_mName 0xA0, ItemStack mBlock 0x18) are
+// unreliable, so dereferencing legacy->mName / legacy->mayPlaceOn() can AV. These
+// helpers read defensively: validate memory is committed+readable before touching
+// it, and only treat the region as a name when it is clean printable ASCII.
+static BlockLegacy* safeLegacy(Block* block) {
+    if (!block) return nullptr;
+    BlockLegacy* legacy = nullptr;
+    __try { legacy = block->toLegacy(); }
+    __except (EXCEPTION_EXECUTE_HANDLER) { legacy = nullptr; }
+    if (!legacy) return nullptr;
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (VirtualQuery(legacy, &mbi, sizeof(mbi)) != sizeof(mbi)) return nullptr;
+    if (!(mbi.Protect & (PAGE_READONLY | PAGE_READWRITE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE))) return nullptr;
+    return legacy;
+}
+
+static bool looksLikeMinecraftName(const char* buf, size_t maxlen) {
+    static const char prefix[] = "minecraft:";
+    size_t len = 0;
+    while (len < maxlen && buf[len] != 0) len++;
+    if (len < (sizeof(prefix) - 1)) return false;
+    if (len == maxlen) return false;          // unterminated
+    for (size_t i = 0; i < len; i++) {
+        unsigned char c = static_cast<unsigned char>(buf[i]);
+        if (c < 0x20 || c > 0x7E) return false;
+    }
+    for (size_t i = 0; i < (sizeof(prefix) - 1); i++)
+        if (buf[i] != prefix[i]) return false;
+    return true;
+}
+
+static std::string safeBlockName(Block* block) {
+    BlockLegacy* legacy = safeLegacy(block);
+    if (!legacy) return "";
+    // mName is a std::string at offset 0xA0. MSVC std::string is either SSO (16-byte
+    // inline buffer) or a heap pointer in the first 8 bytes; handle both.
+    const char* namePtr = reinterpret_cast<const char*>(legacy) + 0xA0;
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (VirtualQuery(namePtr, &mbi, sizeof(mbi)) != sizeof(mbi)) return "";
+    if (!(mbi.Protect & (PAGE_READONLY | PAGE_READWRITE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE))) return "";
+    char hdr[16] = {};
+    memcpy(hdr, namePtr, 16);
+    if (looksLikeMinecraftName(hdr, 16)) return std::string(hdr);
+    // non-SSO: first 8 bytes are a pointer to the actual character buffer
+    uintptr_t bufPtr = *reinterpret_cast<const uintptr_t*>(hdr);
+    if (bufPtr >= 0x7FF714E80000ULL && bufPtr < 0x7FF714E80000ULL + 0xC100000ULL) {
+        if (VirtualQuery(reinterpret_cast<const void*>(bufPtr), &mbi, sizeof(mbi)) == sizeof(mbi) &&
+            (mbi.Protect & (PAGE_READONLY | PAGE_READWRITE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE))) {
+            char txt[64] = {};
+            memcpy(txt, reinterpret_cast<const char*>(bufPtr), 64);
+            if (looksLikeMinecraftName(txt, 64)) return std::string(txt);
+        }
+    }
+    return "";
+}
+
+// Calls BlockLegacy::mayPlaceOn() defensively: with the obfuscated layout the
+// mLegacy offset may be off, handing us a garbage vtable, so the virtual call is
+// wrapped in SEH. Kept in its own function (only POD locals) to avoid MSVC C2712.
+static bool safeMayPlaceOn(Block* block, glm::vec3 blockPos) {
+    if (!block) return false;
+    bool mayPlace = false;
+    __try { mayPlace = block->mLegacy->mayPlaceOn(blockPos); }
+    __except (EXCEPTION_EXECUTE_HANDLER) { mayPlace = false; }
+    return mayPlace;
+}
 
 int ItemUtils::getItemValue(ItemStack* item) {
     int value = 0;
@@ -158,7 +227,7 @@ int ItemUtils::getAllPlaceables(bool hotbarOnly)
 
             for (const auto& blacklistedBlock : blacklistedBlocks)
             {
-                if (StringUtils::containsIgnoreCase(stack->mBlock->toLegacy()->mName, blacklistedBlock))
+                if (StringUtils::containsIgnoreCase(safeBlockName(stack->mBlock), blacklistedBlock))
                 {
                     skip = true;
                     break;
@@ -193,7 +262,7 @@ int ItemUtils::getFirstPlaceable(bool hotbarOnly)
 
             for (const auto& blacklistedBlock : blacklistedBlocks)
             {
-                if (StringUtils::containsIgnoreCase(stack->mBlock->toLegacy()->mName, blacklistedBlock))
+                if (StringUtils::containsIgnoreCase(safeBlockName(stack->mBlock), blacklistedBlock))
                 {
                     skip = true;
                     break;
@@ -230,7 +299,7 @@ int ItemUtils::getPlaceableItemOnBlock(glm::vec3 blockPos, bool hotbarOnly, bool
 
             for (const auto& blacklistedBlock : blacklistedBlocks)
             {
-                if (StringUtils::containsIgnoreCase(stack->mBlock->toLegacy()->mName, blacklistedBlock))
+                if (StringUtils::containsIgnoreCase(safeBlockName(stack->mBlock), blacklistedBlock))
                 {
                     skip = true;
                     break;
@@ -239,7 +308,7 @@ int ItemUtils::getPlaceableItemOnBlock(glm::vec3 blockPos, bool hotbarOnly, bool
             if (skip) continue;
 
             Block* block = stack->mBlock;
-            if (!block->mLegacy->mayPlaceOn(blockPos)) continue;
+            if (!safeMayPlaceOn(block, blockPos)) continue;
 
             if (!prioHighest)
             {
@@ -270,7 +339,7 @@ int ItemUtils::getPlaceableItemOnBlock(glm::vec3 blockPos, bool hotbarOnly, bool
 bool ItemUtils::isUsableBlock(ItemStack* stack)
 {
     if (!stack->mItem) return false;
-    return stack->mBlock && !StringUtils::containsAnyIgnoreCase(stack->mBlock->toLegacy()->mName, std::vector<std::string>(blacklistedBlocks.begin(), blacklistedBlocks.end()));
+    return stack->mBlock && !StringUtils::containsAnyIgnoreCase(safeBlockName(stack->mBlock), std::vector<std::string>(blacklistedBlocks.begin(), blacklistedBlocks.end()));
 }
 
 int ItemUtils::getSwiftnessSpellbook(bool hotbarOnly)
@@ -373,7 +442,7 @@ int ItemUtils::getHardestBlock(int slot, bool hotbarOnly)
 
             for (const auto& blacklistedBlock : blacklistedBlocks)
             {
-                if (StringUtils::containsIgnoreCase(stack->mBlock->toLegacy()->mName, blacklistedBlock))
+                if (StringUtils::containsIgnoreCase(safeBlockName(stack->mBlock), blacklistedBlock))
                 {
                     skip = true;
                     break;
