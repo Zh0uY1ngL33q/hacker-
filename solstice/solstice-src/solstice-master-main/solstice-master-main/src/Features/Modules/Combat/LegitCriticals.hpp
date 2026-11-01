@@ -47,17 +47,19 @@ public:
     void onPacketOutEvent(class PacketOutEvent& event);
     void applyInput(class PlayerAuthInputPacket& paip);
 
-    // 攻击协作接口（由 Aura 在发出攻击包前调用，冗余保险）：
-    //   立即标记暴击窗口开启（仅空中生效），让本 tick 的攻击必骑在已改写的
-    //   PlayerAuthInput 上。持续-空中模型由 onBaseTickEvent 主导。
-    //   本模块【不修改本地 MoveInputComponent】，只改写发出的 PAI 包，因此不会
-    //   卡本地下蹲、关模块后本地状态零残留。
+    // 攻击协作接口（由 Aura 在发出攻击包前调用）：
+    //   仅在攻击前触发一个短时暴击窗口（CRIT_WINDOW tick），窗口内临时置真实下蹲 +
+    //   断疾跑 + (可选)PushDown，攻击后自动恢复。模块【不空中持续介入】，无攻击时零干扰。
+    //   onPacketOutEvent 在窗口内同步改写发出的 PAI 包（网络侧蹲伏标志）作双保险。
     void arm();
+    void disarm();                // 攻击窗口结束/关模块时恢复本地输入，防残留
 
     std::string getSettingDisplay() override {
         return mMode.mValues[mMode.as<int>()];
     }
 
 private:
-    bool mArmed = false;          // 暴击窗口是否激活（= 玩家在空中且模块启用）
+    static constexpr int CRIT_WINDOW = 3;  // 攻击触发后的介入窗口(tick)：覆盖攻击当拍+后续，保证 PAI 带蹲
+    bool mArmed = false;          // 暴击窗口是否激活（仅由 arm() 在攻击前触发，不全局自动开启）
+    int  mTtl   = 0;              // 窗口剩余 tick；递减到 0 自动 disarm
 };

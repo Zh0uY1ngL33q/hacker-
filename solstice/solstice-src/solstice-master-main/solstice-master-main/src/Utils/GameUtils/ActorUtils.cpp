@@ -17,6 +17,7 @@
 #include <SDK/Minecraft/Network/MinecraftPackets.hpp>
 #include <SDK/Minecraft/Network/Packets/InventoryTransactionPacket.hpp>
 #include <SDK/Minecraft/World/Level.hpp>
+#include <Utils/MemUtils.hpp>
 static AntiBot* antibot = nullptr;
 
 std::vector<struct Actor *> ActorUtils::getActorList(bool playerOnly, bool excludeBots)
@@ -64,6 +65,18 @@ std::vector<struct Actor *> ActorUtils::getActorList(bool playerOnly, bool exclu
                     spdlog::critical("Found null actor pointer for entity!");
                     continue;
                 };
+
+                // Filter dangling/wild pointers: the entity is still in the registry and
+                // mActor is non-null, but the Actor object may already be freed. Dereferencing
+                // it throws a 0xC0000005 that this function's try/catch CANNOT catch (it is an
+                // SEH access violation, not a C++ exception). VirtualQuery checks the page is
+                // committed; a freed/unmapped pointer fails here and is dropped before Aura
+                // ever dereferences it.
+                if (!MemUtils::isValidPtr(reinterpret_cast<uintptr_t>(moduleOwner.mActor)))
+                {
+                    spdlog::critical("Found dangling (invalid) actor pointer for entity [{}]", entId);
+                    continue;
+                }
                 // Continue if the actor is a bot and we want to exclude bots
                 if (excludeBots && antibot->isBot(moduleOwner.mActor)) continue;
 

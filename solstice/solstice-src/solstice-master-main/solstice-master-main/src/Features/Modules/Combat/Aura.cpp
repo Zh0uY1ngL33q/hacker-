@@ -424,6 +424,9 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
     for (auto actor : actors)
     {
         if (actor == player) continue;
+        // Defense: a few actors may dangle mid-despawn; dereferencing them AV-crashes.
+        // Probe once safely; on crash (SEH) skip this actor instead of crashing the game.
+        if (!TRY_CALL(actor->isPlayer())) continue;
         float range = mDynamicRange.mValue && !isMoving ? mDynamicRangeValue.mValue : mRange.mValue;
         if (actor->distanceTo(player) > range) continue;
         if (!mAttackThroughWalls.mValue && !player->canSee(actor)) continue;
@@ -475,13 +478,8 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
             rotate(actor);
         }
 
-        // LegitCriticals 协作：发出攻击包前立即打开暴击窗口（仅置 mArmed），冗余保险；
-        // 真正的"空中持续改写 PAI 包"由 LegitCriticals::onBaseTickEvent 主导。仅空中生效。
-        if (auto* legitCrit = gFeatureManager->mModuleManager->getModule<LegitCriticals>()) {
-            if (legitCrit->mEnabled && !player->isOnGround()) {
-                legitCrit->arm();
-            }
-        }
+        // LegitCriticals 现在自行监听出站攻击包触发暴击窗口（见 LegitCriticals::onPacketOutEvent），
+        // 不依赖本模块调用：Aura / TriggerBot / 手动攻击 等任意攻击来源都能触发。
 
         // 1.21.120: Level::getHitResult() 的偏移是 ambiguous（4 处匹配）的 SUSPECT 签名，
         // 即使非空也可能返回野指针，写 mType 必崩。攻击包自带目标 runtime ID，服务器以攻击
