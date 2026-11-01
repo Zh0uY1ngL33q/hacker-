@@ -30,5 +30,11 @@ bgfx_rendercontexti* bgfx_context::getRenderContext()
 
 bgfx_context* bgfx_context::get()
 {
+    // Dereferencing the signature's target directly means an unresolved signature
+    // is a null-page read, not a failed lookup. The 1.21.120 match also lands at
+    // an odd address (0x665A211), which cannot be a pointer-aligned global, so a
+    // "successful" scan is not proof either -- both cases have to be survivable.
+    if (!SigManager::ClientInstance_mBgfx)
+        return nullptr;
     return *reinterpret_cast<bgfx_context**>(SigManager::ClientInstance_mBgfx);
 }

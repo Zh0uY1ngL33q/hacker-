@@ -371,7 +371,20 @@ HRESULT D3DHook::present(IDXGISwapChain3* swapChain, UINT syncInterval, UINT fla
 
             UINT deviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_SINGLETHREADED;
 
-            ID3D12CommandQueue* pacq = reinterpret_cast<bgfx_d3d12_RendererContextD3D12*>(bgfx_context::get()->getRenderContext())->getCommandQueue();
+            // getRenderContext() returns null on 1.21.120 (the offset does not
+            // resolve), and the old code reinterpret_cast the result and called
+            // through it -- a member call on a null this. Bail out instead of
+            // building a D3D11-on-12 device on top of nothing.
+            bgfx_context* bgfx = bgfx_context::get();
+            bgfx_rendercontexti* renderCtx = bgfx ? bgfx->getRenderContext() : nullptr;
+            ID3D12CommandQueue* pacq = renderCtx
+                ? reinterpret_cast<bgfx_d3d12_RendererContextD3D12*>(renderCtx)->getCommandQueue()
+                : nullptr;
+            if (!pacq)
+            {
+                spdlog::error("bgfx render context unresolved -- skipping D3D11-on-12 device creation");
+                return oPresent(swapChain, syncInterval, flags);
+            }
             ID3D12CommandQueue* realQueue = {};
 
             CHECK_HR(pacq->QueryInterface(IID_PPV_ARGS(&realQueue)));

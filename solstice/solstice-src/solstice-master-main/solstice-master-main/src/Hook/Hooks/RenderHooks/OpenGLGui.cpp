@@ -297,15 +297,15 @@ void OpenGLGui::render(HDC dc) try
     }
     MathUtils::displaySize = {io.DisplaySize.x, io.DisplaySize.y};
     ImGui::NewFrame();
-    RenderEvent event;
     // RenderEvent used to be dispatched only from D3DHook::present(), and that
-    // present returns the original immediately once this GL path is active. So
-    // every module that subscribes to RenderEvent -- ClickGui, HudEditor,
-    // FullBright, Interface, Notifications, Watermark, Regen, Scaffold -- never
-    // rendered here at all, and only the three modules called by hand ever drew
-    // anything. The dispatch now happens further down, inside the fullscreen
-    // click-through window, because ImGui::NewFrame leaves no current window and
-    // this ImGui fork's PushFont writes to it.
+    // present returns the original immediately once this GL path is active. All
+    // 39 files that subscribe to RenderEvent -- the whole Visual group (Arraylist,
+    // ESP, Nametags, Watermark, Notifications, Keystrokes, Tracers, ...) plus the
+    // combat and movement modules that hook it -- therefore never rendered here;
+    // only the three modules called by hand drew anything. The dispatch now
+    // happens further down, inside the fullscreen click-through window, because
+    // ImGui::NewFrame leaves no current window and this ImGui fork's PushFont
+    // writes to it.
     if (gFeatureManager && gFeatureManager->mModuleManager) {
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize(io.DisplaySize);
@@ -317,18 +317,16 @@ void OpenGLGui::render(HDC dc) try
         static bool loggedHudDispatch = false;
         if (!loggedHudDispatch) {
             loggedHudDispatch = true;
-            spdlog::info("[GUI probe] GL HUD dispatch active (HudEditor/TargetHUD)");
+            spdlog::info("[GUI probe] GL HUD dispatch active (RenderEvent -> all subscribers)");
         }
         // Interface::onRenderEvent dereferences ClientInstance::get() without a
         // null check, and this path can run before the client is fully up.
+        // TargetHUD subscribes too (TargetHUD.cpp), so nothing is called by hand
+        // here any more -- doing that would draw it twice.
         if (ClientInstance::get()) {
             auto holder = nes::make_holder<RenderEvent>();
             gFeatureManager->mDispatcher->trigger(holder);
         }
-        // TargetHUD is the one HUD module that does not subscribe to RenderEvent,
-        // so it still needs its call.
-        if (auto* targetHud = gFeatureManager->mModuleManager->getModule<TargetHUD>())
-            targetHud->onRenderEvent(event);
         ImGui::End();
         ImGui::PopStyleVar();
     }
