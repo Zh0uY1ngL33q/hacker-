@@ -45,8 +45,73 @@ std::vector<unsigned char> gNoSwitchAnimation = {
 
 DEFINE_PATCH_FUNC(patchNoSwitchAnimation, SigManager::ItemInHandRenderer_render_bytepatch, gNoSwitchAnimation);
 DEFINE_NOP_PATCH_FUNC(patchFluxSwing, SigManager::FluxSwing, 0x5);
-DEFINE_NOP_PATCH_FUNC(patchDefaultSwing, SigManager::ItemInHandRenderer_renderItem_bytepatch, 0x8);
-DEFINE_NOP_PATCH_FUNC(patchDefaultSwing2, SigManager::ItemInHandRenderer_renderItem_bytepatch+11, 0x8);
+
+// "Default swing off" used to be two NOP patches:
+//     +0x00  8 bytes  movss xmm3, [rcx+0x8D0]   -> nop * 8
+//     +0x0B  8 bytes  movss xmm0, [rcx+0x87C]   -> nop * 8
+// after which the very next instruction is
+//     subss xmm0, xmm3
+// so both operands were whatever the caller happened to leave in xmm0/xmm3:
+// undefined, and undefined by accident of register reuse, not by design.
+//
+// Freezing the delta only needs the two loads to read the same field, which makes
+// `subss` exactly zero with no undefined register. That is one 8-byte write that
+// changes only the displacement, and the second load stays untouched:
+//     f3 0f 10 99 d0 08 00 00   movss xmm3,[rcx+0x8D0]
+//     f3 0f 10 99 7c 08 00 00   movss xmm3,[rcx+0x87C]
+// The original bytes are checked before writing, so a build where the site moved
+// reports it instead of corrupting whatever now lives there.
+void patchDefaultSwing(bool patch)
+{
+    static uintptr_t resolved = 0;
+    static uint8_t original[8] = {};
+    static bool patched = false;
+    static bool reported = false;
+
+    static constexpr uint8_t kExpected[8] = {0xF3, 0x0F, 0x10, 0x99, 0xD0, 0x08, 0x00, 0x00};
+    static constexpr uint8_t kFrozen[8]   = {0xF3, 0x0F, 0x10, 0x99, 0x7C, 0x08, 0x00, 0x00};
+
+    if (!resolved) resolved = SigManager::ItemInHandRenderer_renderItem_bytepatch;
+    if (!resolved)
+    {
+        if (!reported) { reported = true; spdlog::error("[Animations] DefaultSwing: signature unresolved"); }
+        return;
+    }
+
+    auto* p = reinterpret_cast<uint8_t*>(resolved);
+    if (!InstanceLocator::isReadableMemory(p, sizeof(original))) return;
+
+    if (patch)
+    {
+        if (patched) return;
+        std::memcpy(original, p, sizeof(original));
+        if (std::memcmp(original, kExpected, sizeof(kExpected)) != 0)
+        {
+            if (!reported)
+            {
+                reported = true;
+                spdlog::error("[Animations] DefaultSwing site moved ({} {} {} {} ... expected F3 0F 10 99 D0 08 00 00), not patching",
+                              static_cast<unsigned>(original[0]), static_cast<unsigned>(original[1]),
+                              static_cast<unsigned>(original[2]), static_cast<unsigned>(original[3]));
+            }
+            return;
+        }
+        MemUtils::setProtection(resolved, sizeof(kFrozen), PAGE_EXECUTE_READWRITE);
+        std::memcpy(p, kFrozen, sizeof(kFrozen));
+        patched = true;
+        spdlog::info("[Animations] DefaultSwing frozen at 0x{:X} (delta forced to 0)", resolved);
+    }
+    else if (patched)
+    {
+        MemUtils::setProtection(resolved, sizeof(original), PAGE_EXECUTE_READWRITE);
+        std::memcpy(p, original, sizeof(original));
+        patched = false;
+    }
+}
+
+// Kept as a no-op so the existing call sites stay valid: NOPing the second load
+// is what left xmm0 undefined, and patchDefaultSwing above now handles the pair.
+void patchDefaultSwing2(bool) {}
 
 namespace {
     // The swing angle the engine folds into the in-hand render matrix is a float
