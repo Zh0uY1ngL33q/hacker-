@@ -83,7 +83,9 @@ namespace {
             std::memcmp(p, kMulssRip, sizeof(kMulssRip)) != 0) {
             spdlog::error("[Animations] swing-angle site mismatch at 0x{:X}: "
                           "{:02X} {:02X} {:02X} {:02X} {:02X} (expected F3 44 0F 59 25)",
-                          ins, p[0], p[1], p[2], p[3], p[4]);
+                          ins, static_cast<unsigned>(p[0]), static_cast<unsigned>(p[1]),
+                          static_cast<unsigned>(p[2]), static_cast<unsigned>(p[3]),
+                          static_cast<unsigned>(p[4]));
             return nullptr;
         }
 
