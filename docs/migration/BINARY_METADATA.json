@@ -1,0 +1,1016 @@
+{
+ "target": {
+  "product": "Minecraft Windows (Bedrock)",
+  "fileVersion": "1.21.120.0",
+  "module": "Minecraft.Windows.exe"
+ },
+ "samples": {
+  "onDisk": {
+   "file": "unpacked/unpacked_Minecraft.Windows.exe",
+   "sha256": "5fb2e893f724b1d644561161b8a5c2180a333e8d7f181b44b856a05f89026deb",
+   "size": 223629824,
+   "machineName": "AMD64",
+   "peFormat": "PE32+",
+   "imageBase": "0x7ff66b9f0000",
+   "entryPoint": "0x236940",
+   "sizeOfImage": "0xd7b7000",
+   "numberOfSections": 15,
+   "timeDateStamp": "0x6aca042b",
+   "subsystem": "0x2",
+   "dllCharacteristics": "0xc120",
+   "relocationCount": 4,
+   "tls": [
+    {
+     "callbacks": "0x7ff677a811b8",
+     "index": "0x7ff677a811b0"
+    }
+   ]
+  },
+  "memoryImage": {
+   "file": "Dump/Minecraft.Windows_1.21.120.0_20261027_005946.image",
+   "sha256": "11147749f1a4085b15b13cec4f45952d297acb275c0966954bdff4cbd2ff9b70",
+   "size": 226144256,
+   "machineName": "AMD64",
+   "peFormat": "PE32+",
+   "imageBase": "0x7ff714e80000",
+   "entryPoint": "0xcf7b058",
+   "sizeOfImage": "0xd7ab000",
+   "numberOfSections": 14,
+   "timeDateStamp": "0x6aca042b",
+   "subsystem": "0x2",
+   "dllCharacteristics": "0xc160",
+   "relocationCount": 0,
+   "tls": [
+    {
+     "callbacks": "0x8084583490a8948",
+     "index": "0xc74808"
+    }
+   ]
+  }
+ },
+ "sections": {
+  "onDisk": [
+   {
+    "index": 0,
+    "name": ".text",
+    "rva": "0x1000",
+    "virtualSize": "0x8b6f000",
+    "rawSize": "0x8b6ea00",
+    "rawPointer": "0x600",
+    "characteristics": "0x60000020",
+    "exec": true,
+    "read": true,
+    "write": false,
+    "entropy": 6.4842
+   },
+   {
+    "index": 1,
+    "name": "        ",
+    "rva": "0x8b70000",
+    "virtualSize": "0x1d1f000",
+    "rawSize": "0x1d14e00",
+    "rawPointer": "0x8b6f000",
+    "characteristics": "0xc0000040",
+    "exec": false,
+    "read": true,
+    "write": true,
+    "entropy": 6.0417
+   },
+   {
+    "index": 2,
+    "name": "        ",
+    "rva": "0xa88f000",
+    "virtualSize": "0x11ae000",
+    "rawSize": "0xf4b800",
+    "rawPointer": "0xa883e00",
+    "characteristics": "0xc0000040",
+    "exec": false,
+    "read": true,
+    "write": true,
+    "entropy": 5.2126
+   },
+   {
+    "index": 3,
+    "name": "        ",
+    "rva": "0xba3d000",
+    "virtualSize": "0x4b2000",
+    "rawSize": "0x4b1e00",
+    "rawPointer": "0xb7cf600",
+    "characteristics": "0x40000040",
+    "exec": false,
+    "read": true,
+    "write": false,
+    "entropy": 7.2423
+   },
+   {
+    "index": 4,
+    "name": "        ",
+    "rva": "0xbeef000",
+    "virtualSize": "0xf000",
+    "rawSize": "0xec00",
+    "rawPointer": "0xbc81400",
+    "characteristics": "0x40000040",
+    "exec": false,
+    "read": true,
+    "write": false,
+    "entropy": 6.5879
+   },
+   {
+    "index": 5,
+    "name": "        ",
+    "rva": "0xbefe000",
+    "virtualSize": "0x43000",
+    "rawSize": "0x42800",
+    "rawPointer": "0xbc90000",
+    "characteristics": "0x40000040",
+    "exec": false,
+    "read": true,
+    "write": false,
+    "entropy": 5.9833
+   },
+   {
+    "index": 6,
+    "name": "        ",
+    "rva": "0xbf41000",
+    "virtualSize": "0x14a000",
+    "rawSize": "0x149c00",
+    "rawPointer": "0xbcd2800",
+    "characteristics": "0x42000040",
+    "exec": false,
+    "read": true,
+    "write": false,
+    "entropy": 5.5003
+   },
+   {
+    "index": 7,
+    "name": ".edata",
+    "rva": "0xc08b000",
+    "virtualSize": "0x1000",
+    "rawSize": "0x600",
+    "rawPointer": "0xbe1c400",
+    "characteristics": "0x40000040",
+    "exec": false,
+    "read": true,
+    "write": false,
+    "entropy": 4.8724
+   },
+   {
+    "index": 8,
+    "name": ".idata",
+    "rva": "0xc08c000",
+    "virtualSize": "0x2000",
+    "rawSize": "0x1a00",
+    "rawPointer": "0xbe1ca00",
+    "characteristics": "0xc0000040",
+    "exec": false,
+    "read": true,
+    "write": true,
+    "entropy": 4.6718
+   },
+   {
+    "index": 9,
+    "name": ".tls",
+    "rva": "0xc08e000",
+    "virtualSize": "0x4000",
+    "rawSize": "0x3200",
+    "rawPointer": "0xbe1e400",
+    "characteristics": "0xc0000000",
+    "exec": false,
+    "read": true,
+    "write": true,
+    "entropy": 0.0393
+   },
+   {
+    "index": 10,
+    "name": ".rsrc",
+    "rva": "0xc092000",
+    "virtualSize": "0x43000",
+    "rawSize": "0x42800",
+    "rawPointer": "0xbe21600",
+    "characteristics": "0x40000040",
+    "exec": false,
+    "read": true,
+    "write": false,
+    "entropy": 5.9833
+   },
+   {
+    "index": 11,
+    "name": ".winlice",
+    "rva": "0xc0d5000",
+    "virtualSize": "0xea6000",
+    "rawSize": "0xea6000",
+    "rawPointer": "0xbe63e00",
+    "characteristics": "0xe0000060",
+    "exec": true,
+    "read": true,
+    "write": true,
+    "entropy": 7.0544
+   },
+   {
+    "index": 12,
+    "name": ".boot",
+    "rva": "0xcf7b000",
+    "virtualSize": "0x82f000",
+    "rawSize": "0x82f000",
+    "rawPointer": "0xcd09e00",
+    "characteristics": "0x60000060",
+    "exec": true,
+    "read": true,
+    "write": false,
+    "entropy": 7.7499
+   },
+   {
+    "index": 13,
+    "name": ".reloc",
+    "rva": "0xd7aa000",
+    "virtualSize": "0x1000",
+    "rawSize": "0x400",
+    "rawPointer": "0xd538e00",
+    "characteristics": "0x40000000",
+    "exec": false,
+    "read": true,
+    "write": false,
+    "entropy": 4.0525
+   },
+   {
+    "index": 14,
+    "name": ".SCY",
+    "rva": "0xd7ab000",
+    "virtualSize": "0xc000",
+    "rawSize": "0xc000",
+    "rawPointer": "0xd539200",
+    "characteristics": "0xe0000060",
+    "exec": true,
+    "read": true,
+    "write": true,
+    "entropy": 5.5722
+   }
+  ],
+  "memoryImage": [
+   {
+    "index": 0,
+    "name": "        ",
+    "rva": "0x1000",
+    "virtualSize": "0x8b6e8a9",
+    "rawSize": "0x28b2e00",
+    "rawPointer": "0x600",
+    "characteristics": "0x60000020",
+    "exec": true,
+    "read": true,
+    "write": false,
+    "entropy": 6.4874
+   },
+   {
+    "index": 1,
+    "name": "        ",
+    "rva": "0x8b70000",
+    "virtualSize": "0x1d1e06e",
+    "rawSize": "0x9b0000",
+    "rawPointer": "0x28b3400",
+    "characteristics": "0x40000040",
+    "exec": false,
+    "read": true,
+    "write": false,
+    "entropy": 6.4845
+   },
+   {
+    "index": 2,
+    "name": "        ",
+    "rva": "0xa88f000",
+    "virtualSize": "0x11adf20",
+    "rawSize": "0x12ac00",
+    "rawPointer": "0x3263400",
+    "characteristics": "0xc0000040",
+    "exec": false,
+    "read": true,
+    "write": true,
+    "entropy": 6.4436
+   },
+   {
+    "index": 3,
+    "name": "        ",
+    "rva": "0xba3d000",
+    "virtualSize": "0x4b1cf8",
+    "rawSize": "0x287400",
+    "rawPointer": "0x338e000",
+    "characteristics": "0x40000040",
+    "exec": false,
+    "read": true,
+    "write": false,
+    "entropy": 6.4383
+   },
+   {
+    "index": 4,
+    "name": "        ",
+    "rva": "0xbeef000",
+    "virtualSize": "0xeae0",
+    "rawSize": "0x8a00",
+    "rawPointer": "0x3615400",
+    "characteristics": "0x40000040",
+    "exec": false,
+    "read": true,
+    "write": false,
+    "entropy": 6.2343
+   },
+   {
+    "index": 5,
+    "name": "        ",
+    "rva": "0xbefe000",
+    "virtualSize": "0x42638",
+    "rawSize": "0x7200",
+    "rawPointer": "0x361de00",
+    "characteristics": "0x40000040",
+    "exec": false,
+    "read": true,
+    "write": false,
+    "entropy": 6.2702
+   },
+   {
+    "index": 6,
+    "name": "        ",
+    "rva": "0xbf41000",
+    "virtualSize": "0x149b74",
+    "rawSize": "0x25c00",
+    "rawPointer": "0x3625000",
+    "characteristics": "0x42000040",
+    "exec": false,
+    "read": true,
+    "write": false,
+    "entropy": 6.2345
+   },
+   {
+    "index": 7,
+    "name": ".edata",
+    "rva": "0xc08b000",
+    "virtualSize": "0x1000",
+    "rawSize": "0x600",
+    "rawPointer": "0x364ac00",
+    "characteristics": "0x40000040",
+    "exec": false,
+    "read": true,
+    "write": false,
+    "entropy": 5.7662
+   },
+   {
+    "index": 8,
+    "name": ".idata",
+    "rva": "0xc08c000",
+    "virtualSize": "0x1a00",
+    "rawSize": "0x1a00",
+    "rawPointer": "0x364b200",
+    "characteristics": "0xc0000040",
+    "exec": false,
+    "read": true,
+    "write": true,
+    "entropy": 6.3163
+   },
+   {
+    "index": 9,
+    "name": ".tls",
+    "rva": "0xc08e000",
+    "virtualSize": "0x4000",
+    "rawSize": "0x3400",
+    "rawPointer": "0x364cc00",
+    "characteristics": "0xc0000000",
+    "exec": false,
+    "read": true,
+    "write": true,
+    "entropy": 6.2592
+   },
+   {
+    "index": 10,
+    "name": ".rsrc",
+    "rva": "0xc092000",
+    "virtualSize": "0x42800",
+    "rawSize": "0x42800",
+    "rawPointer": "0x3650000",
+    "characteristics": "0x40000040",
+    "exec": false,
+    "read": true,
+    "write": false,
+    "entropy": 6.2226
+   },
+   {
+    "index": 11,
+    "name": ".winlice",
+    "rva": "0xc0d5000",
+    "virtualSize": "0xea6000",
+    "rawSize": "0x0",
+    "rawPointer": "0x0",
+    "characteristics": "0xe0000060",
+    "exec": true,
+    "read": true,
+    "write": true,
+    "entropy": 0.0
+   },
+   {
+    "index": 12,
+    "name": ".boot",
+    "rva": "0xcf7b000",
+    "virtualSize": "0x82f000",
+    "rawSize": "0x82f000",
+    "rawPointer": "0x3692800",
+    "characteristics": "0x60000060",
+    "exec": true,
+    "read": true,
+    "write": false,
+    "entropy": 6.4759
+   },
+   {
+    "index": 13,
+    "name": ".reloc",
+    "rva": "0xd7aa000",
+    "virtualSize": "0x1000",
+    "rawSize": "0x10",
+    "rawPointer": "0x3ec1800",
+    "characteristics": "0x40000000",
+    "exec": false,
+    "read": true,
+    "write": false,
+    "entropy": 3.4528
+   }
+  ]
+ },
+ "imports": {
+  "dllCount": 89,
+  "entries": [
+   {
+    "dll": "advapi32.dll",
+    "count": 7
+   },
+   {
+    "dll": "comdlg32.dll",
+    "count": 4
+   },
+   {
+    "dll": "crypt32.dll",
+    "count": 13
+   },
+   {
+    "dll": "CrashHunter_PC3.dll",
+    "count": 1
+   },
+   {
+    "dll": "gdi32.dll",
+    "count": 18
+   },
+   {
+    "dll": "imm32.dll",
+    "count": 8
+   },
+   {
+    "dll": "IPHLPAPI.DLL",
+    "count": 4
+   },
+   {
+    "dll": "kernel32.dll",
+    "count": 110
+   },
+   {
+    "dll": "msvcp140.dll",
+    "count": 245
+   },
+   {
+    "dll": "opengl32.dll",
+    "count": 4
+   },
+   {
+    "dll": "PhysXFoundation_64.dll",
+    "count": 55
+   },
+   {
+    "dll": "PhysX_64.dll",
+    "count": 4
+   },
+   {
+    "dll": "shell32.dll",
+    "count": 5
+   },
+   {
+    "dll": "user32.dll",
+    "count": 69
+   },
+   {
+    "dll": "vcruntime140.dll",
+    "count": 25
+   },
+   {
+    "dll": "vcruntime140_1.dll",
+    "count": 1
+   },
+   {
+    "dll": "winhttp.dll",
+    "count": 17
+   },
+   {
+    "dll": "Wldap32.dll",
+    "count": 17
+   },
+   {
+    "dll": "ws2_32.dll",
+    "count": 49
+   },
+   {
+    "dll": "XInput1_4.dll",
+    "count": 1
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 3
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 1
+   },
+   {
+    "dll": "ntdll.dll",
+    "count": 1
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 2
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 5
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 1
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 1
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 1
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 3
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 2
+   },
+   {
+    "dll": "kernel32.dll",
+    "count": 1
+   },
+   {
+    "dll": "kernel32.dll",
+    "count": 4
+   },
+   {
+    "dll": "kernel32.dll",
+    "count": 1
+   },
+   {
+    "dll": "kernel32.dll",
+    "count": 1
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 6
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 1
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 4
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 2
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 1
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 6
+   },
+   {
+    "dll": "kernel32.dll",
+    "count": 13
+   },
+   {
+    "dll": "kernel32.dll",
+    "count": 1
+   },
+   {
+    "dll": "ntdll.dll",
+    "count": 2
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 1
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 5
+   },
+   {
+    "dll": "ntdll.dll",
+    "count": 3
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 2
+   },
+   {
+    "dll": "kernel32.dll",
+    "count": 1
+   },
+   {
+    "dll": "kernel32.dll",
+    "count": 2
+   },
+   {
+    "dll": "kernel32.dll",
+    "count": 2
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 1
+   },
+   {
+    "dll": "kernel32.dll",
+    "count": 2
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 1
+   },
+   {
+    "dll": "kernel32.dll",
+    "count": 1
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 1
+   },
+   {
+    "dll": "kernel32.dll",
+    "count": 1
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 4
+   },
+   {
+    "dll": "kernel32.dll",
+    "count": 3
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 1
+   },
+   {
+    "dll": "kernel32.dll",
+    "count": 3
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 1
+   },
+   {
+    "dll": "kernel32.dll",
+    "count": 1
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 1
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 8
+   },
+   {
+    "dll": "kernel32.dll",
+    "count": 1
+   },
+   {
+    "dll": "KernelBase.dll",
+    "count": 1
+   },
+   {
+    "dll": "ucrtbase.dll",
+    "count": 4
+   },
+   {
+    "dll": "ucrtbase.dll",
+    "count": 16
+   },
+   {
+    "dll": "ucrtbase.dll",
+    "count": 4
+   },
+   {
+    "dll": "ucrtbase.dll",
+    "count": 12
+   },
+   {
+    "dll": "ucrtbase.dll",
+    "count": 10
+   },
+   {
+    "dll": "ucrtbase.dll",
+    "count": 2
+   },
+   {
+    "dll": "ucrtbase.dll",
+    "count": 72
+   },
+   {
+    "dll": "ucrtbase.dll",
+    "count": 1
+   },
+   {
+    "dll": "ucrtbase.dll",
+    "count": 33
+   },
+   {
+    "dll": "ucrtbase.dll",
+    "count": 63
+   },
+   {
+    "dll": "ucrtbase.dll",
+    "count": 27
+   },
+   {
+    "dll": "ucrtbase.dll",
+    "count": 16
+   },
+   {
+    "dll": "ucrtbase.dll",
+    "count": 4
+   },
+   {
+    "dll": "user32.dll",
+    "count": 1
+   },
+   {
+    "dll": "cryptsp.dll",
+    "count": 11
+   },
+   {
+    "dll": "SHCore.dll",
+    "count": 1
+   },
+   {
+    "dll": "bcrypt.dll",
+    "count": 1
+   },
+   {
+    "dll": "cohtml.WindowsDesktop.dll",
+    "count": 51
+   },
+   {
+    "dll": "cohtml_icuuc.dll",
+    "count": 20
+   },
+   {
+    "dll": "fmod64.dll",
+    "count": 55
+   },
+   {
+    "dll": "GdiPlus.dll",
+    "count": 10
+   },
+   {
+    "dll": "libenvsdk.dll",
+    "count": 4
+   },
+   {
+    "dll": "combase.dll",
+    "count": 4
+   }
+  ]
+ },
+ "exports": [
+  {
+   "ordinal": 1,
+   "name": "AmdPowerXpressRequestHighPerformance",
+   "rva": "0xa8d105c"
+  },
+  {
+   "ordinal": 2,
+   "name": "NVSDK_NGX_D3D12_AllocateParameters",
+   "rva": "0x7cc1c70"
+  },
+  {
+   "ordinal": 3,
+   "name": "NVSDK_NGX_D3D12_CreateFeature",
+   "rva": "0x7cc1cd0"
+  },
+  {
+   "ordinal": 4,
+   "name": "NVSDK_NGX_D3D12_DestroyParameters",
+   "rva": "0x7cc1d40"
+  },
+  {
+   "ordinal": 5,
+   "name": "NVSDK_NGX_D3D12_EvaluateFeature",
+   "rva": "0x7cc1da0"
+  },
+  {
+   "ordinal": 6,
+   "name": "NVSDK_NGX_D3D12_EvaluateFeature_C",
+   "rva": "0x7cc1e10"
+  },
+  {
+   "ordinal": 7,
+   "name": "NVSDK_NGX_D3D12_GetCapabilityParameters",
+   "rva": "0x7cc1e50"
+  },
+  {
+   "ordinal": 8,
+   "name": "NVSDK_NGX_D3D12_GetParameters",
+   "rva": "0x7cc1eb0"
+  },
+  {
+   "ordinal": 9,
+   "name": "NVSDK_NGX_D3D12_GetScratchBufferSize",
+   "rva": "0x7cc1f00"
+  },
+  {
+   "ordinal": 10,
+   "name": "NVSDK_NGX_D3D12_ReleaseFeature",
+   "rva": "0x7cc2280"
+  },
+  {
+   "ordinal": 11,
+   "name": "NVSDK_NGX_D3D12_Shutdown",
+   "rva": "0x7cc22d0"
+  },
+  {
+   "ordinal": 12,
+   "name": "NVSDK_NGX_Parameter_GetD",
+   "rva": "0x7cc15a0"
+  },
+  {
+   "ordinal": 13,
+   "name": "NVSDK_NGX_Parameter_GetD3d11Resource",
+   "rva": "0x7cc1600"
+  },
+  {
+   "ordinal": 14,
+   "name": "NVSDK_NGX_Parameter_GetD3d12Resource",
+   "rva": "0x7cc1660"
+  },
+  {
+   "ordinal": 15,
+   "name": "NVSDK_NGX_Parameter_GetF",
+   "rva": "0x7cc16c0"
+  },
+  {
+   "ordinal": 16,
+   "name": "NVSDK_NGX_Parameter_GetI",
+   "rva": "0x7cc1720"
+  },
+  {
+   "ordinal": 17,
+   "name": "NVSDK_NGX_Parameter_GetUI",
+   "rva": "0x7cc1780"
+  },
+  {
+   "ordinal": 18,
+   "name": "NVSDK_NGX_Parameter_GetULL",
+   "rva": "0x7cc17e0"
+  },
+  {
+   "ordinal": 19,
+   "name": "NVSDK_NGX_Parameter_GetVoidPointer",
+   "rva": "0x7cc1840"
+  },
+  {
+   "ordinal": 20,
+   "name": "NVSDK_NGX_Parameter_SetD",
+   "rva": "0x7cc18a0"
+  },
+  {
+   "ordinal": 21,
+   "name": "NVSDK_NGX_Parameter_SetD3d11Resource",
+   "rva": "0x7cc18f0"
+  },
+  {
+   "ordinal": 22,
+   "name": "NVSDK_NGX_Parameter_SetD3d12Resource",
+   "rva": "0x7cc1950"
+  },
+  {
+   "ordinal": 23,
+   "name": "NVSDK_NGX_Parameter_SetF",
+   "rva": "0x7cc19b0"
+  },
+  {
+   "ordinal": 24,
+   "name": "NVSDK_NGX_Parameter_SetI",
+   "rva": "0x7cc1a00"
+  },
+  {
+   "ordinal": 25,
+   "name": "NVSDK_NGX_Parameter_SetUI",
+   "rva": "0x7cc1a60"
+  },
+  {
+   "ordinal": 26,
+   "name": "NVSDK_NGX_Parameter_SetULL",
+   "rva": "0x7cc1ac0"
+  },
+  {
+   "ordinal": 27,
+   "name": "NVSDK_NGX_Parameter_SetVoidPointer",
+   "rva": "0x7cc1b20"
+  },
+  {
+   "ordinal": 28,
+   "name": "NvOptimusEnablement",
+   "rva": "0xa8d1058"
+  }
+ ],
+ "debug": [],
+ "crtImports": [
+  {
+   "dll": "msvcp140.dll",
+   "count": 245
+  },
+  {
+   "dll": "vcruntime140.dll",
+   "count": 25
+  },
+  {
+   "dll": "vcruntime140_1.dll",
+   "count": 1
+  },
+  {
+   "dll": "ucrtbase.dll",
+   "count": 4
+  },
+  {
+   "dll": "ucrtbase.dll",
+   "count": 16
+  },
+  {
+   "dll": "ucrtbase.dll",
+   "count": 4
+  },
+  {
+   "dll": "ucrtbase.dll",
+   "count": 12
+  },
+  {
+   "dll": "ucrtbase.dll",
+   "count": 10
+  },
+  {
+   "dll": "ucrtbase.dll",
+   "count": 2
+  },
+  {
+   "dll": "ucrtbase.dll",
+   "count": 72
+  },
+  {
+   "dll": "ucrtbase.dll",
+   "count": 1
+  },
+  {
+   "dll": "ucrtbase.dll",
+   "count": 33
+  },
+  {
+   "dll": "ucrtbase.dll",
+   "count": 63
+  },
+  {
+   "dll": "ucrtbase.dll",
+   "count": 27
+  },
+  {
+   "dll": "ucrtbase.dll",
+   "count": 16
+  },
+  {
+   "dll": "ucrtbase.dll",
+   "count": 4
+  }
+ ],
+ "rtti": {
+  "typeDescriptorCount": 23297,
+  "note": "unique .?AV...@@ names in the memory image"
+ },
+ "signatureBaseline": {
+  "signaturesTotal": 115,
+  "signaturesFailed": 20,
+  "signaturesAmbiguous": 21,
+  "offsetsTotal": 58,
+  "offsetsFailed": 21,
+  "offsetsAmbiguous": 12
+ }
+}
