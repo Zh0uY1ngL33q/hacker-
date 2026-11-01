@@ -313,6 +313,15 @@ void OpenGLGui::render(HDC dc) try
                         if (auto* rpc = player->getRenderPositionComponent()) {
                             RenderUtils::transform = FrameTransform{
                                 ci->getViewMatrix(), *cam, rpc->mPosition, ci->getFov() };
+                            // getBoxPoints() and getImBoxPoints() read these three
+                            // statics, not the transform members, and they are
+                            // otherwise only filled by D3DHook::igBeginFrame -- i.e.
+                            // never on this path. With fov and origin at zero
+                            // OWorldToScreen returns false and every ESP box, tracer
+                            // and hat collapses to nothing, which is exactly what a
+                            // working transform alone did not fix.
+                            MathUtils::fov = RenderUtils::transform.mFov;
+                            MathUtils::origin = RenderUtils::transform.mOrigin;
                         }
                     }
                 }

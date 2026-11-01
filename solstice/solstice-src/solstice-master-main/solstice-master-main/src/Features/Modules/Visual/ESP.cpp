@@ -10,6 +10,7 @@
 #include <SDK/Minecraft/ClientInstance.hpp>
 #include <SDK/Minecraft/Options.hpp>
 #include <SDK/Minecraft/Actor/Actor.hpp>
+#include <SDK/Minecraft/Rendering/LevelRenderer.hpp>
 
 void ESP::onEnable()
 {
@@ -23,6 +24,28 @@ void ESP::onDisable()
 
 void ESP::onRenderEvent(RenderEvent& event)
 {
+    // One-shot probe. World-to-screen has four links and any of them can be null
+    // or zero on 1.21.120, and a blank ESP does not say which one broke. Printing
+    // them once turns that question into a log read instead of another build.
+    static bool sProbed = false;
+    if (!sProbed) {
+        sProbed = true;
+        auto* ci = ClientInstance::get();
+        auto* lr = ci ? ci->getLevelRenderer() : nullptr;
+        auto* player = ci ? ci->getLocalPlayer() : nullptr;
+        auto* rp = lr ? lr->getRendererPlayer() : nullptr;
+        auto* cam = rp ? rp->getCameraPos() : nullptr;
+        auto actors = ActorUtils::getActorList(false, true);
+        spdlog::info("[ESP probe] levelRenderer={:#x} rendererPlayer={:#x} cameraPos={:#x} "
+                     "origin=({:.2f},{:.2f},{:.2f}) fov=({:.2f},{:.2f}) resolution=({:.0f},{:.0f}) actors={}",
+                     reinterpret_cast<uintptr_t>(lr), reinterpret_cast<uintptr_t>(rp),
+                     reinterpret_cast<uintptr_t>(cam),
+                     MathUtils::origin.x, MathUtils::origin.y, MathUtils::origin.z,
+                     MathUtils::fov.x, MathUtils::fov.y,
+                     MathUtils::displaySize.x, MathUtils::displaySize.y,
+                     actors.size());
+    }
+
     if (!ClientInstance::get()->getLevelRenderer()) return;
 
     auto actors = ActorUtils::getActorList(false, true);
