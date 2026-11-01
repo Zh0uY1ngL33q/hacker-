@@ -60,6 +60,23 @@
 
 ---
 
+### 5. 构建脚本修正（构建机首轮反馈后）
+
+**触发**：构建机回传 `env.log` —— `cl/rc/ninja` 全 `NOT FOUND`、configure `exit 1`，
+但同一份日志证明 VS 18 Community 已装、cmake 4.4.4 在 PATH。根因是普通控制台没有 `vcvars`。
+
+| 文件 | 改动 | 说明 |
+|---|---|---|
+| `tools/build/verify-build.ps1` | 增加 MSVC 环境自举：`vswhere -requires ...VC.Tools.x86.x64` → `call vcvars64.bat` → 导入 `set` 输出；新增 `vcvars.log`；`env.log` 增 `vcvars64` 行 | 仅此一段是本次新增，其余保留 `6bcd7be` 的实现 |
+| 同上 | 新增 `Invoke-Logged`：把原生命令的 stderr 从 `ErrorRecord` 还原为纯文本再落盘 | 之前日志里混入 `CategoryInfo / FullyQualifiedErrorId`，会干扰错误分类 |
+
+**一次需要记录的失误**：本轮开始时我直接重写了 `verify-build.ps1`，覆盖了 `6bcd7be`
+里已有的执行策略包装、源码树自动定位、`run.log`、依赖缓存复用等改进。
+发现后用 `git checkout 6bcd7be -- tools/build/verify-build.ps1` 恢复，再只补 vcvars 一段。
+`verify-build.cmd` 全程未改。教训：改别人的文件前先 `git log -1 -- <path>` 看有没有新提交。
+
+---
+
 ## 历史（本轮之前，供对照）
 
 | 提交 | 说明 |

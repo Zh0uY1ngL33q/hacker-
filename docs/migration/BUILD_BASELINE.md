@@ -70,8 +70,9 @@ host `MORELINK` / Windows 11 `10.0.22631.0`：
 **结论**：构建机上有 VS 18 Community，但普通 PowerShell 会话不会自动 `vcvars`；
 Ninja 也不是 PATH 工具。这不是源码问题，也不是“没装 VS”。
 
-v2 脚本因此改为自建环境：`vswhere` 定位 VS → `call VC\Auxiliary\Build\vcvars64.bat` →
-从 `<VS>\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja\ninja.exe` 取 Ninja，
+修正后的脚本因此自建环境：`vswhere -requires ...VC.Tools.x86.x64` 定位 VS →
+`call VC\Auxiliary\Build\vcvars64.bat` 并导入 `set` 输出 → 从
+`<VS>\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja\ninja.exe` 取 Ninja，
 与 §3 里历史缓存记录的构建方式（VS 自带 Ninja）一致。
 
 ## 4. 干净副本 + 配置尝试（本机执行，结果留档）
@@ -137,6 +138,7 @@ cmake --build out\build\x64-Release -- -k 0
 * 任何早期失败都写 `verify-build-error.log` 并停住窗口。
 
 `verify-build.ps1` 会产出 `env.log / configure.log / build.log / summary.txt`，
+外加 `vcvars.log`（`where cl` / `where rc` / cl 版本）与 `run.log`（脚本自身输出）；
 其中 `summary.txt` 已按 `C####` / `LNK####` / `MSB####` 归并错误码并列出首个出现位置和失败文件清单。
 **回传这 4 个文件即可定位**，不需要整份滚屏日志。
 

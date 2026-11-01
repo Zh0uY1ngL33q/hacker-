@@ -144,24 +144,25 @@ build-verify\summary.txt    错误码归并 + 首个出现位置 + 失败文件�
 拿到后我会按“环境 / 依赖 / 源码 / 接口”分类，只对**能证明原因**的错误做最小修改，
 并明确区分“编译通过”与“运行正常”两件事——后者仍然只能由注入日志判定。
 
-## 10. 首轮构建机反馈（2026-11-01 21:13）与脚本 v2
+## 10. 首轮构建机反馈（2026-11-01 21:13）与脚本修正
 
-用户回传的 `env.log` 显示：`cl.exe / rc.exe / ninja` 全部 `NOT FOUND`，configure `exit 1`；
+用户回传的 `env.log`：`cl.exe / rc.exe / ninja` 全部 `NOT FOUND`，configure `exit 1`；
 但同一份日志里 **VS 18 Community 已安装**、cmake 4.4.4 在 PATH、HEAD 命中 `a93ff55`。
 
-根因是脚本 v1 假设“在 VS 开发者命令行里运行”，而实际是从普通 PowerShell 启动，
-`vcvars64.bat` 从未执行。**不是源码问题，也不是没装 VS。**
+根因：脚本被普通控制台启动，`vcvars64.bat` 从未执行，所以 `cl.exe`/`rc.exe` 不在 PATH，
+cmake 找不到编译器。**不是源码问题，也不是没装 VS。**
 
-v2 改动：
+修正后的脚本（`tools/build/verify-build.ps1`）包含两部分工作：
 
-1. 自己定位 VS（`vswhere -requires ...VC.Tools.x86.x64`）并 `call VC\Auxiliary\Build\vcvars64.bat`；
-2. Ninja 从 `<VS>\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja\ninja.exe` 取，
-   与 §3 里历史缓存记录的构建方式一致；
-3. 顺手修掉一个真 bug：`$vsRoot` 从 `vcvars64.bat` 反推少剥一层，会得到 `<VS>\VC`（错），
-   改用 vswhere 直接给的安装根；
-4. vcvars 输出单独留 `vcvars.log`（含 `where cl` / `where rc` / `cl` 版本），失败可诊断；
-5. `.bat` 改为直接调用 + `$LASTEXITCODE`，避免 `Start-Process cmd /c` 的引号问题。
+| 来源 | 内容 |
+|---|---|
+| commit `6bcd7be` | 执行策略包装 `verify-build.cmd`（只对该进程 bypass，不改系统设置）、源码树自动定位（向上 6 层找 `project(Solstice)`，再退化为浅层搜索）、`.git` 向上 8 层、`run.log`、复用 `out\build\*\ _deps-local` 依赖缓存、`verify-build-error.log` + 结束暂停 |
+| 本次追加 | `vswhere -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64` 选实例 → `call VC\Auxiliary\Build\vcvars64.bat` → 把 `set` 输出导入当前进程环境；`vcvars.log` 记录 `where cl` / `where rc` / `cl` 版本；`env.log` 增加 `vcvars64` 一行；configure/build 的原生 stderr 由 `Invoke-Logged` 还原为纯文本（去掉 `CategoryInfo` 噪声） |
 
-验证到什么程度：PowerShell 解析器 **1049 token / 0 错误**；三处路径推导用真实 VS 路径核对无误。
-**`.bat` 的实际执行在本机沙箱里被禁止（不允许 PowerShell 拉起 `cmd.exe`），所以执行结果仍是 UNKNOWN**，
-必须由构建机回传才能定论。
+**一处需要说明的失误**：我一开始直接重写了这个脚本，把 `6bcd7be` 的上述改进覆盖掉了。
+发现后用 `git checkout 6bcd7be -- tools/build/verify-build.ps1` 恢复原文件，再只补上缺的
+vcvars 那一段，没有保留我的重写版本。`verify-build.cmd` 全程未被改动。
+
+验证到什么程度：PS 解析器 **1844 token / 0 错误**（293 行）；`vcvars` 的变量导入与
+`where cl/rc` 调用在语法层面无误。但**本机沙箱禁止从 PS 拉起 `cmd.exe`**，
+所以 vcvars 实际能否导入环境仍是 **UNKNOWN**，必须由构建机回传 `vcvars.log` + `configure.log` 才能定论。
