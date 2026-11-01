@@ -114,7 +114,14 @@ void Solstice::init(HMODULE hModule)
     } catch (const std::exception& ex) {
         console->error("Cannot create diagnostic log {}: {}", logFile, ex.what());
     }
-    console->flush_on(spdlog::level::info);
+    // Do NOT flush on every info: that forces a synchronous disk write on the
+    // calling (game main) thread for EVERY log message. Under any hot-path
+    // logging (e.g. Aura's per-attack packet) this stalls the render loop ->
+    // FPS drop -> server timeout -> disconnect. Flush periodically on a
+    // background thread instead, and only force an immediate flush for real
+    // errors so crash diagnostics are still persisted without per-message stalls.
+    spdlog::flush_every(std::chrono::seconds(3));
+    console->flush_level(spdlog::level::err);
     spdlog::set_default_logger(console);
     console->info("Build: {} branch {}", SOLSTICE_BUILD_VERSION, SOLSTICE_BUILD_BRANCH);
     console->info("Diagnostic log path: {}", logFile);

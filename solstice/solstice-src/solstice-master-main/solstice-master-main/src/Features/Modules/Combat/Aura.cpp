@@ -600,14 +600,6 @@ void Aura::onPacketOutEvent(PacketOutEvent& event)
                 mLastTransaction = NOW;
         }
 
-        if (cit->type == ComplexInventoryTransaction::Type::ItemUseOnEntityTransaction)
-        {
-            const auto iut = reinterpret_cast<ItemUseOnActorInventoryTransaction*>(cit);
-            if (iut->mActionType == ItemUseOnActorInventoryTransaction::ActionType::Attack)
-            {
-                spdlog::info("clickpos: {}/{}/{}", iut->mClickPos.x, iut->mClickPos.y, iut->mClickPos.z);
-            }
-        }
     } else if (event.mPacket->getId() == PacketID::MobEquipment)
     {
         auto pkt = event.getPacket<MobEquipmentPacket>();
