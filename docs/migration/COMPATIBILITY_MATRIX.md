@@ -73,3 +73,32 @@ offsets     58：ok 25 / ambiguous 12 / failed 21
 > 客户端日志里那行 `Failed to find 43 signatures/offsets!` 与 `sigreport.json` 的
 > 41（20+21）不一致，差 2；这属于客户端计数口径问题，不影响本表——本表逐名核对过两次
 > （线上 `sigreport.json` ↔ 离线 `baseline_offline.json`，四个集合完全相同）。
+
+## 6. 编译验证状态（阶段二，2026-11-01）
+
+**所有模块的编译状态一律为 `NOT COMPILED`**，没有例外。理由：本机无 MSVC/SDK/Ninja，
+两次干净副本配置都停在工具链探测阶段（`logs/configure-ninja.log`、`logs/configure-default.log`，exit 1）。
+
+| 模块组 | 编译 | 单模块可独立编译性 | 备注 |
+|---|---|---|---|
+| `Features/Modules/Visual/**`（含 Animations/TargetHUD/HudEditor/ViewModel） | NOT COMPILED | 否 | 依赖 `Solstice` 目标整体（单文件无法脱离 `pch.hpp` + 全局单例） |
+| `Features/Configs/**` | NOT COMPILED | 否 | 同上 |
+| `Utils/SysUtils/Logger`、`ExceptionHandler` | NOT COMPILED | 否 | 依赖 `build_info.h`（配置期生成） |
+| `Utils/Resources` | NOT COMPILED | 否 | 依赖 `ld -r -b binary` 生成的资源符号 |
+| `SDK/**`、`Hook/**` | NOT COMPILED | 否 | 依赖 `libhat`/`minhook` 子工程 |
+
+关于“对独立模块做编译测试”：本工程是**单一 SHARED 目标**（`add_library(Solstice SHARED ${sourceFiles})`，
+`sourceFiles` 为全量 `src/**` 的 GLOB），没有 per-module target，也没有 `Tests/`。
+在不动 `CMakeLists.txt` 的前提下，**“只编译 UI 模块”这个动作在物理上不存在**；
+拆 target 属于会改变构建产物的结构性改动，本阶段不做（并已在 `MIGRATION_REPORT.md §3.1` 说明理由）。
+
+因此本阶段对“独立模块”的可做验证降级为两条**非编译**检查，且都不升级模块状态：
+
+1. include 闭包：2152 处工程内引用 0 断链（`TEST_REPORT.md §7` 测试 26）。
+2. 改动文件引用的外部标识符均有声明（测试 27）。
+
+## 7. 状态口径再确认
+
+* `OK` / `DEGRADED` / `DEAD` 仍然只描述**符号解析层面**的事实，不是“功能可用”。
+* 本阶段没有把任何模块从 UNKNOWN 升级，也没有因为“能解析 include”而下调风险。
+* 任何“编译通过/运行正常”的结论，必须等构建机日志与注入日志，二者缺一不可。

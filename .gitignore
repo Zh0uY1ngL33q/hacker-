@@ -13,3 +13,9 @@ out/
 # Local diagnostic archives (dump images are large and version specific)
 *.rar
 *.image
+
+# Scratch trees used by the engineering-verification phase. The logs worth
+# keeping are copied into docs/migration/logs; the trees themselves are
+# disposable and must never be committed.
+_buildtest/
+build-verify/

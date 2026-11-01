@@ -80,3 +80,60 @@ E:/PY/python.exe tools/re/audit_patches.py \
 | NoSwitchAnimation 修复生效 | 快速切物品 | 切枪时不再出现手部旋转抽动；手持物品不再随机抖动 |
 | `DefaultSwing` OPEN 项 | 选 `Animation = Test` | 若手部姿态抖动/卡死 → 采用 §5 的位移替换方案 |
 | 配置读写 | 产物存在 | 改设置 → 重启 → 设置保留 |
+
+---
+
+# 阶段二：工程验证（2026-11-01 20:40–21:05）
+
+本阶段只做**能真正跑起来**的检查；凡是需要编译器的，一律记为阻塞，不用静态结果顶替。
+
+## 7. 新增测试与结果
+
+| # | 测试 | 命令/方法 | 结果 | 分类 |
+|---|---|---|---|---|
+| 16 | Git HEAD 与历史 | `git rev-parse HEAD`、`git log --oneline -6` | **PASS** HEAD=`8bc6c211bef7…`，5 个本轮提交在列 | — |
+| 17 | 工作区干净度 | `git status --porcelain -uno` | **PASS** 无已跟踪改动 | — |
+| 18 | 仓库完整性 | `git fsck --no-progress` | **PASS** 无输出（无悬挂/损坏对象） | — |
+| 19 | 提交树规模 | `git ls-tree -r HEAD --name-only \| wc -l` | **PASS** 932 文件（`solstice/` 下 908） | — |
+| 20 | 原始源码保留 | 解压 `_backup/solstice-before-adapt-20261025-191721.zip` 与 HEAD 归一化比对 | **PASS** 原始 906 文件可比对；累计 **69 改 / 31 增 / 29 删**（删除项全是 `out/build/**` 构建残留） | — |
+| 21 | 干净副本导出 | `git archive HEAD \| tar -x -C _buildtest/clean` | **PASS** 独立目录 932 文件 / 23 MB，注释/工作区均未参与 | — |
+| 22 | 工具链穷举 | `vswhere -all`；`find` 三个盘 `cl.exe/nmake.exe/ninja.exe/rc.exe` | **FAIL（环境）** 0 命中；无 Windows Kits；`/mingw64` 无 gcc | 环境问题 |
+| 23 | 干净副本配置 A（Ninja） | `cmake -S <clean> -B <b> -G Ninja` | **FAIL（环境）** `unable to find a build program corresponding to "Ninja"` + 编译器未设置，exit 1 | 环境问题 |
+| 24 | 干净副本配置 B（默认） | `cmake -S <clean> -B <b>` | **FAIL（环境）** `'nmake' '-?' failed` + 编译器未设置，exit 1 | 环境问题 |
+| 25 | 依赖解析（无编译器可跑） | `cmake -P cmake/Dependencies.cmake` | **PASS（部分）** spdlog 1.9.2 / magic_enum 0.9.5 / glm 1.0.1 下载+解压+二次命中缓存；nlohmann_json 起下载未完成；DirectXTK、cryptopp 未开始（按“不准备环境”要求中止） | 依赖问题（未完成，非失败） |
+| 26 | include 闭包（全树） | `tools/re/lint_includes.py` | **PASS** 2152 处工程内 include 全部可解析；113 个系统/SDK 头忽略；**0 断链** | — |
+| 27 | 改动文件的外部标识符 | grep 声明位置 | **PASS** `mSwingAngleOriginal`→`Animations.hpp:97`；`ItemInHandRenderer_TapSwingAngleRadians`→`SigManager.hpp:172`；`isReadableMemory`/`setProtection` 均有声明 | — |
+| 28 | 编译（整体 / 单模块） | — | **NOT RUN** 无编译器 | 环境问题 |
+| 29 | 配置读写 / UI / 日志 / 异常恢复 / 资源释放 / 离线回归 | — | **NOT RUN** 需可执行产物 | 环境问题 |
+
+阶段二：**通过 8 项（16-21、25-27）、环境阻塞 2 项（22-24 属同类）、未运行 2 项组**。
+
+## 8. 错误分类（本阶段全部错误）
+
+| 分类 | 条目 | 证据 | 处置 |
+|---|---|---|---|
+| **环境问题** | 无 MSVC / 无 Windows SDK(rc.exe) / 无 Ninja / 无 MSYS2 ld | 测试 22-24，日志 `logs/configure-*.log` | 本机不安装；改由构建机执行 `tools/build/verify-build.ps1` |
+| **依赖问题** | nlohmann_json / DirectXTK / cryptopp 未完成解析 | `logs/deps-resolve-partial.log` | 未验证，标记 UNKNOWN；构建机首次配置会自行下载 |
+| **源码问题** | 本阶段**未发现**。include 闭包 0 断链、改动文件标识符均有声明 | 测试 26-27 | — |
+| **接口问题** | 本阶段**无法判定**（需要编译到链接期才知道） | — | 标记 UNKNOWN |
+
+> 说明：`lint_includes.py` 只证明“引用能解析到文件”，**不证明语法/类型正确**。
+> 它不能替代编译，本报告不会把它算作“编译通过”。
+
+## 9. 与阶段一的口径差异（避免误读）
+
+* 阶段一 §1 的“通过 7 项”全部是**静态**测试（离线扫描、PE、RTTI、补丁审计）。
+* 阶段二新增的 8 项里，**没有一项是编译或运行**。
+* 因此“静态分析通过 ≠ 运行时兼容”这条约束仍然有效，且在本阶段被主动遵守：
+  `COMPATIBILITY_MATRIX.md` 里没有任何模块因为“include 能解析”而被升级状态。
+
+## 10. 回传清单（构建机执行后）
+
+```
+build-verify/env.log         工具链实际版本（cl / ninja / rc / SDK / git HEAD / 未提交改动）
+build-verify/configure.log   CMake 完整输出（含依赖下载）
+build-verify/build.log      编译器完整输出（-k 0，不在首个错误处停）
+build-verify/summary.txt    错误码归并 + 每个码的首个出现 + 失败文件清单
+```
+
+拿到这 4 个文件后，可按“环境 / 依赖 / 源码 / 接口”四类直接归档，并对**能证明原因**的错误做最小修改。

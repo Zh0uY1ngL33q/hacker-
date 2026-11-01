@@ -1,0 +1,4 @@
+-- dependency spdlog: cached at G:/hacker/_buildtest/deps-run/_deps-local/spdlog-1.9.2
+-- dependency magic_enum: cached at G:/hacker/_buildtest/deps-run/_deps-local/magic_enum-0.9.5
+-- dependency glm: cached at G:/hacker/_buildtest/deps-run/_deps-local/glm-1.0.1
+-- dependency nlohmann_json: downloading https://codeload.github.com/nlohmann/json/zip/refs/tags/v3.11.3

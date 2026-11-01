@@ -1,0 +1,19 @@
+# cmake configure, generator=Ninja, clean tree, no toolchain on this machine
+# cmake: cmake version 4.4.4
+# command: cmake -S <clean> -B <build> -G Ninja
+
+CMake Error at cmake/CPM.cmake:20 (file):
+  file DOWNLOAD cannot compute hash on failed download
+
+    from url: "https://github.com/cpm-cmake/CPM.cmake/releases/download/v0.38.7/CPM.cmake"
+    status: [55;"Failed sending data to the peer"]
+Call Stack (most recent call first):
+  CMakeLists.txt:3 (include)
+
+
+CMake Error: CMake was unable to find a build program corresponding to "Ninja".  CMAKE_MAKE_PROGRAM is not set.  You probably need to select a different build tool.
+CMake Error: CMAKE_C_COMPILER not set, after EnableLanguage
+CMake Error: CMAKE_CXX_COMPILER not set, after EnableLanguage
+-- Configuring incomplete, errors occurred!
+
+[cmake exit code: 1]

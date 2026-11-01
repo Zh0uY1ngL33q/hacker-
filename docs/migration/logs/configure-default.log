@@ -1,0 +1,28 @@
+# cmake configure, default generator (NMake Makefiles), clean tree
+# command: cmake -S <clean> -B <build>
+
+-- Building for: NMake Makefiles
+CMake Error at cmake/CPM.cmake:20 (file):
+  file DOWNLOAD cannot compute hash on failed download
+
+    from url: "https://github.com/cpm-cmake/CPM.cmake/releases/download/v0.38.7/CPM.cmake"
+    status: [22;"HTTP response code said error"]
+Call Stack (most recent call first):
+  CMakeLists.txt:3 (include)
+
+
+CMake Error at CMakeLists.txt:4 (project):
+  Running
+
+   'nmake' '-?'
+
+  failed with:
+
+   no such file or directory
+
+
+CMake Error: CMAKE_C_COMPILER not set, after EnableLanguage
+CMake Error: CMAKE_CXX_COMPILER not set, after EnableLanguage
+-- Configuring incomplete, errors occurred!
+
+[cmake exit code: 1]
