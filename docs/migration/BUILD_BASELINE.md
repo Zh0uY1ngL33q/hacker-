@@ -91,17 +91,30 @@ git archive HEAD | tar -x -C _buildtest/clean
 ## 6. 复现构建的标准步骤（在构建机上）
 
 ```bat
-:: 1) 拉最新提交（HEAD 应 >= 8bc6c21）
+:: 1) 拉最新提交（HEAD 应 >= a93ff55）
 git -C G:\hacker pull
 
-:: 2) 用脚本一次跑完并留档（推荐）
-powershell -ExecutionPolicy Bypass -File G:\hacker\tools\build\verify-build.ps1
+:: 2) 双击 tools\build\verify-build.cmd（推荐）
+::    它用 -ExecutionPolicy Bypass 只对本次进程生效，结束后一定 pause
 
 :: 3) 或手工
 cmake -S solstice\solstice-src\solstice-master-main\solstice-master-main ^
       -B out\build\x64-Release -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build out\build\x64-Release -- -k 0
 ```
+
+**为什么必须有那个 `.cmd` 包装**：Windows 默认执行策略是 `Restricted`，直接双击或直接执行 `.ps1` 会报
+「在此系统上禁止运行脚本」（本机实测同一报错，见 `TEST_REPORT.md §11`），而且控制台窗口会随脚本
+结束立刻关闭，报错一闪而过。`.cmd` 做三件事：用 `-ExecutionPolicy Bypass` 绕过（**只影响本次进程，
+不改系统设置**）、把脚本参数原样透传、结束时 `pause`。
+
+脚本会自动做这些（不需要手工传参）：
+
+* 从自身位置向上找 `solstice\solstice-src\...\CMakeLists.txt`（其中含 `project(Solstice)`），
+  最多 6 层，找不到再在自身目录下浅搜 5 层，最后才报错并要求 `-Source`；
+* 向上最多 8 层找 `.git`，把 HEAD 和未提交改动记进 `env.log`；
+* 复用已有的 `out\build\x64-Release\_deps-local` 作为依赖缓存，避免重新下载；
+* 任何早期失败都写 `verify-build-error.log` 并停住窗口。
 
 `verify-build.ps1` 会产出 `env.log / configure.log / build.log / summary.txt`，
 其中 `summary.txt` 已按 `C####` / `LNK####` / `MSB####` 归并错误码并列出首个出现位置和失败文件清单。

@@ -137,3 +137,33 @@ build-verify/summary.txt    错误码归并 + 每个码的首个出现 + 失败�
 ```
 
 拿到这 4 个文件后，可按“环境 / 依赖 / 源码 / 接口”四类直接归档，并对**能证明原因**的错误做最小修改。
+
+## 11. 脚本在用户构建机上“启动即报错”的根因（已定位并修复）
+
+用户把 `verify-build.ps1` 放在构建机的 `solstice` 同级目录，双击后报错但窗口一闪而过。
+
+复现与结论（本机 PowerShell 实测）：
+
+```
+& : 无法加载文件 ...\verify-build.ps1，因为在此系统上禁止运行脚本。
+    + FullyQualifiedErrorId : UnauthorizedAccess
+```
+
+两个独立原因叠加：
+
+| # | 原因 | 修复 |
+|---|---|---|
+| 1 | Windows 默认执行策略 `Restricted`，**`.ps1` 根本不允许运行** | 新增 `verify-build.cmd`，以 `-ExecutionPolicy Bypass` 只对本次进程放开，**不改系统设置** |
+| 2 | 旧脚本按“自己躺在 `tools\build\`”推算仓库根目录，放在 `solstice` 同级时算出错误路径后 `exit 2`；窗口关闭导致错误信息丢失 | 改为从脚本位置向上 6 层找 `CMakeLists.txt`（校验 `project(Solstice)`），再浅搜 5 层，最后才要求 `-Source`；任何早期失败写 `verify-build-error.log` 并暂停 |
+
+顺带修掉一个同类缺陷：`.git` 根目录原先按固定 3 层推算，现改为向上最多 8 层搜索。
+模拟用户目录布局实测输出：
+
+```
+source tree     : G:\hacker\_pstest\solstice\solstice-src\solstice-master-main\solstice-master-main
+=== git ===
+repo        : G:\hacker
+a93ff555fb6441577e103bba938f67df1c52e290
+```
+
+`verify-build.ps1` 语法经 PowerShell Parser 校验：**1570 token，0 错误**。
