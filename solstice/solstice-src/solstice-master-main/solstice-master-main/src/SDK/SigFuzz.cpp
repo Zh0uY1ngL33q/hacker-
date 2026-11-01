@@ -9,6 +9,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include <atomic>
+#include <cstdlib>
 #include <thread>
 #include <Windows.h>
 
@@ -34,6 +36,11 @@ struct PendingPattern {
     hat::signature_view sig;
 };
 std::vector<PendingPattern> g_pendingPatterns;
+
+// The analysis thread. Joinable on purpose: it logs through the spdlog logger,
+// so the logger must outlive it - stopAsync() joins it before teardown.
+std::thread             g_fuzzThread;
+std::atomic<bool>       g_fuzzStop{false};
 
 std::string hexRva(uintptr_t value) {
     char buf[32];
@@ -67,10 +74,20 @@ void SigFuzz::onFailed(const char* name, hat::signature_view sig) {
     }
 }
 
-// Near-miss analysis + report writing, off the critical path and below normal
-// priority so it never competes with the game for CPU time.
+// Near-miss analysis, off the critical path and below normal priority so it
+// never competes with the game for CPU time.
+//
+// Opt-in: without SOLSTICE_FUZZ=1 this returns immediately. The search is
+// diagnostics only, and running it by default meant every injection burned
+// ~16 s of CPU, flooded the console with 40+ [fuzz] lines (drowning the
+// debug prompt) and left a detached thread writing to a logger that the
+// unload path tears down - which crashed the game on eject.
 void SigFuzz::analyzeAsync() {
-    std::thread([]() {
+    if (std::getenv("SOLSTICE_FUZZ") == nullptr) return;
+    if (g_fuzzThread.joinable()) return; // already running
+
+    g_fuzzStop = false;
+    g_fuzzThread = std::thread([]() {
         SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
 
         std::vector<PendingPattern> pending;
@@ -80,6 +97,8 @@ void SigFuzz::analyzeAsync() {
         }
 
         for (auto& pendingPattern : pending) {
+            if (g_fuzzStop) return;
+
             Entry entry;
             entry.name    = pendingPattern.name;
             entry.pattern = hat::to_string(pendingPattern.sig);
@@ -117,32 +136,41 @@ void SigFuzz::analyzeAsync() {
                 }
             }
 
-            {
-                std::lock_guard lock(g_sigFuzzMutex);
-                g_sigFuzzEntries.push_back(std::move(entry));
-            }
-
+            // Log BEFORE moving the entry: std::move leaves the moved-from
+            // name empty, which is why the previous run printed "[fuzz] :".
             if (!entry.found) {
                 Solstice::console->critical(
                     "[fuzz] {}: no near miss found; the function was probably rewritten or removed",
                     entry.name);
-                continue;
+            }
+            else {
+                std::string detail;
+                for (const auto& diff : entry.diffs) {
+                    char buf[32];
+                    std::snprintf(buf, sizeof(buf), " %d:%02X>%02X", diff.at, diff.from, diff.to);
+                    detail += buf;
+                }
+
+                Solstice::console->warn("[fuzz] {}: RVA {}, {} byte(s) differ, {} candidate(s){}",
+                                        entry.name, hexRva(entry.rva), entry.diffs.size(),
+                                        entry.candidates, detail);
             }
 
-            std::string detail;
-            for (const auto& diff : entry.diffs) {
-                char buf[32];
-                std::snprintf(buf, sizeof(buf), " %d:%02X>%02X", diff.at, diff.from, diff.to);
-                detail += buf;
+            {
+                std::lock_guard lock(g_sigFuzzMutex);
+                g_sigFuzzEntries.push_back(std::move(entry));
             }
-
-            Solstice::console->warn("[fuzz] {}: RVA {}, {} byte(s) differ, {} candidate(s){}",
-                                    entry.name, hexRva(entry.rva), entry.diffs.size(),
-                                    entry.candidates, detail);
         }
 
+        // Refresh the report so it also carries the near misses.
         writeReport();
-    }).detach();
+    });
+}
+
+// Joins the analysis thread. Called before the logger is torn down.
+void SigFuzz::stopAsync() {
+    g_fuzzStop = true;
+    if (g_fuzzThread.joinable()) g_fuzzThread.join();
 }
 
 bool SigFuzz::writeReport() {

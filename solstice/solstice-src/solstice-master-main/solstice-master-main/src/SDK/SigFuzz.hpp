@@ -52,10 +52,15 @@ public:
     /// table is complete to run it off the critical path.
     static void onFailed(const char* name, hat::signature_view sig);
 
-    /// Runs the near-miss analysis and writes sigreport.json on a background,
-    /// low-priority thread. Returns immediately: the caller (the init thread)
-    /// must not be blocked by diagnostics.
+    /// Runs the near-miss analysis on a background, low-priority thread.
+    /// Opt-in only (SOLSTICE_FUZZ=1): the search is a serial full-section scan
+    /// costing ~0.4 s per failed pattern (~16 s for 43 of them) and it only
+    /// feeds the diagnostics report. Without the env var this does nothing.
     static void analyzeAsync();
+
+    /// Stops the background analysis and waits for it to finish. Must be called
+    /// before the logger is torn down - the analysis thread logs through it.
+    static void stopAsync();
 
     /// Writes everything collected during this session to sigreport.json in the
     /// Solstice directory, including the unresolved and ambiguous entries of both

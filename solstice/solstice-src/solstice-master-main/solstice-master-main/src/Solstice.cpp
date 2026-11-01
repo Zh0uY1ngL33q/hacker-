@@ -31,6 +31,15 @@
 #include <winrt/Windows.ApplicationModel.Core.h>
 #include <winrt/Windows.UI.Core.h>
 #include <build_info.h>
+
+// Older build_info.h (a build directory that was configured before the
+// fingerprint existed) must still compile.
+#ifndef SOLSTICE_SOURCE_FINGERPRINT_SHORT
+#define SOLSTICE_SOURCE_FINGERPRINT_SHORT "unknown"
+#endif
+#ifndef SOLSTICE_BUILD_TIMESTAMP
+#define SOLSTICE_BUILD_TIMESTAMP "unknown"
+#endif
 #include <Features/IRC/IrcClient.hpp>
 #include <Features/Modules/Misc/IRC.hpp>
 #include <SDK/Minecraft/Rendering/GuiData.hpp>
@@ -123,7 +132,14 @@ void Solstice::init(HMODULE hModule)
     spdlog::flush_every(std::chrono::seconds(3));
     spdlog::flush_on(spdlog::level::err);
     spdlog::set_default_logger(console);
-    console->info("Build: {} branch {}", SOLSTICE_BUILD_VERSION, SOLSTICE_BUILD_BRANCH);
+    // The commit hash alone is not an identity: it only reports what HEAD was on
+    // the build machine, and it stays stale (or wrong) when the tree was dirty
+    // or the checkout lagged. The source fingerprint is computed from the files
+    // that were actually compiled, so it pins the running binary to its code.
+    console->info("Build: {} branch {} | source {} | built {} | uncommitted {}",
+                  SOLSTICE_BUILD_VERSION, SOLSTICE_BUILD_BRANCH,
+                  SOLSTICE_SOURCE_FINGERPRINT_SHORT, SOLSTICE_BUILD_TIMESTAMP,
+                  SOLSTICE_FILES_CHANGED_COUNT);
     console->info("Diagnostic log path: {}", logFile);
     char hostPath[MAX_PATH]{};
     GetModuleFileNameA(nullptr, hostPath, MAX_PATH);
@@ -244,11 +260,12 @@ void Solstice::init(HMODULE hModule)
         //     unresolved entries is small and the runtime tables keep reproducing
         //     the same hits, so a fresh image is only needed when dissecting a
         //     specific new MISSING/SUSPECT entry offline.
-        // Diagnostics only: the near-miss search is a serial full-section scan
-        // that used to burn ~16 s of CPU right after injection, on the init
-        // thread, before the client was fully hooked up. Run it in the
-        // background instead - the report is still written, just later.
-        SigFuzz::analyzeAsync();
+        // The report itself (failed + ambiguous signatures) is cheap, so it is
+        // written synchronously. The near-miss search behind it is a serial
+        // full-section scan and stays opt-in (SOLSTICE_FUZZ=1); it is started
+        // further down, AFTER the debug prompt below - otherwise its output
+        // would write over the "press ENTER" line while it waits for input.
+        SigFuzz::writeReport();
 
 #ifdef __DEBUG__
         console->critical("Solstice should not be used in this state.");
@@ -259,6 +276,8 @@ void Solstice::init(HMODULE hModule)
         {
             SigManager::deinitialize();
             OffsetProvider::deinitialize();
+            SigFuzz::stopAsync();
+            spdlog::shutdown();
             Logger::deinitialize();
 
             setTitle("");
@@ -271,6 +290,10 @@ void Solstice::init(HMODULE hModule)
         exit(0);
 #endif
     }
+
+    // Now that the debug prompt is out of the way, the near-miss analysis may
+    // run in the background (opt-in via SOLSTICE_FUZZ=1).
+    SigFuzz::analyzeAsync();
 
     console->info("initialized signatures in {}ms", send - sstart);
 
@@ -444,6 +467,21 @@ void Solstice::shutdownThread()
     // wait for threads to finish
     Sleep(1000); // Give the user time to read the message
 
+    // The near-miss analysis thread logs through spdlog, so it has to be gone
+    // before the logger is torn down. Logger::deinitialize() closes stdout and
+    // frees the console, and any log line written after that lands in a closed
+    // FILE* -> access violation.
+    SigFuzz::stopAsync();
+
+    // Release the spdlog sinks while the console is still alive. After this,
+    // any further log call is a no-op instead of a write into a dead stdout.
+    spdlog::shutdown();
+
     Logger::deinitialize();
-    FreeLibrary(mModule); // i don't understand this
+
+    // NOT freeing the library on purpose: the game may still be executing
+    // inside one of our hooks (PacketReceiveHook::onPacketSend kept firing
+    // after the unload), and unmapping the DLL under it is an instant
+    // access violation. The hooks are already removed and the features are
+    // shut down, so leaving the module mapped is harmless.
 }
