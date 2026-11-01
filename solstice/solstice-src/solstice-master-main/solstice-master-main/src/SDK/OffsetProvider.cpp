@@ -50,6 +50,31 @@ hat::scan_result OffsetProvider::scanSig(hat::signature_view sig, const std::str
     return result;
 }
 
+bool OffsetProvider::plausibleOffset(const std::string& name, long long value, bool isIndex)
+{
+    // The limits come from measurement, not taste. In the 1.21.44 reference
+    // build the largest genuine member offset this project uses is 0x15E8
+    // (Actor_mSerializedSkin) and the largest vtable index is 436
+    // (Level_getBlockPalette) out of 478 ClientInstance slots. Both limits below
+    // sit well above those and still far below what a mis-matched signature
+    // produces, which is in the millions.
+    const long long limit = isIndex ? 4096 : 0x8000;
+    const bool inRange = value >= 0 && value < limit;
+    // No real member of a polymorphic object lives in the first eight bytes:
+    // that is where MSVC keeps the vtable pointer. MinecraftGame's profanity
+    // context resolved to 1 here while the 1.21.44 reference build gives 400,
+    // so it is a mis-matched signature rather than a field, and member_at()
+    // would perform an unaligned read that ends in a garbage pointer.
+    const bool insideVtable = !isIndex && value > 0 && value < 8;
+    if (inRange && !insideVtable) return true;
+
+    // Called from the initializers, which initialize() runs under an OpenMP
+    // parallel for, so the record has to be serialised like the other maps.
+    std::lock_guard lock(mSigMutex);
+    mSigImplausible[name] = value;
+    return false;
+}
+
 void OffsetProvider::initialize()
 {
     int64_t start = NOW;
@@ -93,6 +118,24 @@ void OffsetProvider::initialize()
         Solstice::console->warn("[offsets] {} of {} signatures are ambiguous", ambiguous, mSigs.size());
     }
 
+    // A signature can resolve to a place that is not the function it was written
+    // for. The scan then reports success, the offset arithmetic divides whatever
+    // displacement happened to sit there, and the consumer dereferences it. These
+    // are the ones plausibleOffset() refused; naming them is the point, because
+    // silence is what let Actor_swing feed 17305961 into a vtable lookup.
+    if (!mSigImplausible.empty()) {
+        for (const auto& [name, value] : mSigImplausible) {
+            Solstice::console->critical(
+                "[offsets] {} resolved to {} - not a possible vtable index or member "
+                "offset, kept 0; the signature matched the wrong instruction",
+                name, value);
+        }
+        Solstice::console->warn(
+            "[offsets] {} signature(s) rejected as implausible; features that need them "
+            "stay disabled instead of dereferencing wild memory",
+            mSigImplausible.size());
+    }
+
 #ifndef __DEBUG__
     auto mc = hat::process::get_process_module().address();
     auto mcSize = hat::process::get_process_module().get_module_data().size();
@@ -127,6 +170,7 @@ void OffsetProvider::deinitialize()
     mSigs.clear();
     mSigMatchCounts.clear();
     mSigMissing.clear();
+    mSigImplausible.clear();
 
     mIsInitialized = false;
 }

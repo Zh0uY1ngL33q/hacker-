@@ -773,7 +773,20 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
     int swingTime = mSwingTime.as<int>();
     int swingProgress = mSwingDuration;
     int oldSwingProgress = mOldSwingDuration;
-    float lerpedSwingProgress = MathUtils::lerp(oldSwingProgress, swingProgress, ClientInstance::get()->getMinecraftSim()->getGameSim()->mDeltaTime);
+    // getGameSim() returns null on 1.21.120 because MinecraftSim_mGameSim does not
+    // resolve; before the guard it returned the object's vtable pointer, and this
+    // line read a function table as a float. One tick at 20 tps is the honest
+    // fallback when the simulation clock is unavailable.
+    float deltaTime = 0.05f;
+    if (auto* ci = ClientInstance::get()) {
+        if (auto* sim = ci->getMinecraftSim()) {
+            if (auto* game = sim->getGameSim()) {
+                if (game->mDeltaTime > 0.f && game->mDeltaTime < 1.f)
+                    deltaTime = game->mDeltaTime;
+            }
+        }
+    }
+    float lerpedSwingProgress = MathUtils::lerp(oldSwingProgress, swingProgress, deltaTime);
     float percent = lerpedSwingProgress / swingTime;
     // spdlog::info("swingProgress: {} oldSwingProgress: {} lerpedSwingProgress: {} percent: {}", swingProgress, oldSwingProgress, lerpedSwingProgress, percent);
 

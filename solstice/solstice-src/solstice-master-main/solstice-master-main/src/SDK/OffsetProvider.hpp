@@ -20,8 +20,11 @@ static void name##_initializer() { \
     initialized = true; \
     auto result = scanSig(hat::compile_signature<str>(), xorstr_(#name), index_offset); \
     if (!result.has_result()) { SigFuzz::onFailed(xorstr_(#name), hat::compile_signature<str>()); return; } \
-    if ((offset_type) == OffsetType::Index) name = *reinterpret_cast<type*>(reinterpret_cast<uintptr_t>(result.get()) + index_offset) / 8; \
-    else (name) = *reinterpret_cast<type*>(reinterpret_cast<uintptr_t>(result.get()) + index_offset); \
+    const long long rawValue = *reinterpret_cast<type*>(reinterpret_cast<uintptr_t>(result.get()) + index_offset); \
+    const bool isIndex = ((offset_type) == OffsetType::Index); \
+    const long long value = isIndex ? rawValue / 8 : rawValue; \
+    if (!plausibleOffset(xorstr_(#name), value, isIndex)) return; \
+    (name) = static_cast<type>(value); \
 } \
 private: \
 static inline std::function<void()> name##_function = (mSigInitializers.emplace_back(name##_initializer), std::function<void()>()); \
@@ -38,8 +41,11 @@ static void name##_initializer() { \
     initialized = true; \
     auto result = scanSig(hat::compile_signature<str>(), xorstr_(#name), index_offset); \
     if (!result.has_result()) { SigFuzz::onFailed(xorstr_(#name), hat::compile_signature<str>()); return; } \
-    if ((offset_type) == OffsetType::Index) (name) = *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(result.get()) + (index_offset)) / 8; \
-    else (name) = *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(result.get()) + (index_offset)); \
+    const long long rawValue = *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(result.get()) + (index_offset)); \
+    const bool isIndex = ((offset_type) == OffsetType::Index); \
+    const long long value = isIndex ? rawValue / 8 : rawValue; \
+    if (!plausibleOffset(xorstr_(#name), value, isIndex)) return; \
+    (name) = static_cast<int>(value); \
 } \
 private: \
 static inline std::function<void()> name##_function = (mSigInitializers.emplace_back(name##_initializer), std::function<void()>()); \
@@ -78,6 +84,20 @@ public:
     /// is not safe for concurrent insertion, so the writes are serialised here
     /// while the (much more expensive) scanning itself stays parallel.
     static inline std::mutex mSigMutex;
+
+    /// A resolved vtable index or member offset has to be small. When a
+    /// signature matches the wrong instruction the offset arithmetic still
+    /// "succeeds" and yields a number in the millions. Measured on 1.21.120:
+    /// Actor_swing resolved to 17305961 (raw displacement 138447688) and
+    /// BlockSource_getChunk to 8015420, while the same symbols resolve to 114
+    /// and 39 in the 1.21.44 reference build. Actor::swing() feeds its value
+    /// straight into callVirtualFunc(), which then reads vtable[17305961] --
+    /// roughly 133 MB past the vtable, i.e. unmapped memory. That is the crash
+    /// seen as Aura::onBaseTickEvent -> Actor::swing, not a hypothetical.
+    /// Values outside the ranges below cannot be real, so the initializer keeps
+    /// the variable at 0 and records the rejection for the startup report.
+    static bool plausibleOffset(const std::string& name, long long value, bool isIndex);
+    static inline std::unordered_map<std::string, long long> mSigImplausible;
 
     DEFINE_INDEX_FIELD(ClientInstance_getLocalPlayer, "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 48 85 C0 74 10 48 8B C8 E8 ? ? ? ? 48 8B 0F 48 39 08 74", 3, OffsetType::Index);
     DEFINE_INDEX_FIELD(ClientInstance_getBlockSource, "48 8B ? ? ? ? ? FF 15 ? ? ? ? 48 85 ? 75 ? 48 83 C4 ? 5B C3 48 8B", 3, OffsetType::Index);

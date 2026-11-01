@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <string>
 #include <atomic>
+#include <type_traits>   // std::is_void_v, used by callVirtualFunc's guard
 #define _AMD64_
 #include <minwindef.h>
 #include <unordered_map>
@@ -93,6 +94,15 @@ public:
     static auto callVirtualFunc(int index, void* _this, Args... args)
     {
         using Fn = Ret(__thiscall*)(void*, Args...);
+        // Slot 0 is the scalar-deleting destructor in the MSVC ABI, never a
+        // business method, and OffsetProvider leaves the index at 0 whenever a
+        // signature fails or resolves to an implausible value. Calling through
+        // slot 0 would destroy the object while the caller is still using it, so
+        // a rejected index has to become a no-op rather than a different crash.
+        if (_this == nullptr || index <= 0) {
+            if constexpr (!std::is_void_v<Ret>) { return Ret{}; }
+            else { return; }
+        }
         auto vtable = *reinterpret_cast<uintptr_t**>(_this);
         return reinterpret_cast<Fn>(vtable[index])(_this, args...);
     }

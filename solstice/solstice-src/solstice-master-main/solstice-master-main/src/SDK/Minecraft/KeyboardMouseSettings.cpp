@@ -17,7 +17,15 @@ int KeyboardMouseSettings::operator[](const std::string& key)
 
 KeyboardMouseSettings* ClientInputMappingFactory::getKeyboardMouseSettings()
 {
-    return hat::member_at<KeyboardMouseSettings*>(this, OffsetProvider::ClientInputMappingFactory_mKeyboardMouseSettings);
+    // The signature for this offset matches the wrong instruction in 1.21.120 and
+    // decodes to 138447688, which plausibleOffset() now rejects and leaves at 0.
+    // hat::member_at() at offset 0 would return the object's own vtable pointer
+    // dressed up as a KeyboardMouseSettings, so the caller would walk a function
+    // table believing it is a keybind array. Null is the only honest answer.
+    const int offset = OffsetProvider::ClientInputMappingFactory_mKeyboardMouseSettings;
+    if (offset <= 0)
+        return nullptr;
+    return hat::member_at<KeyboardMouseSettings*>(this, offset);
 }
 
 ClientInputMappingFactory* ClientInputHandler::getMappingFactory()

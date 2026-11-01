@@ -39,6 +39,12 @@ ClientInstance* MinecraftGame::getPrimaryClientInstance()
 
 UIProfanityContext* MinecraftGame::getProfanityContext()
 {
+    // SUSPECT in 1.21.120: this resolves to 1 (the 1.21.44 reference build gives
+    // 400), so plausibleOffset() rejects it and leaves 0. Either way member_at()
+    // would return the vtable pointer, which is why the gate is here and not at
+    // the call sites.
+    if (!usableOffset(OffsetProvider::MinecraftGame_mProfanityContext))
+        return nullptr;
     return hat::member_at<UIProfanityContext*>(this, OffsetProvider::MinecraftGame_mProfanityContext);
 }
 

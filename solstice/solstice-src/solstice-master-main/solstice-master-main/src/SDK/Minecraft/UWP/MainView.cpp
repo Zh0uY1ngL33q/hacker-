@@ -8,7 +8,13 @@
 
 class BedrockPlatformUWP* MainView::getBedrockPlatform()
 {
-    return hat::member_at<BedrockPlatformUWP*>(this, OffsetProvider::MainView_bedrockPlatform);
+    // MainView_bedrockPlatform does not resolve on 1.21.120. With the offset at 0
+    // member_at() hands back the vtable pointer, which is non-null and therefore
+    // looks like success to every caller.
+    const int offset = OffsetProvider::MainView_bedrockPlatform;
+    if (offset <= 0)
+        return nullptr;
+    return hat::member_at<BedrockPlatformUWP*>(this, offset);
 }
 
 MainView* MainView::getInstance()
