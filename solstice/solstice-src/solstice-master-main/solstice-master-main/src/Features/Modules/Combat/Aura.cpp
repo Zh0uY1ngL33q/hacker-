@@ -426,7 +426,7 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
         if (actor == player) continue;
         // Defense: a few actors may dangle mid-despawn; dereferencing them AV-crashes.
         // Probe once safely; on crash (SEH) skip this actor instead of crashing the game.
-        if (!TRY_CALL(actor->isPlayer())) continue;
+        if (!TRY_CALL([&]() { actor->isPlayer(); })) continue;
         float range = mDynamicRange.mValue && !isMoving ? mDynamicRangeValue.mValue : mRange.mValue;
         if (actor->distanceTo(player) > range) continue;
         if (!mAttackThroughWalls.mValue && !player->canSee(actor)) continue;

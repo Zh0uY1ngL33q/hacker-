@@ -19,6 +19,8 @@
 #include <SDK/Minecraft/Actor/Actor.hpp>
 #include <SDK/Minecraft/Actor/Components/MoveInputComponent.hpp>
 #include <SDK/Minecraft/Actor/Components/StateVectorComponent.hpp>
+#include <SDK/OffsetProvider.hpp>
+#include <Utils/GameUtils/ActorUtils.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
 
 void LegitCriticals::onEnable() {
@@ -48,6 +50,7 @@ void LegitCriticals::disarm() {
 void LegitCriticals::onBaseTickEvent(BaseTickEvent& event) {
     auto* player = event.mActor; // 本地玩家
     if (!player) return;
+    mTick++; // 自增 tick 计数器（i-frame 回退判定用）
 
     // 冷却阶段：本地恢复、不蹲，给你跑/跳的窗口；递减冷却后直接返回（不蹲）。
     if (mCooldown > 0) {
@@ -100,15 +103,35 @@ void LegitCriticals::arm() {
     mTtl = CRIT_WINDOW;
 }
 
+// i-frame gate：目标刚被打过（无敌帧中）返回 false，不开暴击窗口。
+// 优先用目标真实受伤计时（覆盖所有来源，含他人攻击）；偏移未解析时回退到"本模块记录的每目标上次攻击 tick"。
+bool LegitCriticals::targetVulnerable(uint64_t targetId) {
+    if (OffsetProvider::Actor_mHurtTimeComponent != 0) {
+        if (auto* target = ActorUtils::getActorFromRuntimeID((int64_t)targetId)) {
+            if (auto* hurt = target->getMobHurtTimeComponent()) {
+                if (hurt->mHurtTime > 0) return false; // 受伤无敌帧中
+            }
+        }
+    }
+    // 回退：距本模块上次攻击该目标未超过 IFRAME_TICKS 也视为无敌（仅当受伤计时偏移不可用时才真正起作用）
+    auto it = mLastHitTick.find(targetId);
+    if (it != mLastHitTick.end() && (mTick - it->second) < IFRAME_TICKS) return false;
+    return true;
+}
+
 // 网络侧：检测攻击包触发窗口；窗口内把 PAI 也显式打上蹲伏/断疾跑标志（与本地一致，双保险）。
 void LegitCriticals::onPacketOutEvent(PacketOutEvent& event) {
     if (event.mPacket->getId() == PacketID::InventoryTransaction) {
         if (auto pkt = event.getPacket<InventoryTransactionPacket>()) {
             if (auto* cit = pkt->mTransaction.get()) {
-                if (cit->type == ComplexInventoryTransaction::Type::ItemUseOnActorInventoryTransaction) {
+                if (cit->type == ComplexInventoryTransaction::Type::ItemUseOnEntityTransaction) {
                     auto* iut = reinterpret_cast<ItemUseOnActorInventoryTransaction*>(cit);
                     if (iut->mActionType == ItemUseOnActorInventoryTransaction::ActionType::Attack) {
-                        arm(); // 自驱动：仅空中 + 冷却就绪时开窗口
+                        // i-frame gate：目标处于受伤无敌帧时跳过，避免浪费暴击窗口（也不触发蹲）
+                        if (targetVulnerable(iut->mActorId)) {
+                            mLastHitTick[iut->mActorId] = mTick; // 记录本次攻击，供回退判定
+                            arm(); // 自驱动：仅空中 + 冷却就绪时开窗口
+                        }
                     }
                 }
             }
