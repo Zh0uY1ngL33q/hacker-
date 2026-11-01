@@ -5,6 +5,14 @@
 #include "ExceptionHandler.hpp"
 
 #include <build_info.h>
+
+// Older build_info.h must still compile.
+#ifndef SOLSTICE_SOURCE_FINGERPRINT_SHORT
+#define SOLSTICE_SOURCE_FINGERPRINT_SHORT "unknown"
+#endif
+#ifndef SOLSTICE_BUILD_TIMESTAMP
+#define SOLSTICE_BUILD_TIMESTAMP "unknown"
+#endif
 #include <Windows.h>
 #include <string>
 #include <spdlog/spdlog.h>
@@ -88,6 +96,8 @@ void ExceptionHandler::makeCrashLog(const std::string& text, DWORD exceptionCode
         // Append the exception code then divider
         excFile << xorstr_("Exception Code: 0x") << fmt::format(xorstr_("{:X}"), exceptionCode) << xorstr_("\n");
         excFile << xorstr_("Solstice commit: ") << SOLSTICE_BUILD_VERSION << xorstr_("\n");
+        excFile << xorstr_("Solstice source: ") << SOLSTICE_SOURCE_FINGERPRINT_SHORT << xorstr_("\n");
+        excFile << xorstr_("Solstice built: ") << SOLSTICE_BUILD_TIMESTAMP << xorstr_("\n");
         excFile << xorstr_("Solstice branch: ") << SOLSTICE_BUILD_BRANCH << xorstr_("\n");
         excFile << xorstr_("Solstice commit msg: ") << SOLSTICE_BUILD_COMMIT_MESSAGE << xorstr_("\n");
         excFile << xorstr_("Minecraft version: ") << ProcUtils::getVersion() << xorstr_("\n");

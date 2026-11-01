@@ -166,7 +166,10 @@ endforeach(FILE)
 include_directories(${SHADER_BIN_DIR})
 find_package(OpenMP)
 
-add_custom_target(generate_build_info
+# ALL: this must run on every build, not only when it is requested explicitly.
+# Without it a build directory that was configured earlier keeps the commit hash
+# from that moment, and the log then reports a version the binary is not.
+add_custom_target(generate_build_info ALL
         COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/GenerateBuildInfo.cmake
         COMMENT "Generating build info [${CMAKE_BINARY_DIR}/build_info.h]"
 )

@@ -64,6 +64,31 @@ solstice_git(SOLSTICE_BUILD_BRANCH "unknown" rev-parse --abbrev-ref HEAD)
 file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_BUILD_BRANCH \"${SOLSTICE_BUILD_BRANCH}\"\n")
 message(STATUS "Build branch: ${SOLSTICE_BUILD_BRANCH}")
 
+# A commit hash only says what HEAD was when the script ran - it says nothing
+# about whether the tree was clean, and it is silently wrong whenever the
+# build machine's git state lags behind the sources it actually compiled.
+# The source fingerprint below is computed from the files themselves, so it
+# identifies the compiled code regardless of the repository state.
+string(TIMESTAMP SOLSTICE_BUILD_TIMESTAMP "%Y-%m-%dT%H:%M:%SZ" UTC)
+file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_BUILD_TIMESTAMP \"${SOLSTICE_BUILD_TIMESTAMP}\"\n")
+
+file(GLOB_RECURSE SOLSTICE_SOURCE_FILES
+        "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/src/*.hpp"
+        "${CMAKE_CURRENT_LIST_DIR}/src/*.h")
+list(SORT SOLSTICE_SOURCE_FILES)
+set(SOLSTICE_SOURCE_DIGEST "")
+foreach(SOLSTICE_SOURCE_FILE ${SOLSTICE_SOURCE_FILES})
+    file(SHA256 "${SOLSTICE_SOURCE_FILE}" SOLSTICE_FILE_DIGEST)
+    string(SUBSTRING "${SOLSTICE_FILE_DIGEST}" 0 16 SOLSTICE_FILE_DIGEST_SHORT)
+    string(APPEND SOLSTICE_SOURCE_DIGEST "${SOLSTICE_FILE_DIGEST_SHORT}")
+endforeach()
+string(SHA256 SOLSTICE_SOURCE_DIGEST SOLSTICE_SOURCE_FINGERPRINT)
+string(SUBSTRING "${SOLSTICE_SOURCE_FINGERPRINT}" 0 12 SOLSTICE_SOURCE_FINGERPRINT_SHORT)
+file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_SOURCE_FINGERPRINT \"${SOLSTICE_SOURCE_FINGERPRINT}\"\n")
+file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_SOURCE_FINGERPRINT_SHORT \"${SOLSTICE_SOURCE_FINGERPRINT_SHORT}\"\n")
+message(STATUS "Source fingerprint: ${SOLSTICE_SOURCE_FINGERPRINT_SHORT} (${SOLSTICE_BUILD_TIMESTAMP})")
+
 solstice_git(SOLSTICE_BUILD_COMMIT_MESSAGE "unknown" log -1 --pretty=%B)
 string(REGEX REPLACE "\n.*" "" SOLSTICE_BUILD_COMMIT_MESSAGE "${SOLSTICE_BUILD_COMMIT_MESSAGE}")
 string(REPLACE "\"" "\\\"" SOLSTICE_BUILD_COMMIT_MESSAGE "${SOLSTICE_BUILD_COMMIT_MESSAGE}")
