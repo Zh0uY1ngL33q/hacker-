@@ -8,6 +8,7 @@
 #include <Features/IRC/IrcClient.hpp>
 #include <Features/Modules/Misc/Friends.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
+#include <SDK/Minecraft/InstanceLocator.hpp>
 #include <SDK/Minecraft/MinecraftSim.hpp>
 #include <SDK/Minecraft/Options.hpp>
 #include <SDK/Minecraft/Actor/Actor.hpp>
@@ -56,7 +57,12 @@ void Nametags::onBaseTickEvent(BaseTickEvent& event)
 
         glm::vec2 posxz = { p.x, p.z };
         glm::vec2 prevPosxz = { prevPos.x, prevPos.z };
-        float bps = glm::distance(posxz, prevPosxz) * (ClientInstance::get()->getMinecraftSim()->getSimTimer() * ClientInstance::get()->getMinecraftSim()->getSimSpeed());
+        // getMinecraftSim() is a raw member read and can be null; the timer
+        // helpers are guarded internally but the pointer is not. 20 tps is the
+        // value the game uses, so the bps figure stays in the right units.
+        auto* nci = ClientInstance::get();
+        auto* sim = nci ? nci->getMinecraftSim() : nullptr;
+        float bps = glm::distance(posxz, prevPosxz) * (sim ? sim->getSimTimer() * sim->getSimSpeed() : 20.f);
         if (!bpsHistory.contains(actor)) bpsHistory[actor] = {};
 
         std::map<int64_t, float>& history = bpsHistory[actor];
@@ -106,11 +112,13 @@ void Nametags::onRenderEvent(RenderEvent& event)
     auto drawList = ImGui::GetBackgroundDrawList();
 
     auto localPlayer = ci->getLocalPlayer();
+    auto* options = ci->getOptions();
+    if (!options) return;
 
     for (auto actor : actors)
     {
         if (!actor->isPlayer()) continue;
-        if (actor == localPlayer && ci->getOptions()->mThirdPerson->value == 0 && !localPlayer->getFlag<RenderCameraComponent>()) continue;
+        if (actor == localPlayer && options->mThirdPerson->value == 0 && !localPlayer->getFlag<RenderCameraComponent>()) continue;
         if (actor == localPlayer && !mRenderLocal.mValue) continue;
         auto shape = actor->getAABBShapeComponent();
         if (!shape) continue;
@@ -138,9 +146,13 @@ void Nametags::onRenderEvent(RenderEvent& event)
         glm::vec3 origin = RenderUtils::transform.mOrigin;
         glm::vec2 screen = glm::vec2(0, 0);
 
-        if (!RenderUtils::transform.mMatrix.OWorldToScreen(origin, renderPos, screen, ci->getFov(), ci->getGuiData()->mResolution)) continue;
+        auto* guiData = ci->getGuiData();
+        if (!guiData) continue;
+        const glm::vec2 resolution = guiData->mResolution;
+
+        if (!RenderUtils::transform.mMatrix.OWorldToScreen(origin, renderPos, screen, ci->getFov(), resolution)) continue;
         if (std::isnan(screen.x) || std::isnan(screen.y)) continue;
-        if (screen.x < 0 || screen.y < 0 || screen.x > ci->getGuiData()->mResolution.x * 2 || screen.y > ci->getGuiData()->mResolution.y * 2) continue;
+        if (screen.x < 0 || screen.y < 0 || screen.x > resolution.x * 2 || screen.y > resolution.y * 2) continue;
 
 
         float fontSize = mFontSize.mValue;
@@ -212,12 +224,24 @@ void Nametags::onRenderEvent(RenderEvent& event)
 void Nametags::onNametagRenderEvent(NametagRenderEvent& event)
 {
     auto actor = event.mActor;
-    auto localPlayer = ClientInstance::get()->getLocalPlayer();
-    auto ci = ClientInstance::get();
+    // This crashed on the first frame after Nametags was enabled. The detour sits
+    // on Unknown_renderNametag -- a signature its author never identified -- and
+    // the fifth argument there is not shaped like an Actor, so isBot() chased a
+    // value that was not a vtable. isPlausibleObject reads the first qword and
+    // requires the vtable to live in the game image, which rejects that case.
+    // The check stays even if the signature is replaced later: a detour parameter
+    // is not something to trust.
+    if (!InstanceLocator::isPlausibleObject(actor)) return;
+
+    auto* ci = ClientInstance::get();
+    if (!ci) return;
+    auto localPlayer = ci->getLocalPlayer();
+    auto* options = ci->getOptions();
+    if (!options) return;
 
     if (ActorUtils::isBot(actor)) return;
     if (!actor->isPlayer()) return;
-    if (actor == localPlayer && ci->getOptions()->mThirdPerson->value == 0 && !localPlayer->getFlag<RenderCameraComponent>()) return;
+    if (actor == localPlayer && options->mThirdPerson->value == 0 && !localPlayer->getFlag<RenderCameraComponent>()) return;
     if (actor == localPlayer && !mRenderLocal.mValue) return;
     auto shape = actor->getAABBShapeComponent();
     if (!shape) return;
@@ -231,9 +255,13 @@ void Nametags::onNametagRenderEvent(NametagRenderEvent& event)
     glm::vec3 origin = RenderUtils::transform.mOrigin;
     glm::vec2 screen = glm::vec2(0, 0);
 
-    if (!RenderUtils::transform.mMatrix.OWorldToScreen(origin, renderPos, screen, ci->getFov(), ci->getGuiData()->mResolution)) return;
+    auto* guiData = ci->getGuiData();
+    if (!guiData) return;
+    const glm::vec2 resolution = guiData->mResolution;
+
+    if (!RenderUtils::transform.mMatrix.OWorldToScreen(origin, renderPos, screen, ci->getFov(), resolution)) return;
     if (std::isnan(screen.x) || std::isnan(screen.y)) return;
-    if (screen.x < 0 || screen.y < 0 || screen.x > ci->getGuiData()->mResolution.x * 2 || screen.y > ci->getGuiData()->mResolution.y * 2) return;
+    if (screen.x < 0 || screen.y < 0 || screen.x > resolution.x * 2 || screen.y > resolution.y * 2) return;
 
     event.cancel();
 }

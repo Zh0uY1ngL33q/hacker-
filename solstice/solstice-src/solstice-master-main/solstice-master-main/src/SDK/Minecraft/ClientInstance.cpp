@@ -12,6 +12,8 @@
 #include "InstanceLocator.hpp"
 
 #include <Utils/Structs.hpp>
+#include <SDK/Minecraft/Rendering/GuiData.hpp>
+#include <cmath>
 
 #include "KeyboardMouseSettings.hpp"
 #include <Windows.h>
@@ -47,9 +49,36 @@ glmatrixf ClientInstance::getViewMatrix()
 
 glm::vec2 ClientInstance::getFov()
 {
-    float x = hat::member_at<float>(this, OffsetProvider::ClientInstance_mFovX); // 0x6F0
-    float y = hat::member_at<float>(this, OffsetProvider::ClientInstance_mFovY); // 0x704
-    return { x, y };
+    // These are not angles. OWorldToScreen multiplies the projected offset by
+    // them, so each one is 1/tan(fov/2) for that axis: about (0.87, 1.43) for the
+    // game's default 70 degree vertical fov at 16:9.
+    //
+    // On 1.21.120 the offsets below no longer hold that field. The ESP probe reads
+    // (0.00, -1.7014118e+38), i.e. -FLT_MAX, and a multiplier that size makes
+    // every projection fail -- which is why ESP, Tracers, Nametags and ItemESP all
+    // drew nothing even once the camera origin was correct.
+    float x = hat::member_at<float>(this, OffsetProvider::ClientInstance_mFovX);
+    float y = hat::member_at<float>(this, OffsetProvider::ClientInstance_mFovY);
+
+    const auto usable = [](float v) { return std::isfinite(v) && v > 0.1f && v < 10.f; };
+    if (usable(x) && usable(y))
+        return { x, y };
+
+    // Rebuild the factors for the default fov instead, so world-to-screen keeps
+    // producing sane coordinates. This is an approximation: if the player has
+    // changed the fov setting the boxes will be slightly off-centre, but visible
+    // beats blank, and the real offsets can be filled in once they are known.
+    constexpr float kPi = 3.14159265358979323846f;
+    constexpr float kDefaultVerticalFovDeg = 70.f;
+    const float yFactor = 1.f / std::tan(kDefaultVerticalFovDeg * 0.5f * kPi / 180.f);
+
+    float aspect = 16.f / 9.f;
+    if (auto* guiData = getGuiData()) {
+        const auto res = guiData->mResolution;
+        if (res.x > 0.f && res.y > 0.f)
+            aspect = res.x / res.y;
+    }
+    return { yFactor / aspect, yFactor };
 }
 
 MinecraftSim* ClientInstance::getMinecraftSim()
