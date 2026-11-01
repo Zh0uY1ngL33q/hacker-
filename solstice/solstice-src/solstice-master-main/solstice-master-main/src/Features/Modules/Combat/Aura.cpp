@@ -382,189 +382,194 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
 {
     auto player = event.mActor; // Local player
     if (!player) return;
-    if(player->getHealth() <= 0) return; // kai plz add actor->isAlive() thankz
-    auto supplies = player->getSupplies();
+    if (player->getHealth() <= 0) return; // kai plz add actor->isAlive() thankz
 
-    auto actors = ActorUtils::getActorList(false, true);
-    static std::unordered_map<Actor*, int64_t> lastAttacks = {};
-    bool isMoving = Keyboard::isUsingMoveKeys();
+    // Defense: a target may be freed mid-despawn (use-after-free on a still-committed
+    // heap page). isValidPtr() / isPlayer() can BOTH pass on such a pointer, then a later
+    // deref (sort comparator, distanceTo, getRuntimeID, attack, getSword,
+    // findObstructingActor, ...) AV-crashes with 0xC0000005. Wrap the ENTIRE per-tick
+    // entity work in SEH so any access violation is caught and the tick is skipped
+    // instead of crashing the game. (C++ try/catch cannot catch 0xC0000005; SEH
+    // __try/__except can. The __try lives inside TryCallWrapper, so there is no __try
+    // in this function body -> no C2712.)
+    bool ok = TryCallWrapper([&]() {
+        auto supplies = player->getSupplies();
 
-    // Sort actors by lastAttack if mode is switch
-    if (mMode.mValue == Mode::Switch)
-    {
-        std::ranges::sort(actors, [&](Actor* a, Actor* b) -> bool
+        auto actors = ActorUtils::getActorList(false, true);
+        static std::unordered_map<Actor*, int64_t> lastAttacks = {};
+        bool isMoving = Keyboard::isUsingMoveKeys();
+
+        // Sort actors by lastAttack if mode is switch
+        if (mMode.mValue == Mode::Switch)
         {
-            return lastAttacks[a] < lastAttacks[b];
-        });
-    }
-    else if (mMode.mValue == Mode::Multi)
-    {
-        // Sort actors by distance if mode is multi
-        std::ranges::sort(actors, [&](Actor* a, Actor* b) -> bool
-        {
-            return a->distanceTo(player) < b->distanceTo(player);
-        });
-    }
-
-    static int64_t lastAttack = 0;
-    int64_t now = NOW;
-    float aps = mAPS.mValue;
-    if (mRandomizeAPS.mValue)
-    {
-        // Validate min and max APS
-        if (mAPSMin.mValue < 0) mAPSMin.mValue = 0;
-        if (mAPSMax.mValue < mAPSMin.mValue + 1) mAPSMax.mValue = mAPSMin.mValue + 1;
-
-        aps = MathUtils::random(mAPSMin.mValue, mAPSMax.mValue);
-    }
-    int64_t delay = 1000 / aps;
-
-    bool foundAttackable = false;
-
-    for (auto actor : actors)
-    {
-        if (actor == player) continue;
-        // Defense: a few actors may dangle mid-despawn; dereferencing them AV-crashes.
-        // Probe once safely; on crash (SEH) skip this actor instead of crashing the game.
-        if (!TRY_CALL([&]() { actor->isPlayer(); })) continue;
-        float range = mDynamicRange.mValue && !isMoving ? mDynamicRangeValue.mValue : mRange.mValue;
-        if (actor->distanceTo(player) > range) continue;
-        if (!mAttackThroughWalls.mValue && !player->canSee(actor)) continue;
-
-        if (actor->isPlayer() && gFriendManager->mEnabled)
-        {
-            if (gFriendManager->isFriend(actor) && !mFistFriends.mValue)
+            std::ranges::sort(actors, [&](Actor* a, Actor* b) -> bool
             {
-                continue;
-            }
+                return lastAttacks[a] < lastAttacks[b];
+            });
+        }
+        else if (mMode.mValue == Mode::Multi)
+        {
+            // Sort actors by distance if mode is multi
+            std::ranges::sort(actors, [&](Actor* a, Actor* b) -> bool
+            {
+                return a->distanceTo(player) < b->distanceTo(player);
+            });
         }
 
-        if (mRotateMode.mValue == RotateMode::Normal)
-            rotate(actor);
-        foundAttackable = true;
-        sTarget = actor;
-        sTargetRuntimeID = actor->getRuntimeID();
-
-        throwProjectiles(actor);
-        shootBow(actor);
-
-        if (now - lastAttack < delay) break;
-
-        if (mSwing.mValue)
+        static int64_t lastAttack = 0;
+        int64_t now = NOW;
+        float aps = mAPS.mValue;
+        if (mRandomizeAPS.mValue)
         {
-            if (mSwingDelay.mValue)
+            // Validate min and max APS
+            if (mAPSMin.mValue < 0) mAPSMin.mValue = 0;
+            if (mAPSMax.mValue < mAPSMin.mValue + 1) mAPSMax.mValue = mAPSMin.mValue + 1;
+
+            aps = MathUtils::random(mAPSMin.mValue, mAPSMax.mValue);
+        }
+        int64_t delay = 1000 / aps;
+
+        bool foundAttackable = false;
+
+        for (auto actor : actors)
+        {
+            if (actor == player) continue;
+            float range = mDynamicRange.mValue && !isMoving ? mDynamicRangeValue.mValue : mRange.mValue;
+            if (actor->distanceTo(player) > range) continue;
+            if (!mAttackThroughWalls.mValue && !player->canSee(actor)) continue;
+
+            if (actor->isPlayer() && gFriendManager->mEnabled)
             {
-                if (now - mLastSwing >= mSwingDelayValue.mValue * 1000)
+                if (gFriendManager->isFriend(actor) && !mFistFriends.mValue)
                 {
-                    player->swing();
+                    continue;
                 }
             }
-            else player->swing();
-        }
-        int slot = -1;
-        int bestWeapon = getSword(actor);
-        mHotbarOnly.mValue ? slot = bestWeapon : slot = player->getSupplies()->mSelectedSlot;
 
-        auto ogActor = actor;
-        actor = findObstructingActor(player, actor);
+            if (mRotateMode.mValue == RotateMode::Normal)
+                rotate(actor);
+            foundAttackable = true;
+            sTarget = actor;
+            sTargetRuntimeID = actor->getRuntimeID();
 
-        if (mSwitchMode.mValue == SwitchMode::Full)
-        {
-            supplies->mSelectedSlot = bestWeapon;
-        }
+            throwProjectiles(actor);
+            shootBow(actor);
 
-        if (mRotateMode.mValue == RotateMode::Flick)
-        {
-            rotate(actor);
-        }
+            if (now - lastAttack < delay) break;
 
-        // LegitCriticals 现在自行监听出站攻击包触发暴击窗口（见 LegitCriticals::onPacketOutEvent），
-        // 不依赖本模块调用：Aura / TriggerBot / 手动攻击 等任意攻击来源都能触发。
-
-        // 1.21.120: Level::getHitResult() 的偏移是 ambiguous（4 处匹配）的 SUSPECT 签名，
-        // 即使非空也可能返回野指针，写 mType 必崩。攻击包自带目标 runtime ID，服务器以攻击
-        // 事务为准，根本不需要本地 hitResult。这里整段删除，不要碰它。
-
-
-        if (mAttackMode.mValue == AttackMode::Synched)
-        {
-
-            std::shared_ptr<InventoryTransactionPacket> attackTransaction = ActorUtils::createAttackTransaction(actor, mSwitchMode.mValue == SwitchMode::Spoof ? bestWeapon : -1);
-
-            bool shouldUseFire = shouldUseFireSword(ogActor) && mLastTransaction + 200 < NOW;
-            bool spoofed = false;
-            int oldSlot = mLastSlot;
-
-#ifdef __PRIVATE_BUILD__
-            if (mFireSwordSpoof.mValue && shouldUseFire)
+            if (mSwing.mValue)
             {
-                spoofed = true;
-                auto pkt = PacketUtils::createMobEquipmentPacket(bestWeapon);
-                PacketUtils::queueSend(pkt, false);
+                if (mSwingDelay.mValue)
+                {
+                    if (now - mLastSwing >= mSwingDelayValue.mValue * 1000)
+                    {
+                        player->swing();
+                    }
+                }
+                else player->swing();
             }
-#endif
+            int slot = -1;
+            int bestWeapon = getSword(actor);
+            mHotbarOnly.mValue ? slot = bestWeapon : slot = player->getSupplies()->mSelectedSlot;
 
-            PacketUtils::queueSend(attackTransaction, false);
+            auto ogActor = actor;
+            actor = findObstructingActor(player, actor);
 
-            if (spoofed)
-            {
-                auto pkt = PacketUtils::createMobEquipmentPacket(oldSlot);
-                PacketUtils::queueSend(pkt, false);
-            }
-        } else {
-            int oldSlot = supplies->mSelectedSlot;
-            if (mSwitchMode.mValue == SwitchMode::Spoof)
+            if (mSwitchMode.mValue == SwitchMode::Full)
             {
                 supplies->mSelectedSlot = bestWeapon;
             }
 
-            bool shouldUseFire = shouldUseFireSword(ogActor) && mLastTransaction + 200 < NOW;
-            bool spoofed = false;
-            int oldPktSlot = mLastSlot;
+            if (mRotateMode.mValue == RotateMode::Flick)
+            {
+                rotate(actor);
+            }
+
+            // LegitCriticals 自行监听出站攻击包触发暴击窗口，不依赖本模块调用。
+            // 1.21.120: Level::getHitResult() 偏移 ambiguous/SUSPECT，删干净，不要碰。
+
+            if (mAttackMode.mValue == AttackMode::Synched)
+            {
+
+                std::shared_ptr<InventoryTransactionPacket> attackTransaction = ActorUtils::createAttackTransaction(actor, mSwitchMode.mValue == SwitchMode::Spoof ? bestWeapon : -1);
+
+                bool shouldUseFire = shouldUseFireSword(ogActor) && mLastTransaction + 200 < NOW;
+                bool spoofed = false;
+                int oldSlot = mLastSlot;
 
 #ifdef __PRIVATE_BUILD__
-            if (mFireSwordSpoof.mValue && shouldUseFire)
-            {
-                auto pkt = PacketUtils::createMobEquipmentPacket(bestWeapon);
-                ClientInstance::get()->getPacketSender()->send(pkt.get());
-                spoofed = true;
-            }
+                if (mFireSwordSpoof.mValue && shouldUseFire)
+                {
+                    spoofed = true;
+                    auto pkt = PacketUtils::createMobEquipmentPacket(bestWeapon);
+                    PacketUtils::queueSend(pkt, false);
+                }
 #endif
 
-            player->getGameMode()->attack(actor);
-            supplies->mSelectedSlot = oldSlot;
+                PacketUtils::queueSend(attackTransaction, false);
 
-            if (spoofed)
-            {
-                auto pkt = PacketUtils::createMobEquipmentPacket(oldPktSlot);
-                ClientInstance::get()->getPacketSender()->send(pkt.get());
+                if (spoofed)
+                {
+                    auto pkt = PacketUtils::createMobEquipmentPacket(oldSlot);
+                    PacketUtils::queueSend(pkt, false);
+                }
+            } else {
+                int oldSlot = supplies->mSelectedSlot;
+                if (mSwitchMode.mValue == SwitchMode::Spoof)
+                {
+                    supplies->mSelectedSlot = bestWeapon;
+                }
+
+                bool shouldUseFire = shouldUseFireSword(ogActor) && mLastTransaction + 200 < NOW;
+                bool spoofed = false;
+                int oldPktSlot = mLastSlot;
+
+#ifdef __PRIVATE_BUILD__
+                if (mFireSwordSpoof.mValue && shouldUseFire)
+                {
+                    auto pkt = PacketUtils::createMobEquipmentPacket(bestWeapon);
+                    ClientInstance::get()->getPacketSender()->send(pkt.get());
+                    spoofed = true;
+                }
+#endif
+
+                player->getGameMode()->attack(actor);
+                supplies->mSelectedSlot = oldSlot;
+
+                if (spoofed)
+                {
+                    auto pkt = PacketUtils::createMobEquipmentPacket(oldPktSlot);
+                    ClientInstance::get()->getPacketSender()->send(pkt.get());
+                }
+            }
+
+            lastAttack = now;
+            lastAttacks[actor] = now;
+            if (mMode.mValue == Mode::Single || mMode.mValue == Mode::Switch) break;
+        }
+
+        if (!foundAttackable)
+        {
+            mRotating = false;
+            sTarget = nullptr;
+        }
+        sHasTarget = foundAttackable;
+
+        if (mThirdPerson.mValue && mThirdPersonOnlyOnAttack.mValue && sHasTarget) {
+            if (!mIsThirdPerson) {
+                ClientInstance::get()->getOptions()->mThirdPerson->value = 1;
+                mIsThirdPerson = true;
             }
         }
-
-        lastAttack = now;
-        lastAttacks[actor] = now;
-        if (mMode.mValue == Mode::Single || mMode.mValue == Mode::Switch) break;
-    }
-
-    if (!foundAttackable)
-    {
-        mRotating = false;
-        sTarget = nullptr;
-    }
-    sHasTarget = foundAttackable;
-
-    if (mThirdPerson.mValue && mThirdPersonOnlyOnAttack.mValue && sHasTarget) {
-        if (!mIsThirdPerson) {
-            ClientInstance::get()->getOptions()->mThirdPerson->value = 1;
-            mIsThirdPerson = true;
+        else if (mThirdPerson.mValue && mThirdPersonOnlyOnAttack.mValue && !sHasTarget) {
+            if (mIsThirdPerson) {
+                ClientInstance::get()->getOptions()->mThirdPerson->value = 0;
+                mIsThirdPerson = false;
+            }
         }
-    }
-    else if (mThirdPerson.mValue && mThirdPersonOnlyOnAttack.mValue && !sHasTarget) {
-        if (mIsThirdPerson) {
-            ClientInstance::get()->getOptions()->mThirdPerson->value = 0;
-            mIsThirdPerson = false;
-        }
-    }
+    });
+    // On !ok the whole tick's entity work was aborted by an access violation on a
+    // dangling target; skipping it is the intended safe behavior (no crash).
 }
 
 void Aura::onPacketOutEvent(PacketOutEvent& event)
