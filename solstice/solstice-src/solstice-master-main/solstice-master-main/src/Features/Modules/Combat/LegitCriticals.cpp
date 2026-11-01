@@ -4,9 +4,11 @@
 // 本地输入驱动（local-only）：窗口内置本地 MoveInputComponent::mIsSneakDown（真实蹲），
 //   游戏会把该状态序列化进 PlayerAuthInput 发包——本地与发包同一条状态，天然一致、不会不同步。
 //   冷却节律：窗口结束进入 COOLDOWN 静默，本地恢复，让你能正常跑、跳；不再被常蹲锁死。
-//   攻击驱动：检测任意出站攻击包(InventoryTransaction Attack)才 arm（仅空中 + 冷却就绪），
-//   Aura / TriggerBot / 手动攻击 都能触发，且只在攻击时介入（非全局）。
-//   PushDown 仅窗口内：压下落速度维持 fallDistance>0（顶点/上升段暴击）。
+//   攻击驱动：检测任意出站攻击包(InventoryTransaction Attack)才 arm（仅空中 + 冷却就绪，
+//   已激活则刷新窗口）；Aura / TriggerBot / 手动攻击 都能触发，且只在攻击时介入（非全局）。
+//   PushDown 仅窗口内：每 tick 无条件压速度到 -0.1（z1yr 同款），攻击时位置在下降
+//   -> fallDistance>0。这是暴击来源；蹲只是伪装。
+//   状态生效比攻击包晚一拍：第一击"播种"窗口，暴击吃在窗口内的后续攻击上。
 //
 
 #include "LegitCriticals.hpp"
@@ -19,8 +21,6 @@
 #include <SDK/Minecraft/Actor/Actor.hpp>
 #include <SDK/Minecraft/Actor/Components/MoveInputComponent.hpp>
 #include <SDK/Minecraft/Actor/Components/StateVectorComponent.hpp>
-#include <SDK/OffsetProvider.hpp>
-#include <Utils/GameUtils/ActorUtils.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
 
 void LegitCriticals::onEnable() {
@@ -50,7 +50,6 @@ void LegitCriticals::disarm() {
 void LegitCriticals::onBaseTickEvent(BaseTickEvent& event) {
     auto* player = event.mActor; // 本地玩家
     if (!player) return;
-    mTick++; // 自增 tick 计数器（i-frame 回退判定用）
 
     // 冷却阶段：本地恢复、不蹲，给你跑/跳的窗口；递减冷却后直接返回（不蹲）。
     if (mCooldown > 0) {
@@ -68,6 +67,9 @@ void LegitCriticals::onBaseTickEvent(BaseTickEvent& event) {
     auto* moveInput = player->getMoveInputComponent();
     if (!moveInput) { disarm(); return; }
 
+    // 落地即收窗：地面攻击本来就不暴击（fallDistance=0），继续蹲只是白限移动。
+    if (player->isOnGround()) { disarm(); return; }
+
     const bool doSneak      = (mMode.mValue == Mode::Sneaking      || mMode.mValue == Mode::Both);
     const bool doStopSprint = (mMode.mValue == Mode::StopSprinting || mMode.mValue == Mode::Both);
 
@@ -75,13 +77,13 @@ void LegitCriticals::onBaseTickEvent(BaseTickEvent& event) {
     moveInput->mIsSneakDown = doSneak;
     if (doStopSprint) moveInput->mIsSprinting = false;
 
-    // PushDown（仅窗口内）：压下落速度维持 fallDistance>0，顶点/上升段也暴击。
-    // 窗口短且此间你正蹲(本就无法跳)，对移动影响可控。
+    // PushDown（仅窗口内）：每 tick 无条件把垂直速度压到 -0.1（z1yr 同款）。
+    // 位置因此持续下降 -> PAI 上报的位置也在降 -> 服务器 fallDistance>0。
+    // 这才是暴击的来源；蹲只是伪装，不产生暴击。BaseTickEvent 在原 baseTick
+    // 之前触发，速度改动当拍就被积分。
     if (mPushDown.mValue) {
         if (auto* state = player->getStateVectorComponent()) {
-            if (state->mVelocity.y >= -0.05f) {
-                state->mVelocity.y = -0.1f;
-            }
+            state->mVelocity.y = -0.1f;
         }
     }
 
@@ -98,25 +100,10 @@ void LegitCriticals::arm() {
     if (!ci) return;
     auto* player = ci->getLocalPlayer();
     if (!player || player->isOnGround()) return; // 仅空中
-    if (mCooldown > 0 || mArmed) return;         // 冷却中或已激活：不重复开，避免常蹲锁死
+    if (mCooldown > 0) return;                   // 冷却中不开，避免常蹲锁死
+    // 已激活则刷新窗口：连击期间状态持续，后续攻击才吃得到蹲+压速。
     mArmed = true;
     mTtl = CRIT_WINDOW;
-}
-
-// i-frame gate：目标刚被打过（无敌帧中）返回 false，不开暴击窗口。
-// 优先用目标真实受伤计时（覆盖所有来源，含他人攻击）；偏移未解析时回退到"本模块记录的每目标上次攻击 tick"。
-bool LegitCriticals::targetVulnerable(uint64_t targetId) {
-    if (OffsetProvider::Actor_mHurtTimeComponent != 0) {
-        if (auto* target = ActorUtils::getActorFromRuntimeID((int64_t)targetId)) {
-            if (auto* hurt = target->getMobHurtTimeComponent()) {
-                if (hurt->mHurtTime > 0) return false; // 受伤无敌帧中
-            }
-        }
-    }
-    // 回退：距本模块上次攻击该目标未超过 IFRAME_TICKS 也视为无敌（仅当受伤计时偏移不可用时才真正起作用）
-    auto it = mLastHitTick.find(targetId);
-    if (it != mLastHitTick.end() && (mTick - it->second) < IFRAME_TICKS) return false;
-    return true;
 }
 
 // 网络侧：检测攻击包触发窗口；窗口内把 PAI 也显式打上蹲伏/断疾跑标志（与本地一致，双保险）。
@@ -127,11 +114,7 @@ void LegitCriticals::onPacketOutEvent(PacketOutEvent& event) {
                 if (cit->type == ComplexInventoryTransaction::Type::ItemUseOnEntityTransaction) {
                     auto* iut = reinterpret_cast<ItemUseOnActorInventoryTransaction*>(cit);
                     if (iut->mActionType == ItemUseOnActorInventoryTransaction::ActionType::Attack) {
-                        // i-frame gate：目标处于受伤无敌帧时跳过，避免浪费暴击窗口（也不触发蹲）
-                        if (targetVulnerable(iut->mActorId)) {
-                            mLastHitTick[iut->mActorId] = mTick; // 记录本次攻击，供回退判定
-                            arm(); // 自驱动：仅空中 + 冷却就绪时开窗口
-                        }
+                        arm(); // 自驱动：仅空中 + 冷却就绪时开/续窗口
                     }
                 }
             }
