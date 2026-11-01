@@ -386,8 +386,12 @@ void BlockUtils::destroyBlock(glm::vec3 pos, int side, bool useTransac)
 
 bool BlockUtils::isMiningPosition(glm::ivec3 blockPos) {
     auto player = ClientInstance::get()->getLocalPlayer();
+    if (!player) return false;
 
-    if (0 < player->getGameMode()->mBreakProgress && player->getLevel()->getHitResult()->mBlockPos == blockPos) return true;
+    // 1.21.120: Level::getHitResult() returns null (signature broken). Guard it so
+    // the game's break-progress check can't deref a null hit result and crash.
+    auto* hit = player->getLevel()->getHitResult();
+    if (hit && 0 < player->getGameMode()->mBreakProgress && hit->mBlockPos == blockPos) return true;
 
     if (Regen::mIsMiningBlock && Regen::mCurrentBlockPos == blockPos) return true;
 
