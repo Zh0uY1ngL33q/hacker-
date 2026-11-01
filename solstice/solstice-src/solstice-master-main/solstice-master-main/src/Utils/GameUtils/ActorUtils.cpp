@@ -49,34 +49,25 @@ std::vector<struct Actor *> ActorUtils::getActorList(bool playerOnly, bool exclu
         {
             for (auto &&[entId, moduleOwner, type, ridc, balls]: player->mContext.mRegistry->view<ActorOwnerComponent, ActorTypeComponent, RuntimeIDComponent, AABBShapeComponent>().each())
             {
-                // Check if the entity id exists
+                // Skip entities that are no longer valid (despawn transition).
+                // NOTE: never log inside this hot path - Aura (and several other
+                // entity-dependent modules) calls getActorList every tick, and a
+                // few hundred spdlog::critical lines/sec will stall the main thread
+                // on synchronous log I/O -> FPS drop -> server timeout -> disconnection.
                 if (!player->mContext.mRegistry->valid(entId))
-                {
-                    spdlog::critical("Found invalid entity id [{}]", entId);
-#ifdef __DEBUG__
-                    ChatUtils::displayClientMessage("§cCHECK CONSOLE");
-#endif
-                    return actors;
-                }
-
-                // Continue if the actor is null
-                if (!moduleOwner.mActor)
-                {
-                    spdlog::critical("Found null actor pointer for entity!");
                     continue;
-                };
+
+                // Skip null actor pointers.
+                if (!moduleOwner.mActor)
+                    continue;
 
                 // Filter dangling/wild pointers: the entity is still in the registry and
-                // mActor is non-null, but the Actor object may already be freed. Dereferencing
-                // it throws a 0xC0000005 that this function's try/catch CANNOT catch (it is an
-                // SEH access violation, not a C++ exception). VirtualQuery checks the page is
-                // committed; a freed/unmapped pointer fails here and is dropped before Aura
-                // ever dereferences it.
+                // mActor is non-null, but the Actor object may already be freed. VirtualQuery
+                // checks the page is committed; a freed/unmapped pointer fails here and is
+                // dropped before Aura ever dereferences it. (SEH in the caller is the backstop;
+                // keep this silent - do NOT log per-entity in the hot path.)
                 if (!MemUtils::isValidPtr(reinterpret_cast<uintptr_t>(moduleOwner.mActor)))
-                {
-                    spdlog::critical("Found dangling (invalid) actor pointer for entity [{}]", entId);
                     continue;
-                }
                 // Continue if the actor is a bot and we want to exclude bots
                 if (excludeBots && antibot->isBot(moduleOwner.mActor)) continue;
 
@@ -91,12 +82,9 @@ std::vector<struct Actor *> ActorUtils::getActorList(bool playerOnly, bool exclu
             auto tactors = level->getRuntimeActorList();
             for (auto actor : tactors)
             {
-                // Continue if the actor is null
+                // Continue if the actor is null (silent - hot path).
                 if (!actor)
-                {
-                    spdlog::critical("Found null actor pointer for entity!");
                     continue;
-                };
 
                 // Continue if the actor is a bot and we want to exclude bots
                 if (excludeBots && antibot->isBot(actor)) continue;
@@ -138,10 +126,7 @@ std::vector<Actor*> ActorUtils::getActorsOfType(ActorType type)
             if (!player->mContext.mRegistry->valid(_)) continue;
 
             if (!moduleOwner.mActor)
-            {
-                spdlog::debug("Found null actor pointer for entity!");
                 continue;
-            };
             // do NOT exclude bots as we are specifically requesting a type
 
             if (typeComponent.mType == type)

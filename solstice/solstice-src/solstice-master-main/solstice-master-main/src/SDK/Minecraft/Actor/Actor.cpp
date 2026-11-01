@@ -57,13 +57,13 @@ componentType* Actor::funcName() \
 { \
     if (!isValid()) \
     { \
-        spdlog::critical("Actor::{}: isValid() failed", #funcName); \
+        spdlog::debug("Actor::{}: isValid() failed", #funcName); \
         return nullptr; \
     } \
     auto component = mContext.getComponent<componentType>(); \
     if (!component) \
     { \
-        spdlog::critical("Actor::{}: No {} found", #funcName, #componentType); \
+        spdlog::debug("Actor::{}: No {} found", #funcName, #componentType); \
     } \
     /*if (!MemUtils::isValidPtr(reinterpret_cast<uintptr_t>(component))) \
     { \

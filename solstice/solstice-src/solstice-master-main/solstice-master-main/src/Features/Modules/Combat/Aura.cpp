@@ -623,7 +623,7 @@ void Aura::onPacketInEvent(PacketInEvent& event)
         auto packet = event.getPacket<RemoveActorPacket>();
         if (sTarget && sTargetRuntimeID == packet->mRuntimeID)
         {
-            spdlog::critical("Active target was removed from world!! This may lead to a crash!");
+            spdlog::debug("Active target was removed from world!! This may lead to a crash!");
             sHasTarget = false;
             sTarget = nullptr;
         }
