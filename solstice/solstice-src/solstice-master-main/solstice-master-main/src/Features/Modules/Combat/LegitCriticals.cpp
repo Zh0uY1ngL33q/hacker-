@@ -45,11 +45,17 @@ void LegitCriticals::onDisable() {
 void LegitCriticals::disarm() {
     mArmed = false;
     mTtl = 0;
-    // Restore local input to avoid residue (once event is deafened, onBaseTickEvent no longer corrects it)
-    if (auto* ci = ClientInstance::get()) {
-        if (auto* player = ci->getLocalPlayer()) {
-            if (auto* moveInput = player->getMoveInputComponent()) {
-                moveInput->mIsSneakDown = false;
+    // Clear only the crouch WE wrote. MoveInputComponent is rebuilt from real
+    // keyboard input every tick, so unconditionally writing false here (or in
+    // the idle branches below) would eat the player's own manual crouch for a
+    // tick and gain nothing.
+    if (mSneakApplied) {
+        mSneakApplied = false;
+        if (auto* ci = ClientInstance::get()) {
+            if (auto* player = ci->getLocalPlayer()) {
+                if (auto* moveInput = player->getMoveInputComponent()) {
+                    moveInput->mIsSneakDown = false;
+                }
             }
         }
     }
@@ -59,18 +65,15 @@ void LegitCriticals::onBaseTickEvent(BaseTickEvent& event) {
     auto* player = event.mActor; // local player
     if (!player) return;
 
-    // Cooldown phase: local restored, no crouch, gives you a run/jump window; decrement then return (no crouch).
+    // Cooldown / outside window: do NOT touch the input fields. The game rebuilds
+    // MoveInputComponent from the real keyboard state every tick, so writing
+    // false here would eat the player's own manual crouch for that tick.
     if (mCooldown > 0) {
         mCooldown--;
-        if (auto* mi = player->getMoveInputComponent()) mi->mIsSneakDown = false;
         return;
     }
 
-    if (!mArmed) {
-        // Not in window: ensure local not crouching (consistent with packet), zero interference.
-        if (auto* mi = player->getMoveInputComponent()) mi->mIsSneakDown = false;
-        return;
-    }
+    if (!mArmed) return;
 
     auto* moveInput = player->getMoveInputComponent();
     if (!moveInput) { disarm(); return; }
@@ -82,7 +85,11 @@ void LegitCriticals::onBaseTickEvent(BaseTickEvent& event) {
     const bool doStopSprint = (mMode.mValue == Mode::StopSprinting || mMode.mValue == Mode::Both);
 
     // Real local crouch: the game serializes it into the PAI packet, local and packet share the same source -> no desync.
-    moveInput->mIsSneakDown = doSneak;
+    // Only ever write true; disarm() (which clears only what we wrote) handles release.
+    if (doSneak) {
+        moveInput->mIsSneakDown = true;
+        mSneakApplied = true;
+    }
     if (doStopSprint) moveInput->mIsSprinting = false;
 
     // PushDown (window-only): each tick unconditionally push vertical velocity to -0.1 (like z1yr).

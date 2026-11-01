@@ -74,6 +74,7 @@ private:
     static constexpr int CRIT_WINDOW  = 10; // crouch+push duration (ticks)
     static constexpr int COOLDOWN     = 3;  // silent cooldown (ticks): local restored, can run/jump
     bool mArmed   = false;          // crit window active? (only triggered by attack packets, not auto-global)
+    bool mSneakApplied = false;     // we wrote mIsSneakDown=true; clear only what we wrote, never clobber the player's own crouch
     int  mTtl     = 0;              // window remaining ticks; re-attacking inside refreshes
     int  mCooldown = 0;             // cooldown remaining ticks; >0 means local not crouching, run/jump window
 };
