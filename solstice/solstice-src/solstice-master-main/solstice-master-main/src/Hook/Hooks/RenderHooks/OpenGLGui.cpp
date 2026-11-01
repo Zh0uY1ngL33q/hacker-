@@ -17,6 +17,7 @@
 #include <Features/Modules/Visual/ClickGui.hpp>
 #include <Features/Modules/Visual/HudEditor.hpp>
 #include <Features/Modules/Visual/TargetHUD.hpp>
+#include <SDK/Minecraft/ClientInstance.hpp>
 #include <Utils/FontHelper.hpp>
 #include <Utils/Keyboard.hpp>
 #include <Utils/MiscUtils/MathUtils.hpp>
@@ -297,13 +298,14 @@ void OpenGLGui::render(HDC dc) try
     MathUtils::displaySize = {io.DisplaySize.x, io.DisplaySize.y};
     ImGui::NewFrame();
     RenderEvent event;
-    gui->onRenderEvent(event); // original UI
-    // Once this GL path is active, D3DHook::present() returns the original
-    // present immediately, so the D3D RenderEvent dispatch never runs. Draw the
-    // ImGui-only HUD modules here; modules that need D3D resources degrade
-    // themselves via OpenGLGui::isActive(). ImGui::NewFrame leaves no current
-    // window and this ImGui fork's PushFont writes to it, so give the
-    // dispatchers a fullscreen click-through window first.
+    // RenderEvent used to be dispatched only from D3DHook::present(), and that
+    // present returns the original immediately once this GL path is active. So
+    // every module that subscribes to RenderEvent -- ClickGui, HudEditor,
+    // FullBright, Interface, Notifications, Watermark, Regen, Scaffold -- never
+    // rendered here at all, and only the three modules called by hand ever drew
+    // anything. The dispatch now happens further down, inside the fullscreen
+    // click-through window, because ImGui::NewFrame leaves no current window and
+    // this ImGui fork's PushFont writes to it.
     if (gFeatureManager && gFeatureManager->mModuleManager) {
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize(io.DisplaySize);
@@ -317,10 +319,14 @@ void OpenGLGui::render(HDC dc) try
             loggedHudDispatch = true;
             spdlog::info("[GUI probe] GL HUD dispatch active (HudEditor/TargetHUD)");
         }
-        if (auto* hudEditor = gFeatureManager->mModuleManager->getModule<HudEditor>()) {
-            hudEditor->onRenderEvent(event);
-            hudEditor->onCustomRenderEvent(event);
+        // Interface::onRenderEvent dereferences ClientInstance::get() without a
+        // null check, and this path can run before the client is fully up.
+        if (ClientInstance::get()) {
+            auto holder = nes::make_holder<RenderEvent>();
+            gFeatureManager->mDispatcher->trigger(holder);
         }
+        // TargetHUD is the one HUD module that does not subscribe to RenderEvent,
+        // so it still needs its call.
         if (auto* targetHud = gFeatureManager->mModuleManager->getModule<TargetHUD>())
             targetHud->onRenderEvent(event);
         ImGui::End();
