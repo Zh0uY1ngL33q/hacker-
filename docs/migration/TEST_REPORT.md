@@ -108,6 +108,28 @@ E:/PY/python.exe tools/re/audit_patches.py \
 
 阶段二：**通过 8 项（16-21、25-27）、环境阻塞 2 项（22-24 属同类）、未运行 2 项组**。
 
+### 7.1 构建机首轮（用户执行，2026-11-01 21:13）
+
+| # | 测试 | 结果 | 分类 |
+|---|---|---|---|
+| 30 | 构建机跑 `verify-build.ps1` v1 | **FAIL（环境）** `cl/rc/ninja` 均不在 PATH，configure `exit 1` | 环境问题 |
+| 31 | 同一 `env.log` 的正面信息 | VS **18 Community 已安装**（`C:\Program Files\Microsoft Visual Studio\18\Community`）、cmake 4.4.4 在 PATH、HEAD 命中 `a93ff55` | — |
+
+判定：v1 脚本假设“在 VS 开发者命令行里运行”，实际是从普通 PowerShell 启动的，
+所以 `vcvars64.bat` 从未执行。**这不是源码问题**，也不是环境缺陷——机器上有 VS，
+只是没有加载环境。已出 v2：脚本自己 `call vcvars64.bat`，并从 VS 目录取 Ninja。
+v2 已用 PowerShell 解析器校验（1049 token、0 错误），并用真实 VS 路径验证三处推导：
+
+```
+<VS>\VC\Auxiliary\Build\vcvars64.bat
+<VS>\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja\ninja.exe
+<VS>\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe
+```
+
+> 说明：v2 的 `.bat` 调用链（`& $batPath` + `$LASTEXITCODE`）在本机沙箱里无法执行
+> （沙箱禁止由 PowerShell 拉起 `cmd.exe`），因此**只做了语法与路径推导验证**，
+> 执行结果仍然要等构建机回传。这一条按 UNKNOWN 记，不算通过。
+
 ## 8. 错误分类（本阶段全部错误）
 
 | 分类 | 条目 | 证据 | 处置 |

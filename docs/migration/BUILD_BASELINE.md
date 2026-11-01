@@ -54,6 +54,26 @@ CMake 版本（目录名 4.2.3-msvc3）= 4.2.3
 `BUILD.md` 里写的 `-DCMAKE_BUILD_TYPE=Release` 与实际缓存不一致，以 **RelWithDebInfo** 为准时
 才和上次成功的构建同构。
 
+## 3.1 构建机实测（2026-11-01 21:13，`verify-build.ps1` v1 的 env.log）
+
+host `MORELINK` / Windows 11 `10.0.22631.0`：
+
+| 项 | 实际值 | 判定 |
+|---|---|---|
+| cmake | `C:\Program Files\CMake\bin\cmake.exe`，4.4.4，在 PATH 上 | ✅ |
+| Visual Studio | `C:\Program Files\Microsoft Visual Studio\18\Community`（vswhere 能查到） | ✅ 已安装 |
+| `cl.exe` | 不在 PATH | ⚠️ 普通 PowerShell 未加载 MSVC 环境 |
+| `rc.exe` | 不在 PATH | ⚠️ Windows SDK 未加载 |
+| `ninja` | 不在 PATH | ⚠️ |
+| configure 结果 | `exit 1`：`unable to find a build program corresponding to "Ninja"` + 编译器未设置 | 环境问题，**未进入源码编译** |
+
+**结论**：构建机上有 VS 18 Community，但普通 PowerShell 会话不会自动 `vcvars`；
+Ninja 也不是 PATH 工具。这不是源码问题，也不是“没装 VS”。
+
+v2 脚本因此改为自建环境：`vswhere` 定位 VS → `call VC\Auxiliary\Build\vcvars64.bat` →
+从 `<VS>\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja\ninja.exe` 取 Ninja，
+与 §3 里历史缓存记录的构建方式（VS 自带 Ninja）一致。
+
 ## 4. 干净副本 + 配置尝试（本机执行，结果留档）
 
 用 `git archive HEAD` 导出提交树到独立目录（932 文件，23 MB），**不触碰工作区**：

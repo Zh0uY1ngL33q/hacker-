@@ -143,3 +143,25 @@ build-verify\summary.txt    错误码归并 + 首个出现位置 + 失败文件�
 
 拿到后我会按“环境 / 依赖 / 源码 / 接口”分类，只对**能证明原因**的错误做最小修改，
 并明确区分“编译通过”与“运行正常”两件事——后者仍然只能由注入日志判定。
+
+## 10. 首轮构建机反馈（2026-11-01 21:13）与脚本 v2
+
+用户回传的 `env.log` 显示：`cl.exe / rc.exe / ninja` 全部 `NOT FOUND`，configure `exit 1`；
+但同一份日志里 **VS 18 Community 已安装**、cmake 4.4.4 在 PATH、HEAD 命中 `a93ff55`。
+
+根因是脚本 v1 假设“在 VS 开发者命令行里运行”，而实际是从普通 PowerShell 启动，
+`vcvars64.bat` 从未执行。**不是源码问题，也不是没装 VS。**
+
+v2 改动：
+
+1. 自己定位 VS（`vswhere -requires ...VC.Tools.x86.x64`）并 `call VC\Auxiliary\Build\vcvars64.bat`；
+2. Ninja 从 `<VS>\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja\ninja.exe` 取，
+   与 §3 里历史缓存记录的构建方式一致；
+3. 顺手修掉一个真 bug：`$vsRoot` 从 `vcvars64.bat` 反推少剥一层，会得到 `<VS>\VC`（错），
+   改用 vswhere 直接给的安装根；
+4. vcvars 输出单独留 `vcvars.log`（含 `where cl` / `where rc` / `cl` 版本），失败可诊断；
+5. `.bat` 改为直接调用 + `$LASTEXITCODE`，避免 `Start-Process cmd /c` 的引号问题。
+
+验证到什么程度：PowerShell 解析器 **1049 token / 0 错误**；三处路径推导用真实 VS 路径核对无误。
+**`.bat` 的实际执行在本机沙箱里被禁止（不允许 PowerShell 拉起 `cmd.exe`），所以执行结果仍是 UNKNOWN**，
+必须由构建机回传才能定论。
