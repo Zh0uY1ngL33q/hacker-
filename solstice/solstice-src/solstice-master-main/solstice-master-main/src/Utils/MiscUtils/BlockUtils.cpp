@@ -270,9 +270,16 @@ void BlockUtils::placeBlock(glm::vec3 pos, int side)
     int slot = player->getSupplies()->mSelectedSlot;
     cit->mSlot = slot;
     cit->mItemInHand = NetworkItemStackDescriptor(*player->getSupplies()->getContainer()->getItem(slot));
-    cit->mBlockPos = blockPos;
+    // Bedrock Place semantics: mBlockPos is the SUPPORT block you click against,
+    // the server places the new block at mBlockPos + Facing::getOffset(mFace).
+    // blockFaceOffsets[side] points from the air cell (blockPos) toward the solid
+    // support, so the support == blockPos + blockFaceOffsets[side].
+    glm::ivec3 supportPos = blockPos + glm::ivec3(blockFaceOffsets[side]);
+    cit->mBlockPos = supportPos;
     cit->mFace = side;
-    cit->mTargetBlockRuntimeId = 0;
+    // The server validates the target block against this runtime id; send the real
+    // support block's id (not 0) so the placement isn't rejected.
+    cit->mTargetBlockRuntimeId = ClientInstance::get()->getBlockSource()->getBlock(supportPos)->getRuntimeId();
     cit->mPlayerPos = *player->getPos();
 
     // clickPos is re-written on the outgoing packet by Scaffold::onPacketOutEvent;
