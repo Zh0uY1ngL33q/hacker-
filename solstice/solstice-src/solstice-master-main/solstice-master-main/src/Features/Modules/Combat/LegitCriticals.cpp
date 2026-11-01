@@ -1,14 +1,22 @@
 //
 // LegitCriticals - legit (crouched) critical hits while airborne.
 //
-// 本地输入驱动（local-only）：窗口内置本地 MoveInputComponent::mIsSneakDown（真实蹲），
-//   游戏会把该状态序列化进 PlayerAuthInput 发包——本地与发包同一条状态，天然一致、不会不同步。
-//   冷却节律：窗口结束进入 COOLDOWN 静默，本地恢复，让你能正常跑、跳；不再被常蹲锁死。
-//   攻击驱动：检测任意出站攻击包(InventoryTransaction Attack)才 arm（仅空中 + 冷却就绪，
-//   已激活则刷新窗口）；Aura / TriggerBot / 手动攻击 都能触发，且只在攻击时介入（非全局）。
-//   PushDown 仅窗口内：每 tick 无条件压速度到 -0.1（z1yr 同款），攻击时位置在下降
-//   -> fallDistance>0。这是暴击来源；蹲只是伪装。
-//   状态生效比攻击包晚一拍：第一击"播种"窗口，暴击吃在窗口内的后续攻击上。
+// Local-input driven (local-only): within the window we set the local
+//   MoveInputComponent::mIsSneakDown (real crouch); the game serializes that
+//   state into PlayerAuthInput sent to the server -- local and packet share the
+//   same state, so it is inherently consistent (no desync).
+//   Cooldown rhythm: after the window ends we go silent for COOLDOWN ticks,
+//   local restored, no crouch -- you can run/jump normally; never locked by
+//   permanent crouch.
+//   Attack-driven: any outbound attack packet (InventoryTransaction Attack)
+//   arms the window (airborne-only + cooldown ready; if already armed, refresh
+//   the window). Aura / TriggerBot / manual attack all trigger it, and it only
+//   intervenes on attack (not global).
+//   PushDown (window-only): each tick unconditionally push vertical velocity to
+//   -0.1 (like z1yr), so during attack the position is descending -> fallDistance>0.
+//   This is the actual crit source; crouch is just disguise.
+//   State takes effect one tick after the attack packet: the first hit "sows"
+//   the window, crits land on subsequent hits inside the window.
 //
 
 #include "LegitCriticals.hpp"
@@ -37,7 +45,7 @@ void LegitCriticals::onDisable() {
 void LegitCriticals::disarm() {
     mArmed = false;
     mTtl = 0;
-    // 恢复本地输入，防残留（事件已 deafen 时不再被 onBaseTickEvent 校正）
+    // Restore local input to avoid residue (once event is deafened, onBaseTickEvent no longer corrects it)
     if (auto* ci = ClientInstance::get()) {
         if (auto* player = ci->getLocalPlayer()) {
             if (auto* moveInput = player->getMoveInputComponent()) {
@@ -48,10 +56,10 @@ void LegitCriticals::disarm() {
 }
 
 void LegitCriticals::onBaseTickEvent(BaseTickEvent& event) {
-    auto* player = event.mActor; // 本地玩家
+    auto* player = event.mActor; // local player
     if (!player) return;
 
-    // 冷却阶段：本地恢复、不蹲，给你跑/跳的窗口；递减冷却后直接返回（不蹲）。
+    // Cooldown phase: local restored, no crouch, gives you a run/jump window; decrement then return (no crouch).
     if (mCooldown > 0) {
         mCooldown--;
         if (auto* mi = player->getMoveInputComponent()) mi->mIsSneakDown = false;
@@ -59,7 +67,7 @@ void LegitCriticals::onBaseTickEvent(BaseTickEvent& event) {
     }
 
     if (!mArmed) {
-        // 不在窗口内：确保本地不蹲（与发包一致），零干扰。
+        // Not in window: ensure local not crouching (consistent with packet), zero interference.
         if (auto* mi = player->getMoveInputComponent()) mi->mIsSneakDown = false;
         return;
     }
@@ -67,46 +75,46 @@ void LegitCriticals::onBaseTickEvent(BaseTickEvent& event) {
     auto* moveInput = player->getMoveInputComponent();
     if (!moveInput) { disarm(); return; }
 
-    // 落地即收窗：地面攻击本来就不暴击（fallDistance=0），继续蹲只是白限移动。
+    // Land -> close window: ground attacks don't crit anyway (fallDistance=0), staying crouched just needlessly limits movement.
     if (player->isOnGround()) { disarm(); return; }
 
     const bool doSneak      = (mMode.mValue == Mode::Sneaking      || mMode.mValue == Mode::Both);
     const bool doStopSprint = (mMode.mValue == Mode::StopSprinting || mMode.mValue == Mode::Both);
 
-    // 本地真实下蹲：游戏会序列化进 PAI 发包，本地与发包同源 -> 无不同步。
+    // Real local crouch: the game serializes it into the PAI packet, local and packet share the same source -> no desync.
     moveInput->mIsSneakDown = doSneak;
     if (doStopSprint) moveInput->mIsSprinting = false;
 
-    // PushDown（仅窗口内）：每 tick 无条件把垂直速度压到 -0.1（z1yr 同款）。
-    // 位置因此持续下降 -> PAI 上报的位置也在降 -> 服务器 fallDistance>0。
-    // 这才是暴击的来源；蹲只是伪装，不产生暴击。BaseTickEvent 在原 baseTick
-    // 之前触发，速度改动当拍就被积分。
+    // PushDown (window-only): each tick unconditionally push vertical velocity to -0.1 (like z1yr).
+    // Position therefore keeps descending -> PAI-reported position also descends -> server sees fallDistance>0.
+    // This is the actual crit source; crouch is just disguise, it does not produce crits. BaseTickEvent
+    // fires before the original baseTick, so the velocity change is integrated the same tick.
     if (mPushDown.mValue) {
         if (auto* state = player->getStateVectorComponent()) {
             state->mVelocity.y = -0.1f;
         }
     }
 
-    // 窗口倒计时：结束后 disarm 并进入冷却（给你跑/跳的窗口）。
+    // Window countdown: after it ends, disarm and enter cooldown (gives you a run/jump window).
     if (--mTtl <= 0) {
         disarm();
         mCooldown = COOLDOWN;
     }
 }
 
-// 攻击驱动：任意出站攻击包触发（Aura / TriggerBot / 手动攻击 都算）；内部 guard 仅空中 + 冷却就绪。
+// Attack-driven: any outbound attack packet triggers it (Aura / TriggerBot / manual attack all count); internal guard is airborne-only + cooldown ready.
 void LegitCriticals::arm() {
     auto* ci = ClientInstance::get();
     if (!ci) return;
     auto* player = ci->getLocalPlayer();
-    if (!player || player->isOnGround()) return; // 仅空中
-    if (mCooldown > 0) return;                   // 冷却中不开，避免常蹲锁死
-    // 已激活则刷新窗口：连击期间状态持续，后续攻击才吃得到蹲+压速。
+    if (!player || player->isOnGround()) return; // airborne only
+    if (mCooldown > 0) return;                   // don't open during cooldown, avoid permanent-crouch lock
+    // If already armed, refresh the window: during combos the state persists so later hits get crouch+push.
     mArmed = true;
     mTtl = CRIT_WINDOW;
 }
 
-// 网络侧：检测攻击包触发窗口；窗口内把 PAI 也显式打上蹲伏/断疾跑标志（与本地一致，双保险）。
+// Network side: detect attack packet to open window; inside the window also explicitly set crouch/stop-sprint flags on PAI (consistent with local, belt-and-suspenders).
 void LegitCriticals::onPacketOutEvent(PacketOutEvent& event) {
     if (event.mPacket->getId() == PacketID::InventoryTransaction) {
         if (auto pkt = event.getPacket<InventoryTransactionPacket>()) {
@@ -114,14 +122,14 @@ void LegitCriticals::onPacketOutEvent(PacketOutEvent& event) {
                 if (cit->type == ComplexInventoryTransaction::Type::ItemUseOnEntityTransaction) {
                     auto* iut = reinterpret_cast<ItemUseOnActorInventoryTransaction*>(cit);
                     if (iut->mActionType == ItemUseOnActorInventoryTransaction::ActionType::Attack) {
-                        arm(); // 自驱动：仅空中 + 冷却就绪时开/续窗口
+                        arm(); // self-driven: opens/refreshes window only when airborne + cooldown ready
                     }
                 }
             }
         }
     }
 
-    if (!mArmed) return; // 不在窗口内：不碰 PAI（与本地一致）
+    if (!mArmed) return; // not in window: don't touch PAI (consistent with local)
     if (event.mPacket->getId() != PacketID::PlayerAuthInput) return;
 
     auto paip = event.getPacket<PlayerAuthInputPacket>();

@@ -485,8 +485,8 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
                 rotate(actor);
             }
 
-            // LegitCriticals 自行监听出站攻击包触发暴击窗口，不依赖本模块调用。
-            // 1.21.120: Level::getHitResult() 偏移 ambiguous/SUSPECT，删干净，不要碰。
+            // LegitCriticals now listens to outbound attack packets itself to open the crit window; no call from this module needed.
+            // 1.21.120: Level::getHitResult() offset is ambiguous/SUSPECT; deleted entirely, do not touch.
 
             if (mAttackMode.mValue == AttackMode::Synched)
             {

@@ -121,7 +121,7 @@ void Solstice::init(HMODULE hModule)
     // background thread instead, and only force an immediate flush for real
     // errors so crash diagnostics are still persisted without per-message stalls.
     spdlog::flush_every(std::chrono::seconds(3));
-    console->flush_level(spdlog::level::err);
+    spdlog::flush_on(spdlog::level::err);
     spdlog::set_default_logger(console);
     console->info("Build: {} branch {}", SOLSTICE_BUILD_VERSION, SOLSTICE_BUILD_BRANCH);
     console->info("Diagnostic log path: {}", logFile);
