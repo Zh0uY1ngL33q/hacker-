@@ -433,6 +433,27 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
         // does not require holding the right mouse button.
         if (!triggered && mTest4Phase <= 0.f) return;
 
+        // The dip runs FIRST and on the untouched matrix, exactly the operation
+        // ViewModel::onBobHurtEvent uses (glm::translate on the incoming matrix).
+        // That module's Y translation is the one model-mover confirmed to work,
+        // so the dip borrows it verbatim instead of composing the translation
+        // after the rotated blocking chain, where "down" is no longer screen-down.
+        if (mTest4Phase > 0.f)
+        {
+            constexpr float kPi = 3.14159265358979f;
+            mTest4Phase += ImRenderUtils::getDeltaTime() / 0.25f; // ~250 ms dip
+            if (mTest4Phase >= 1.f)
+            {
+                mTest4Phase = 0.f;
+            }
+            else
+            {
+                // Down and back up, same op as ViewModel's Y translation.
+                const float dip = std::sin(mTest4Phase * kPi) * mHitDrop.as<float>();
+                *matrix = glm::translate(*matrix, glm::vec3(0.f, -dip, 0.f));
+            }
+        }
+
         if (triggered)
         {
             // Hold the swing completely still while blocking: zero the engine's swing
@@ -454,26 +475,6 @@ void Animations::onBobHurtEvent(BobHurtEvent& event)
             *matrix = glm::scale(*matrix, glm::vec3(1.05f, 1.05f, 1.05f));
         }
 
-        if (mTest4Phase > 0.f)
-        {
-            constexpr float kPi = 3.14159265358979f;
-            mTest4Phase += ImRenderUtils::getDeltaTime() / 0.25f; // ~250 ms dip
-            if (mTest4Phase >= 1.f)
-            {
-                mTest4Phase = 0.f;
-            }
-            else
-            {
-                // Down and back up. Left-multiplied on purpose: every other op in
-                // this file is right-multiplied, which means it happens in the
-                // item's own frame, and that frame has already been rotated by the
-                // blocking chain, so "down" there is the blade's axis, not the
-                // screen's. Multiplying from the left translates in the space the
-                // pose starts in (the hand/view space), where -Y is screen down.
-                const float dip = std::sin(mTest4Phase * kPi) * mHitDrop.as<float>();
-                *matrix = glm::translate(glm::mat4(1.f), glm::vec3(0.f, -dip, 0.f)) * *matrix;
-            }
-        }
         return;
     }
 
