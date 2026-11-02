@@ -68,10 +68,16 @@ public:
     static inline void* mDetour1 = nullptr;
     static inline void* mDetour2 = nullptr;
 
+    // Which of the three independent patches actually landed. Two of the three
+    // signatures (default/current input mode, and the bypass pair) do not resolve
+    // on 1.21.120, so inject() has to report per block instead of assuming.
+    enum : uint32_t { kInputMode = 1u << 0, kOs = 1u << 1, kBypass = 1u << 2 };
+    static inline uint32_t patchedBlocks = 0;
+
     void injectOsSpoofer();
     void ejectOsSpoofer();
     void updateOs();
-    void inject();
+    bool inject();
     void eject();
     void spoofEdition();
 

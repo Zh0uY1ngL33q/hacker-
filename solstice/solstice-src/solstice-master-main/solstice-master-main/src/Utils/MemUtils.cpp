@@ -65,6 +65,16 @@ std::string MemUtils::getModulePath(HMODULE handle)
 
 void MemUtils::writeBytes(uintptr_t ptr, const std::vector<unsigned char>& bytes, size_t size)
 {
+    // A null target is the normal state of an unresolved signature, and memcpy to
+    // it is an access violation rather than a no-op. Refuse instead of crashing.
+    if (ptr < 0x10000) {
+        static bool warned = false;
+        if (!warned) {
+            warned = true;
+            spdlog::error("MemUtils::writeBytes refused target {:#x} (unresolved address)", ptr);
+        }
+        return;
+    }
     DWORD oldProtect;
     VirtualProtect(reinterpret_cast<void*>(ptr), size, PAGE_EXECUTE_READWRITE, &oldProtect);
     memcpy(reinterpret_cast<void*>(ptr), bytes.data(), size);
@@ -73,6 +83,14 @@ void MemUtils::writeBytes(uintptr_t ptr, const std::vector<unsigned char>& bytes
 
 void MemUtils::writeBytes(uintptr_t ptr, const void* bytes, size_t size)
 {
+    if (ptr < 0x10000) {
+        static bool warned = false;
+        if (!warned) {
+            warned = true;
+            spdlog::error("MemUtils::writeBytes refused target {:#x} (unresolved address)", ptr);
+        }
+        return;
+    }
     DWORD oldProtect;
     VirtualProtect(reinterpret_cast<void*>(ptr), size, PAGE_EXECUTE_READWRITE, &oldProtect);
     memcpy(reinterpret_cast<void*>(ptr), bytes, size);
@@ -107,6 +125,15 @@ std::vector<unsigned char> MemUtils::readBytes(uintptr_t ptr, size_t size)
 }
 
 void MemUtils::ReadBytes(void* address, void* buffer, size_t size) {
+    if (reinterpret_cast<uintptr_t>(address) < 0x10000 || buffer == nullptr || size == 0) {
+        static bool warned = false;
+        if (!warned) {
+            warned = true;
+            spdlog::error("MemUtils::ReadBytes refused source {} (unresolved address)", address);
+        }
+        if (buffer && size) memset(buffer, 0, size);
+        return;
+    }
     DWORD oldProtect;
     VirtualProtect(address, size, PAGE_EXECUTE_READWRITE, &oldProtect);
     memcpy(buffer, address, size);
@@ -114,7 +141,9 @@ void MemUtils::ReadBytes(void* address, void* buffer, size_t size) {
 }
 
 void MemUtils::NopBytes(uintptr_t address, size_t size) {
-    if ((LPVOID)address == nullptr)
+    // "address + 5" of an unresolved (zero) target is small but not null, so the
+    // old check let it through to memset.
+    if (address < 0x10000)
         return;
 
     DWORD oldprotect;
@@ -378,4 +407,27 @@ bool MemUtils::isValidPtr(uintptr_t address)
         return mbi.State == MEM_COMMIT;
     }
     return false;
+}
+
+bool MemUtils::isPatchableCode(uintptr_t address, size_t size)
+{
+    if (address < 0x10000 || size == 0) return false;
+
+    // Must live inside the host module: an unresolved resolver can return an
+    // ordinary heap or data address, and patching that corrupts unrelated state
+    // instead of the function it was meant to be.
+    MODULEINFO info{};
+    if (!GetModuleInformation(GetCurrentProcess(), GetModuleHandleW(nullptr), &info, sizeof(info)))
+        return false;
+    const auto base = reinterpret_cast<uintptr_t>(info.lpBaseOfDll);
+    if (address < base || address - base + size > info.SizeOfImage)
+        return false;
+
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (!VirtualQuery(reinterpret_cast<void*>(address), &mbi, sizeof(mbi)))
+        return false;
+    if (mbi.State != MEM_COMMIT) return false;
+    if ((mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD)) != 0) return false;
+    const DWORD executable = PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY;
+    return (mbi.Protect & executable) != 0;
 }

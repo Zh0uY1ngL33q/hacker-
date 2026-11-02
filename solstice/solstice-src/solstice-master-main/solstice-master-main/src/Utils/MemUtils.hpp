@@ -120,6 +120,9 @@ public:
 
     template<typename T>
     static void Write(uintptr_t address, T value) {
+        // A field pointer derived from an unresolved offset is null; storing
+        // through it is an access violation, not a no-op.
+        if (address < 0x10000) return;
         // oldProtect is a pointer to the old protection
         DWORD oldProtect;
         VirtualProtect((void*)address, sizeof(T), PAGE_EXECUTE_READWRITE, &oldProtect);
@@ -247,6 +250,16 @@ public:
     static std::vector<uintptr_t> findReferences(uintptr_t address);
     static uintptr_t getTopOfFunction(uintptr_t address);
     static bool isValidPtr(uintptr_t address);
+
+    /// True if `address` is code inside the host module and safe to overwrite.
+    ///
+    /// Signature-resolution failures leave the patch address at zero, and the
+    /// resolvers that "succeed" on the wrong instruction leave a data offset
+    /// (0x50B3069 and friends). Both were passed straight to writeBytes, which
+    /// VirtualProtects, ignores the failure and memcpys -- an access violation
+    /// inside a module's onEnable, which reads as the game crashing when a switch
+    /// is flipped. Anything that writes into the game's code should ask first.
+    static bool isPatchableCode(uintptr_t address, size_t size);
 
 private:
     template<typename T>

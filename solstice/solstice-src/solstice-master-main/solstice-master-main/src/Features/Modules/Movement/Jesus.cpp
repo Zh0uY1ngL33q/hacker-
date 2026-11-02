@@ -5,6 +5,7 @@
 #include "Jesus.hpp"
 
 #include <SDK/OffsetProvider.hpp>
+#include <Utils/MemUtils.hpp>
 #include <SDK/Minecraft/World/BlockLegacy.hpp>
 #include <SDK/Minecraft/Actor/Actor.hpp>
 #include <Features/Events/BaseTickEvent.hpp>
@@ -18,6 +19,14 @@ bool Jesus::sdjReplace(bool patch)
     static uintptr_t waterFunc = SigManager::WaterBlockLegacy_getCollisionShapeForCamera;
     static uintptr_t solidFunc = SigManager::ConcreteBlockLegacy_getCollisionShapeForCamera;
     static int funcIndex = OffsetProvider::BlockLegacy_getCollisionShape;
+
+    // funcIndex is unresolved on 1.21.120 and comes back as zero, and slot 0 of a
+    // BlockLegacy vtable is its destructor: writing it replaces a real function
+    // with the (also unresolved, therefore null) collision shape and the game dies
+    // the next time that block type is destroyed. A collision-shape slot is deep
+    // in the vtable, so anything near the front is certainly the wrong answer.
+    if (funcIndex <= 0 || funcIndex > 0x400) return false;
+    if (!MemUtils::isPatchableCode(waterFunc, 1) || !MemUtils::isPatchableCode(solidFunc, 1)) return false;
 
     auto funcOffset = funcIndex * 8;
 

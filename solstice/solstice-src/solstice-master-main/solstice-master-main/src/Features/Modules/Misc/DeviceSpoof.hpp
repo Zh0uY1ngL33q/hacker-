@@ -22,7 +22,7 @@ public:
     static inline void* patchPtr = nullptr;
     static inline std::string DeviceModel;
 
-    void inject();
+    bool inject();
     void eject();
     void spoofMboard();
 

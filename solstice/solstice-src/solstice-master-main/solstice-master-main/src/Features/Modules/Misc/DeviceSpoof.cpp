@@ -11,16 +11,29 @@
 #include <SDK/Minecraft/Network/Packets/LoginPacket.hpp>
 #include <SDK/SigManager.hpp>
 #include <Utils/Buffer.hpp>
+#include <Utils/MemUtils.hpp>
+#include <spdlog/spdlog.h>
 #include "EditionFaker.hpp"
 
 static uintptr_t deviceModelAddr;
+// ConnectionRequest::create_DeviceModel does not resolve on 1.21.120, which left
+// deviceModelAddr at zero. inject() then wrote a jmp to address zero, so simply
+// enabling this module crashed the game. Track whether the patch actually landed
+// and keep the packet-level spoof working when it did not.
+static bool deviceModelInjected = false;
 
 void DeviceSpoof::onInit()
 {
     deviceModelAddr = SigManager::ConnectionRequest_create_DeviceModel;
 }
 
-void DeviceSpoof::inject() {
+bool DeviceSpoof::inject() {
+    if (!MemUtils::isPatchableCode(deviceModelAddr, sizeof(originalData))) {
+        spdlog::warn("DeviceSpoof: create_DeviceModel did not resolve ({:#x}); "
+                     "device model stays untouched, the rest of the spoof still runs", deviceModelAddr);
+        return false;
+    }
+
     MemUtils::ReadBytes((void *) deviceModelAddr, originalData, sizeof(originalData));
 
     MemUtils::NopBytes(deviceModelAddr, 7);
@@ -37,15 +50,23 @@ void DeviceSpoof::inject() {
 
     MemUtils::writeBytes(deviceModelAddr, "\xE9", 1);
     MemUtils::writeBytes(deviceModelAddr + 1, &newRelRip4, sizeof(int32_t));
+    return true;
 }
 
 void DeviceSpoof::eject()
 {
+    if (!deviceModelInjected) return;
     MemUtils::writeBytes(deviceModelAddr, originalData, sizeof(originalData));
-    FreeBuffer(patchPtr);;
+    FreeBuffer(patchPtr);
+    patchPtr = nullptr;
+    deviceModelInjected = false;
 }
 
 void DeviceSpoof::spoofMboard() {
+    // The byte patch is what consumes DeviceModel; without it there is nothing to
+    // write, and writing through a null patchPtr is an access violation.
+    if (!deviceModelInjected || !patchPtr) return;
+
     auto editionFaker = gFeatureManager->mModuleManager->getModule<EditionFaker>();
 
     if(!editionFaker || !editionFaker->mEnabled){
@@ -61,7 +82,7 @@ void DeviceSpoof::spoofMboard() {
 
 void DeviceSpoof::onEnable()
 {
-    inject();
+    deviceModelInjected = inject();
     gFeatureManager->mDispatcher->listen<ConnectionRequestEvent, &DeviceSpoof::onConnectionRequestEvent>(this);
 }
 
