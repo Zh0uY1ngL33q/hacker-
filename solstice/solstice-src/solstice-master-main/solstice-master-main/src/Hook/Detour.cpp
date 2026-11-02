@@ -25,6 +25,15 @@ Detour::Detour(const std::string& name, void* addr, void* detour, bool silent)
     this->mFunc = addr;
     this->mName = name;
 
+    // A zero address means the signature for this function never resolved. MinHook
+    // answers MH_ERROR_NOT_EXECUTABLE for it, which reads like a hooking failure
+    // and buries the real cause (a missing signature) among the hook logs.
+    if (!mFunc)
+    {
+        if (!silent) spdlog::warn("Skipping detour for {} -- its signature did not resolve", name);
+        return;
+    }
+
     const MH_STATUS result = MH_CreateHook(mFunc, detour, &mOriginalFunc);
     mCreated = (result == MH_STATUS::MH_OK);
 

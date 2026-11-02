@@ -490,68 +490,6 @@ void OpenGLGui::render(HDC dc) try
                         MathUtils::fov = RenderUtils::transform.mFov;
                         MathUtils::origin = RenderUtils::transform.mOrigin;
 
-                        // Temporary: one line per second, 30 lines total, showing
-                        // where a real target lands, so a blank or misplaced box
-                        // can be read off instead of described.
-                        static long long sDiagMs = 0;
-                        static int sDiagLeft = 30;
-                        const long long diagNow = glNowMs();
-                        if (sDiagLeft > 0 && diagNow - sDiagMs >= 1000) {
-                            const auto diagActors = ActorUtils::getActorList(false, true);
-                            // Nothing to measure until something other than the
-                            // local player exists, so the budget is not spent in
-                            // an empty world.
-                            if (diagActors.size() > 1) {
-                            sDiagMs = diagNow;
-                            --sDiagLeft;
-                            const glm::vec3 eye = *cam;
-                            const float selfDist = glm::distance(eye, rpc->mPosition);
-                            GLint viewport[4]{};
-                            glGetIntegerv(GL_VIEWPORT, viewport);
-                            // The decisive number: aim the crosshair at any mob.
-                            // The crosshair is the camera's forward axis, so the
-                            // actor nearest that axis has dot 1 and MUST project to
-                            // the middle of the screen. If it projects anywhere
-                            // else, the projection disagrees with what the game
-                            // draws -- and the offset says in which direction.
-                            const glm::vec3 lookDir = glm::normalize(-glm::vec3(view[2]));
-                            float bestDot = -2.f;
-                            Actor* aimed = nullptr;
-                            float aimedDist = 0.f;
-                            for (auto* candidate : diagActors) {
-                                if (candidate == player) continue;
-                                auto* posComp = candidate->getRenderPositionComponent();
-                                if (!posComp) continue;
-                                const glm::vec3 rel = posComp->mPosition - eye;
-                                const float len = glm::length(rel);
-                                if (len < 0.05f) continue;
-                                const float dot = glm::dot(rel / len, lookDir);
-                                if (dot > bestDot) { bestDot = dot; aimed = candidate; aimedDist = len; }
-                            }
-                            spdlog::info("[view] yaw={:.1f} pitch={:.1f} eye=({:.2f},{:.2f},{:.2f}) selfDist={:.2f} actors={} src={} axisdot={:.4f} display=({:.0f},{:.0f}) viewport=({},{},{},{})",
-                                         yawDeg, pitchDeg, eye.x, eye.y, eye.z, selfDist, diagActors.size(), viewSource,
-                                         glm::dot(lookDir, forward),
-                                         MathUtils::displaySize.x, MathUtils::displaySize.y,
-                                         viewport[0], viewport[1], viewport[2], viewport[3]);
-                            if (aimed) {
-                                const AABB box = aimed->getAABB();
-                                const auto points = MathUtils::getImBoxPoints(box);
-                                if (points.empty()) {
-                                    spdlog::info("[view]   aim dot={:.4f} dist={:.1f} aabb=({:.1f},{:.1f},{:.1f}) no box (corner behind camera)",
-                                                 bestDot, aimedDist, box.mMin.x, box.mMin.y, box.mMin.z);
-                                } else {
-                                    float x0 = points[0].x, x1 = points[0].x, y0 = points[0].y, y1 = points[0].y;
-                                    for (const auto& point : points) {
-                                        x0 = std::min(x0, point.x); x1 = std::max(x1, point.x);
-                                        y0 = std::min(y0, point.y); y1 = std::max(y1, point.y);
-                                    }
-                                    spdlog::info("[view]   aim dot={:.4f} dist={:.1f} aabb=({:.1f},{:.1f},{:.1f}) rect=({:.0f},{:.0f})..({:.0f},{:.0f}) centre=({:.0f},{:.0f})",
-                                                 bestDot, aimedDist, box.mMin.x, box.mMin.y, box.mMin.z,
-                                                 x0, y0, x1, y1, (x0 + x1) * 0.5f, (y0 + y1) * 0.5f);
-                                }
-                            }
-                            }
-                        }
                     }
                     }
                 }
