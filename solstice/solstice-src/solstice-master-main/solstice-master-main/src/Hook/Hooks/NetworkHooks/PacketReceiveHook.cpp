@@ -104,18 +104,34 @@ void* PacketReceiveHook::onPacketSend(void* _this, void* networkIdentifier, void
         return ofunc(_this, networkIdentifier, netEventCallback, packet);
     }
 
+    // MinecraftSim_mGameSession does not point at a GameSession on 1.21.120: the
+    // counters showed every single packet rejected here (4941 calls, 4940
+    // session-fail, 0 dispatched). This check was never load-bearing anyway -- the
+    // detour is installed on PacketHandlerDispatcherInstance::handle, which is the
+    // receive side, and detourFor() has already established that this packet came
+    // through one of those handlers. Keep the identity check when the session is
+    // readable, fall back to detour ownership when it is not.
     auto* session = sim->getGameSession();
     if (!InstanceLocator::isPlausibleObject(session))
     {
+        static bool warned = false;
+        if (!warned)
+        {
+            warned = true;
+            spdlog::warn("[pkt] GameSession unresolved (0x{:X}); dispatching on detour ownership",
+                         reinterpret_cast<uintptr_t>(session));
+        }
         reportPacketPipeline(PktStage::NoSession);
-        return ofunc(_this, networkIdentifier, netEventCallback, packet);
     }
-
-    auto actualEventCallback = session->getEventCallback();
-    if (!InstanceLocator::isReadableMemory(actualEventCallback, 1) ||
-        actualEventCallback != netEventCallback) {
-        reportPacketPipeline(PktStage::NoCallback);
-        return ofunc(_this, networkIdentifier, netEventCallback, packet);
+    else
+    {
+        auto actualEventCallback = session->getEventCallback();
+        if (InstanceLocator::isReadableMemory(actualEventCallback, 1) &&
+            actualEventCallback != netEventCallback)
+        {
+            reportPacketPipeline(PktStage::NoCallback);
+            return ofunc(_this, networkIdentifier, netEventCallback, packet);
+        }
     }
 
     auto holder = nes::make_holder<PacketInEvent>(packet, networkIdentifier, netEventCallback);
@@ -134,8 +150,10 @@ void PacketReceiveHook::handlePacket(std::shared_ptr<Packet> packet)
     auto* sim = clientInstance->getMinecraftSim();
     if (!InstanceLocator::isPlausibleObject(sim)) return;
     auto* session = sim->getGameSession();
-    if (!InstanceLocator::isPlausibleObject(session)) return;
-    onPacketSend(packet ? packet->mDispatcher : nullptr, NetworkIdentifier, session->getEventCallback(), packet);
+    // Same unresolved GameSession as in onPacketSend; the callback is only used for
+    // the identity check, which now treats an implausible session as "unknown".
+    void* eventCallback = InstanceLocator::isPlausibleObject(session) ? session->getEventCallback() : nullptr;
+    onPacketSend(packet ? packet->mDispatcher : nullptr, NetworkIdentifier, eventCallback, packet);
 }
 
 void PacketReceiveHook::init()
