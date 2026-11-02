@@ -136,10 +136,15 @@ void Solstice::init(HMODULE hModule)
     // the build machine, and it stays stale (or wrong) when the tree was dirty
     // or the checkout lagged. The source fingerprint is computed from the files
     // that were actually compiled, so it pins the running binary to its code.
-    console->info("Build: {} branch {} | source {} | built {} | uncommitted {}",
+    // "built" is when build_info.h was written, "compiled" is when this
+    // translation unit was compiled. They are the same generation only when the
+    // header was actually regenerated before this file was built, so a large gap
+    // means the binary was compiled against a stale commit hash -- which is
+    // exactly the failure that kept showing a version the running code was not.
+    console->info("Build: {} branch {} | source {} | header {} | compiled {} | uncommitted {}",
                   SOLSTICE_BUILD_VERSION, SOLSTICE_BUILD_BRANCH,
                   SOLSTICE_SOURCE_FINGERPRINT_SHORT, SOLSTICE_BUILD_TIMESTAMP,
-                  SOLSTICE_FILES_CHANGED_COUNT);
+                  __DATE__ " " __TIME__, SOLSTICE_FILES_CHANGED_COUNT);
     console->info("Diagnostic log path: {}", logFile);
     char hostPath[MAX_PATH]{};
     GetModuleFileNameA(nullptr, hostPath, MAX_PATH);

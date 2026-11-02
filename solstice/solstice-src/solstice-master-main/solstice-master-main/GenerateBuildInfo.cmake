@@ -83,7 +83,14 @@ foreach(SOLSTICE_SOURCE_FILE ${SOLSTICE_SOURCE_FILES})
     string(SUBSTRING "${SOLSTICE_FILE_DIGEST}" 0 16 SOLSTICE_FILE_DIGEST_SHORT)
     string(APPEND SOLSTICE_SOURCE_DIGEST "${SOLSTICE_FILE_DIGEST_SHORT}")
 endforeach()
-string(SHA256 SOLSTICE_SOURCE_DIGEST SOLSTICE_SOURCE_FINGERPRINT)
+# string(SHA256 <out-var> <input>) takes the input as a *value*, not as a
+# variable name. The original line was
+#     string(SHA256 SOLSTICE_SOURCE_DIGEST SOLSTICE_SOURCE_FINGERPRINT)
+# which hashed the literal text "SOLSTICE_SOURCE_DIGEST", wrote that hash back
+# into SOLSTICE_SOURCE_DIGEST, and left SOLSTICE_SOURCE_FINGERPRINT empty -- so
+# every build reported "source  " with nothing after it, and the fingerprint
+# that is supposed to pin the binary to its code was never computed at all.
+string(SHA256 SOLSTICE_SOURCE_FINGERPRINT "${SOLSTICE_SOURCE_DIGEST}")
 string(SUBSTRING "${SOLSTICE_SOURCE_FINGERPRINT}" 0 12 SOLSTICE_SOURCE_FINGERPRINT_SHORT)
 file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_SOURCE_FINGERPRINT \"${SOLSTICE_SOURCE_FINGERPRINT}\"\n")
 file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_SOURCE_FINGERPRINT_SHORT \"${SOLSTICE_SOURCE_FINGERPRINT_SHORT}\"\n")
