@@ -563,5 +563,17 @@ bool Actor::isValid()
 
 bool Actor::canSee(Actor* actor)
 {
+    // The 1.21.120 pattern for this one matches four places, so what got resolved is
+    // one of four functions. If it is not the visibility test it answers false for
+    // everything, and Aura's "skip targets you cannot see" makes the whole module
+    // do nothing while looking perfectly healthy. Being optimistic when the match is
+    // not unique costs an attack through a wall; being pessimistic costs the module.
+    static const bool reliable = []
+    {
+        const auto it = SigManager::mSigMatchCounts.find("Actor_canSee");
+        return it != SigManager::mSigMatchCounts.end() && it->second == 1;
+    }();
+
+    if (!reliable) return true;
     return MemUtils::callFastcall<bool>(SigManager::Actor_canSee, this, actor);
 }

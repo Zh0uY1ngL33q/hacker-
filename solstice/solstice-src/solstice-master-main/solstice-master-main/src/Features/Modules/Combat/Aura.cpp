@@ -3,6 +3,7 @@
 //
 
 #include "Aura.hpp"
+#include <atomic>
 
 #include <Features/FeatureManager.hpp>
 #include <Features/Events/BaseTickEvent.hpp>
@@ -145,6 +146,23 @@ void Aura::rotate(Actor* target)
 
     mTargetedAABB = target->getAABB();
     mRotating = true;
+
+    // Strafe turns the body onto the target, and it has to happen here, once per
+    // tick, not in the render handler: rendering runs several times per tick and
+    // every write there is undone by the input update, which is exactly the head
+    // twitch that showed up once RenderEvent started being dispatched on the GL
+    // path.
+    if (!mStrafe.mValue) return;
+
+    auto* pos = player->getPos();
+    auto* rot = player->getActorRotationComponent();
+    if (!pos || !rot) return;
+
+    const glm::vec2 rots = MathUtils::getRots(*pos, mTargetedAABB);
+    rot->mPitch = rots.x;
+    rot->mYaw = rots.y;
+    rot->mOldPitch = rots.x;
+    rot->mOldYaw = rots.y;
 }
 
 void Aura::shootBow(Actor* target)
@@ -257,29 +275,10 @@ void Aura::onRenderEvent(RenderEvent& event)
     if (mAPSMin.mValue < 0) mAPSMin.mValue = 0;
     if (mAPSMax.mValue < mAPSMin.mValue + 1) mAPSMax.mValue = mAPSMin.mValue + 1;
 
-    if (mStrafe.mValue)
-    {
-        auto player = ClientInstance::get()->getLocalPlayer();
-        if (!player) return;
-
-        if (mRotating)
-        {
-            // Component getters answer null while an actor is without the component
-            // or between ticks, and RenderEvent is dispatched once per frame on the
-            // GL path now -- this wrote through both without looking, which is the
-            // access violation the module was crashing with.
-            auto* pos = player->getPos();
-            auto* rot = player->getActorRotationComponent();
-            if (!pos || !rot) return;
-
-            glm::vec2 rots = MathUtils::getRots(*pos, mTargetedAABB);
-            rot->mPitch = rots.x;
-            rot->mYaw = rots.y;
-            rot->mOldPitch = rots.x;
-            rot->mOldYaw = rots.y;
-
-        }
-    }
+    // Strafe used to write the body rotation here, once per rendered frame. The
+    // input update owns that field on the tick, so every frame overwrote what the
+    // tick had just written and the head visibly twitched. Aura::rotate applies it
+    // once per tick now, from the same target box.
 
     if (mVisuals.mValue) {
         auto player = ClientInstance::get()->getLocalPlayer();
@@ -574,6 +573,21 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
 
             lastAttack = now;
             lastAttacks[actor] = now;
+
+            // One line a second while it is actually attacking: separates "never
+            // decided to attack" from "attacked and the hit did not land", which look
+            // identical from outside but have nothing in common.
+            {
+                static std::atomic<long long> sLastLog{ 0 };
+                long long previous = sLastLog.load(std::memory_order_relaxed);
+                if (now - previous >= 1000 && sLastLog.compare_exchange_strong(previous, now))
+                {
+                    spdlog::info("[aura] attack dist={:.2f} synched={} visible={}",
+                                 actor->distanceTo(player),
+                                 mAttackMode.mValue == AttackMode::Synched,
+                                 player->canSee(actor));
+                }
+            }
             if (mMode.mValue == Mode::Single || mMode.mValue == Mode::Switch) break;
         }
 
