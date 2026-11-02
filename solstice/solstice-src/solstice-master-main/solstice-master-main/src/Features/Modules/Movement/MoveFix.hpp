@@ -5,33 +5,42 @@
 
 #include <Features/Modules/Module.hpp>
 
-// Blends the walk between "where the camera looks" and "where the body faces".
+// Corrects the walk when the aim is turned away from the camera direction.
 //
-// The three states, measured in game with the aim turned onto a target that sits
-// left-front of the camera:
+// Two modes, because the two useful behaviours are not the same shape:
 //
-//   off        walk along the camera, body facing the target  -- straight line,
-//              fastest, and impossible for vanilla to produce
-//   Strength 1 walk along the body, i.e. straight at the target -- this is what
-//              Aura's own Strafe sub-option produces, and the two are equivalent
-//   Strength k the body's turn is applied only k of the way, so the walk keeps
-//              the camera heading with a bend towards the aim -- still moving
-//              forward as asked, with the turn showing up as an arc
+//   Smooth  rotates the local input continuously by delta * Strength. At 1 the walk
+//           follows the body exactly (walks straight at the target, same as Aura's
+//           Strafe); at low values it keeps the camera heading with a gentle bend.
 //
-// The default sits between the last two on purpose: full strength duplicates
-// Strafe, and zero is the broken vanilla state.
+//   Silent  rotates the input by the full delta and then snaps each component to
+//           -1/0/1, the way LiquidBounce's MovementCorrection.SILENT does it. A
+//           small aim change rounds back to "forward" and never moves you off the
+//           line; only a large one becomes a diagonal step. That is the mode that
+//           reads as "still walking forward, but the turn is taken into account".
 class MoveFix : public ModuleBase<MoveFix> {
 public:
+    enum class Mode {
+        Smooth,
+        Silent,
+    };
+
+    EnumSettingT<Mode> mMode = EnumSettingT<Mode>(
+        "Mode",
+        "Smooth bends continuously; Silent snaps to the nearest of the eight walking "
+        "directions so small aim changes leave the line untouched.",
+        Mode::Silent, "Smooth", "Silent");
+
     NumberSetting mStrength = NumberSetting(
         "Strength",
-        "How much of the body's turn is applied to the walk. "
-        "0 = walk where the camera looks (vanilla), 1 = walk where the body faces "
-        "(same as Aura's Strafe).",
+        "Smooth only: how much of the body's turn is applied to the walk. "
+        "0 = walk where the camera looks (vanilla), 1 = walk where the body faces.",
         0.35f, 0.0f, 1.0f, 0.05f);
 
-    MoveFix() : ModuleBase("MoveFix", "Blends the walk between the camera and the aim",
+    MoveFix() : ModuleBase("MoveFix", "Corrects the walk when the aim is turned",
                            ModuleCategory::Movement, 0, false) {
-        addSettings(&mStrength);
+        addSettings(&mMode, &mStrength);
+        VISIBILITY_CONDITION(mStrength, mMode.mValue == Mode::Smooth);
 
         mNames = {
             {Lowercase, "movefix"},
@@ -47,6 +56,7 @@ public:
 
     std::string getSettingDisplay() override
     {
+        if (mMode.mValue == Mode::Silent) return "Silent";
         return fmt::format("{}%", static_cast<int>(mStrength.mValue * 100.f));
     }
 
