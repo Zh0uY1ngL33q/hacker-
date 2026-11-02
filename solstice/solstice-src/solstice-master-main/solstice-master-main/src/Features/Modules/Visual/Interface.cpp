@@ -3,6 +3,7 @@
 //
 
 #include <Features/Events/ActorRenderEvent.hpp>
+#include <Features/Modules/Visual/ClickGui.hpp>
 #include <Features/Events/BaseTickEvent.hpp>
 #include <Features/Events/DrawImageEvent.hpp>
 #include <Features/Events/ModuleStateChangeEvent.hpp>

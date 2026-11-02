@@ -2,6 +2,7 @@
 // Created by vastrakai on 11/19/2024.
 //
 #include "ItemStack.hpp"
+#include <SDK/Minecraft/ClientInstance.hpp>
 
 #include <SDK/Minecraft/Actor/Actor.hpp>
 #include <SDK/Minecraft/World/Level.hpp>

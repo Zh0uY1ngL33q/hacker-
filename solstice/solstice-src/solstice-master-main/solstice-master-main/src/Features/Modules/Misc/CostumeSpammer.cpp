@@ -3,6 +3,7 @@
 //
 
 #include "CostumeSpammer.hpp"
+#include <SDK/Minecraft/ClientInstance.hpp>
 
 #include <SDK/Minecraft/Network/Packets/CommandRequestPacket.hpp>
 

@@ -3,6 +3,7 @@
 //
 
 #include "PreGameHook.hpp"
+#include <SDK/Minecraft/ClientInstance.hpp>
 #include <Features/Events/PreGameCheckEvent.hpp>
 
 std::unique_ptr<Detour> PreGameHook::mDetour = nullptr;

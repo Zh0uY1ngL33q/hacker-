@@ -3,6 +3,7 @@
 //
 
 #include "SetupAndRenderHook.hpp"
+#include <Features/Modules/Visual/ClickGui.hpp>
 
 #include <SDK/Minecraft/mce.hpp>
 #include <SDK/Minecraft/Actor/Actor.hpp>

@@ -3,6 +3,7 @@
 //
 
 #include "CustomChat.hpp"
+#include <SDK/Minecraft/ClientInstance.hpp>
 
 #include <Features/Events/ChatEvent.hpp>
 #include <Features/Events/PacketInEvent.hpp>

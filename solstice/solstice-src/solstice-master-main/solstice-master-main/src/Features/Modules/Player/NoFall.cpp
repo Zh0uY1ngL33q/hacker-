@@ -3,6 +3,7 @@
 //
 
 #include "NoFall.hpp"
+#include <SDK/Minecraft/ClientInstance.hpp>
 
 #include <Features/Events/PacketOutEvent.hpp>
 #include <SDK/Minecraft/Actor/Components/FlagComponent.hpp>

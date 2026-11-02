@@ -3,6 +3,7 @@
 //
 
 #include "TestModule.hpp"
+#include <Features/Modules/Visual/ClickGui.hpp>
 
 #include <Features/Events/BaseTickEvent.hpp>
 #include <Features/Events/LookInputEvent.hpp>
