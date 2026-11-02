@@ -61,7 +61,17 @@ public:
 
     glm::vec3 getLerpedOrigin()
     {
-        return MathUtils::lerp(mOldOrigin, mOrigin, ClientInstance::get()->getMinecraftSim()->getGameSim()->mDeltaTime);
+        // getGameSim() answers null when the simulation clock cannot be located on
+        // this build, and this used to dereference it unconditionally -- enabling
+        // Freecam then read through null on the very first frame. One tick at
+        // 20 tps is the fallback when the real delta time is unavailable.
+        float deltaTime = 0.05f;
+        if (auto* client = ClientInstance::get())
+            if (auto* sim = client->getMinecraftSim())
+                if (auto* game = sim->getGameSim())
+                    if (game->mDeltaTime > 0.f && game->mDeltaTime < 1.f)
+                        deltaTime = game->mDeltaTime;
+        return MathUtils::lerp(mOldOrigin, mOrigin, deltaTime);
     }
 
     void onEnable() override;
