@@ -44,6 +44,43 @@ void ESP::onRenderEvent(RenderEvent& event)
                      MathUtils::fov.x, MathUtils::fov.y,
                      MathUtils::displaySize.x, MathUtils::displaySize.y,
                      actors.size());
+
+        // Project the local player's own position. It sits at the camera, so a
+        // working chain puts it at the centre of the screen; anything else means
+        // the matrix convention is wrong rather than the actor list. OWorldToScreen
+        // returns false when the view-space z is positive, which is exactly the
+        // symptom a transposed or differently-handed matrix produces -- and that
+        // looks identical to "no entities" from the outside.
+        if (player) {
+            if (auto* selfPos = player->getRenderPositionComponent()) {
+                glm::vec3 self = selfPos->mPosition;
+                self.y += 1.0f;                       // roughly eye height
+                glm::vec2 screen{-1.f, -1.f};
+                const glm::vec3 rel = self - RenderUtils::transform.mOrigin;
+                const auto& m = RenderUtils::transform.mMatrix;
+                const float vz = glm::dot(m[2], glm::vec4(rel.x, rel.y, rel.z, 1.f));
+                const bool ok = m.OWorldToScreen(RenderUtils::transform.mOrigin, self, screen,
+                                                 RenderUtils::transform.mFov, MathUtils::displaySize);
+                spdlog::info("[ESP probe] self ok={} screen=({:.1f},{:.1f}) viewZ={:.2f} "
+                             "row0=({:.3f},{:.3f},{:.3f},{:.3f}) row2=({:.3f},{:.3f},{:.3f},{:.3f})",
+                             ok, screen.x, screen.y, vz,
+                             m[0][0], m[0][1], m[0][2], m[0][3],
+                             m[2][0], m[2][1], m[2][2], m[2][3]);
+            }
+        }
+
+        // A zero-sized AABB collapses all eight corners onto one pixel, which is
+        // a third way to get a blank screen with every projection input correct.
+        if (!actors.empty()) {
+            if (actors[0]->getAABBShapeComponent()) {
+                const AABB box = actors[0]->getAABB();
+                spdlog::info("[ESP probe] actor0 min=({:.2f},{:.2f},{:.2f}) max=({:.2f},{:.2f},{:.2f})",
+                             box.mMin.x, box.mMin.y, box.mMin.z,
+                             box.mMax.x, box.mMax.y, box.mMax.z);
+            } else {
+                spdlog::info("[ESP probe] actor0 has no AABBShapeComponent -- every box is skipped");
+            }
+        }
     }
 
     if (!ClientInstance::get()->getLevelRenderer()) return;
