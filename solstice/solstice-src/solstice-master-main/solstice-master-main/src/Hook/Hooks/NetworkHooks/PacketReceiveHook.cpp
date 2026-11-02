@@ -35,17 +35,28 @@ namespace {
 }
 
 namespace {
-    // Two numbers every ten seconds: how often this callback runs, and how often a
-    // packet actually reaches PacketInEvent. A non-zero first with a zero second
-    // means the guards below are rejecting everything, which in game reads as
-    // "Velocity / chat modules do nothing" with no other symptom at all.
-    std::atomic<uint32_t> sPipelineCalled{ 0 };
-    std::atomic<uint32_t> sPipelineDispatched{ 0 };
+    // One line every ten seconds, split by which guard rejected: a run that reports
+    // 8866 calls and 0 dispatches says the pipeline is shut, and the counters below
+    // say at which hop. That distinguishes "the session pointer is wrong" from "the
+    // callback identity check never matches", which look identical from in game.
+    enum class PktStage { Enter, NoSim, NoSession, NoCallback, Dispatched };
 
-    void reportPacketPipeline(bool dispatched)
+    std::atomic<uint32_t> sPktEnter{ 0 };
+    std::atomic<uint32_t> sPktNoSim{ 0 };
+    std::atomic<uint32_t> sPktNoSession{ 0 };
+    std::atomic<uint32_t> sPktNoCallback{ 0 };
+    std::atomic<uint32_t> sPktDispatched{ 0 };
+
+    void reportPacketPipeline(PktStage stage)
     {
-        ++sPipelineCalled;
-        if (dispatched) ++sPipelineDispatched;
+        switch (stage)
+        {
+        case PktStage::Enter:      ++sPktEnter; break;
+        case PktStage::NoSim:      ++sPktNoSim; break;
+        case PktStage::NoSession:  ++sPktNoSession; break;
+        case PktStage::NoCallback: ++sPktNoCallback; break;
+        case PktStage::Dispatched: ++sPktDispatched; break;
+        }
 
         static std::atomic<long long> sLastMs{ 0 };
         const long long now = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -54,14 +65,15 @@ namespace {
         if (now - expected < 10000) return;
         if (!sLastMs.compare_exchange_strong(expected, now)) return;
 
-        spdlog::info("[pkt] packet callback {} calls, {} dispatched to PacketInEvent",
-                     sPipelineCalled.load(), sPipelineDispatched.load());
+        spdlog::info("[pkt] calls {} | sim-fail {} | session-fail {} | callback-fail {} | dispatched {}",
+                     sPktEnter.load(), sPktNoSim.load(), sPktNoSession.load(),
+                     sPktNoCallback.load(), sPktDispatched.load());
     }
 }
 
 void* PacketReceiveHook::onPacketSend(void* _this, void* networkIdentifier, void* netEventCallback, std::shared_ptr<Packet> packet)
 {
-    reportPacketPipeline(false);
+    reportPacketPipeline(PktStage::Enter);
     // Never mutate the map: an id outside the hooked set has no owner here.
     auto* detour = detourFor(packet);
     if (!detour)
@@ -87,20 +99,27 @@ void* PacketReceiveHook::onPacketSend(void* _this, void* networkIdentifier, void
     auto* clientInstance = ClientInstance::get();
     auto* sim = clientInstance ? clientInstance->getMinecraftSim() : nullptr;
     if (!InstanceLocator::isPlausibleObject(sim))
+    {
+        reportPacketPipeline(PktStage::NoSim);
         return ofunc(_this, networkIdentifier, netEventCallback, packet);
+    }
 
     auto* session = sim->getGameSession();
     if (!InstanceLocator::isPlausibleObject(session))
+    {
+        reportPacketPipeline(PktStage::NoSession);
         return ofunc(_this, networkIdentifier, netEventCallback, packet);
+    }
 
     auto actualEventCallback = session->getEventCallback();
     if (!InstanceLocator::isReadableMemory(actualEventCallback, 1) ||
         actualEventCallback != netEventCallback) {
+        reportPacketPipeline(PktStage::NoCallback);
         return ofunc(_this, networkIdentifier, netEventCallback, packet);
     }
 
     auto holder = nes::make_holder<PacketInEvent>(packet, networkIdentifier, netEventCallback);
-    reportPacketPipeline(true);
+    reportPacketPipeline(PktStage::Dispatched);
     gFeatureManager->mDispatcher->trigger(holder);
     if (holder->isCancelled()) return nullptr;
 
