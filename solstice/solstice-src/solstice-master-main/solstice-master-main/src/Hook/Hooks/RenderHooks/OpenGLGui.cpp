@@ -3,6 +3,7 @@
 #include <atomic>
 #include <algorithm>
 #include <chrono>
+#include <cstring>
 #include <exception>
 #include <mutex>
 #include <thread>
@@ -411,17 +412,28 @@ void OpenGLGui::render(HDC dc) try
                     if (auto* cam = rp->getCameraPos()) {
                     if (auto* rpc = player->getRenderPositionComponent()) {
                         glmatrixf view = ci->getViewMatrix();
-                        // The matrix read at ClientInstance+0x368 is not a usable
-                        // view matrix on this build: its third column measures
-                        // (0, 0, 0, 1) -- no direction at all -- so the projected
-                        // z is constant and OWorldToScreen's `z > 0` guard rejects
-                        // every point. Look for the one the game actually renders
-                        // with, and only fall back to a reconstruction from the
-                        // player's rotation when no candidate exists.
-                        static bool sViewSearched = false;
+                        // ClientInstance+0x358 now holds the game's own view
+                        // matrix, so normally nothing else is needed here. The
+                        // checks below exist for the two ways that can fail: the
+                        // field moved to another offset, or it holds something
+                        // that is not a camera basis (a zeroed frame, a stale
+                        // object). A matrix that is orthonormal is trusted; a
+                        // located-but-moved one is re-read from its address every
+                        // frame, never cached, because a stored copy freezes the
+                        // projection at whatever the camera did during the search.
+                        const auto isCameraBasis = [](const glmatrixf& m) {
+                            const glm::vec3 c0{ m[0] }, c1{ m[1] }, c2{ m[2] };
+                            const auto unit = [](const glm::vec3& v) { return std::fabs(glm::length(v) - 1.f) < 5e-2f; };
+                            return unit(c0) && unit(c1) && unit(c2)
+                                && std::fabs(glm::dot(c0, c1)) < 5e-2f
+                                && std::fabs(glm::dot(c0, c2)) < 5e-2f
+                                && std::fabs(glm::dot(c1, c2)) < 5e-2f;
+                        };
+                        static bool sScanned = false;
                         static bool sViewFound = false;
+                        static void* sViewObject = nullptr;
                         static uint32_t sViewOffset = 0;
-                        static glmatrixf sViewMatrix{ glm::mat4(1.f) };
+                        int viewSource = isCameraBasis(view) ? 0 : 3;
                         glm::vec3 forward{ 0.f, 0.f, 1.f };
                         float yawDeg = 0.f, pitchDeg = 0.f;
                         if (auto* rot = player->getActorRotationComponent()) {
@@ -430,8 +442,12 @@ void OpenGLGui::render(HDC dc) try
                             constexpr float kD2R = 3.14159265358979323846f / 180.f;
                             const float y = yawDeg * kD2R, p = pitchDeg * kD2R;
                             forward = { -std::sin(y) * std::cos(p), -std::sin(p), std::cos(y) * std::cos(p) };
-                            if (!sViewSearched) {
-                                sViewSearched = true;
+                            if (viewSource != 0 && sViewFound && sViewObject) {
+                                std::memcpy(&view, static_cast<const uint8_t*>(sViewObject) + sViewOffset, sizeof(view));
+                                if (isCameraBasis(view)) viewSource = 1;
+                            }
+                            if (viewSource != 0 && !sScanned) {
+                                sScanned = true;
                                 const struct { const void* object; size_t bytes; const char* name; } targets[] = {
                                     { ci, 0x1800, "ClientInstance" },
                                     { lr, 0x1800, "LevelRenderer" },
@@ -445,15 +461,22 @@ void OpenGLGui::render(HDC dc) try
                                             spdlog::info("[view] {} +0x{:X} forward-dot {:.4f}", target.name, candidate.offset, candidate.forwardDot);
                                         if (candidate.forwardDot > best) {
                                             best = candidate.forwardDot;
-                                            sViewMatrix = glmatrixf(candidate.matrix);
+                                            sViewObject = const_cast<void*>(target.object);
                                             sViewOffset = candidate.offset;
                                             sViewFound = true;
                                         }
                                     }
                                 }
                                 spdlog::info("[view] search done found={} offset=+0x{:X} dot={:.4f}", sViewFound, sViewOffset, best);
+                                if (sViewFound) {
+                                    std::memcpy(&view, static_cast<const uint8_t*>(sViewObject) + sViewOffset, sizeof(view));
+                                    if (isCameraBasis(view)) viewSource = 1;
+                                }
                             }
-                            view = sViewFound ? sViewMatrix : viewMatrixFromRotation(yawDeg, pitchDeg);
+                            if (viewSource != 0) {
+                                view = viewMatrixFromRotation(yawDeg, pitchDeg);
+                                viewSource = 2;
+                            }
                         }
                         RenderUtils::transform = FrameTransform{
                             view, *cam, rpc->mPosition, ci->getFov() };
@@ -483,8 +506,8 @@ void OpenGLGui::render(HDC dc) try
                             --sDiagLeft;
                             const glm::vec3 eye = *cam;
                             const float selfDist = glm::distance(eye, rpc->mPosition);
-                            spdlog::info("[view] yaw={:.1f} pitch={:.1f} eye=({:.2f},{:.2f},{:.2f}) selfDist={:.2f} actors={} found={}",
-                                         yawDeg, pitchDeg, eye.x, eye.y, eye.z, selfDist, diagActors.size(), sViewFound);
+                            spdlog::info("[view] yaw={:.1f} pitch={:.1f} eye=({:.2f},{:.2f},{:.2f}) selfDist={:.2f} actors={} src={}",
+                                         yawDeg, pitchDeg, eye.x, eye.y, eye.z, selfDist, diagActors.size(), viewSource);
                             for (auto* target : diagActors) {
                                 if (target == player) continue;
                                 const AABB box = target->getAABB();

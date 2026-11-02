@@ -189,7 +189,12 @@ public:
     DEFINE_FIELD(MinecraftUIRenderContext_drawImage, 7);
     DEFINE_FIELD(Actor_mEntityIdentifier, 0x240);
     DEFINE_FIELD(Actor_mLocalName, 0xCB0);
-    DEFINE_FIELD(ClientInstance_mViewMatrix, 0x368);
+    // 0x368 reads one column into the matrix: what came back was
+    // (r1.x, r1.y, r1.z, 0), (r2.x, r2.y, r2.z, 0), (0, 0, 0, 1), so the third
+    // column carried no direction and every projection collapsed. A scan of the
+    // object found the rotation at 0x358 with its -Z axis matching the player's
+    // forward to 1.0000, which is 16 bytes -- exactly one column -- earlier.
+    DEFINE_FIELD(ClientInstance_mViewMatrix, 0x358);
     DEFINE_FIELD(ClientInstance_mFovX, 0x728);
     DEFINE_FIELD(ClientInstance_mFovY, 0x73C);
     DEFINE_FIELD(Block_mRuntimeId, 0xC0);
