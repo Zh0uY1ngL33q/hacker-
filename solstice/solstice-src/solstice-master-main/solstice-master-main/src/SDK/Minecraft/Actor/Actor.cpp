@@ -285,7 +285,12 @@ MobHurtTimeComponent* Actor::getMobHurtTimeComponent()
 
 SimpleContainer* Actor::getArmorContainer()
 {
-    return mContext.getComponent<ActorEquipmentComponent>()->mArmorContainer;
+    // The component itself can be absent (entities without equipment, and every
+    // actor while the registry is being torn down), and this used to dereference
+    // whatever it got without looking.
+    auto* equipment = mContext.getComponent<ActorEquipmentComponent>();
+    if (!equipment) return nullptr;
+    return equipment->mArmorContainer;
 }
 
 PlayerInventory* Actor::getSupplies()

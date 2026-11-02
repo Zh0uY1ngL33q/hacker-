@@ -36,9 +36,15 @@ void InvManager::onDisable()
 void InvManager::onBaseTickEvent(BaseTickEvent& event)
 {
     auto player = ClientInstance::get()->getLocalPlayer();
+    if (!player) return;
     auto armorContainer = player->getArmorContainer();
     auto supplies = player->getSupplies();
+    if (!supplies) return;
     auto container = supplies->getContainer();
+    // getArmorContainer() answers null when the equipment component is missing and
+    // getContainer() when the inventory is not ready; both were dereferenced below
+    // without a check, on every tick.
+    if (!armorContainer || !container) return;
 
     if (mManagementMode.mValue != ManagementMode::Always && !mHasOpenContainer)
     {
@@ -49,7 +55,8 @@ void InvManager::onBaseTickEvent(BaseTickEvent& event)
     int freeSlots = 0;
     for (int i = 0; i < 36; i++)
     {
-        if (!container->getItem(i)->mItem) freeSlots++;
+        auto* stack = container->getItem(i);
+        if (!stack || !stack->mItem) freeSlots++;
     }
 
 

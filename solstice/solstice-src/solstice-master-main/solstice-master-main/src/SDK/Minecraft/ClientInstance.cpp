@@ -169,12 +169,24 @@ void ClientInstance::setDisableInput(bool disable)
 
 bool ClientInstance::getMouseGrabbed()
 {
-    // idk why but the original virtual func's result was inverted
-    // so im just gonna recreate that here because i'm too lazy to refactor everything
-    auto* game = getMinecraftGame();
-    if (!InstanceLocator::isPlausibleGame(game))
-        return true; // pretend the mouse is grabbed: the safe state, no input lost
-    return !game->getMouseGrabbed();
+    // Despite the name this answers "is the mouse free", i.e. is a screen open --
+    // the original virtual call is inverted on purpose, which is what the comment
+    // below used to say.
+    //
+    // MinecraftGame_mMouseGrabbed does not resolve on 1.21.120 and the field read
+    // answers false, so the inversion turned this into a constant true: every
+    // caller was told a screen is always open. Scaffold broke out of its placement
+    // loop on the first iteration, InvManager and MidclickAction returned before
+    // doing anything, and BlockESP never drew.
+    //
+    // The screen name is the state the callers actually care about: hud_screen is
+    // the only screen that holds the mouse, every other one releases it. When the
+    // name is unavailable this falls back to "screen open", which is the same
+    // answer as before, so a failure here cannot make a module run wild.
+    const std::string screen = getScreenName();
+    if (screen.empty() || screen == "no_screen")
+        return true;
+    return screen != "hud_screen";
 }
 
 void ClientInstance::grabMouse()

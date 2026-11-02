@@ -31,6 +31,10 @@ void ChestStealer::onContainerScreenTickEvent(ContainerScreenTickEvent& event) c
     auto csc = event.mController;
     auto player = ClientInstance::get()->getLocalPlayer();
     auto container = player->getContainerManagerModel();
+    // Null on 1.21.120: Actor_mContainerManagerModel does not resolve. This was
+    // dereferenced unconditionally, so opening a chest with ChestStealer enabled
+    // crashed inside the container screen tick.
+    if (!container) return;
 
     static bool isStealing = false;
 
