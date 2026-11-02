@@ -269,12 +269,18 @@ JumpControlComponent* Actor::getJumpControlComponent()
 
 MobHurtTimeComponent* Actor::getMobHurtTimeComponent()
 {
-    // Offset unresolved on 1.21.120; member_at(this, 0) would alias the
-    // vtable and hand consumers a fake non-null pointer (TargetHUD reads
-    // it three times for hurt flashes). Null is the honest answer while
-    // the offset is unknown.
-    if (OffsetProvider::Actor_mHurtTimeComponent == 0) return nullptr;
-    return hat::member_at<MobHurtTimeComponent*>(this, OffsetProvider::Actor_mHurtTimeComponent);
+    // This one alone still read a raw field offset. On 1.21.120 the hurt timer
+    // lives in the entt registry, not at Actor+0x478 -- which is why the offset
+    // does not resolve and this returned null forever, leaving TargetHUD's hurt
+    // flash dead and Anticheat without a value.
+    //
+    // Every other component here (ActorRotationComponent, RenderPositionComponent,
+    // ActorTypeComponent, ...) is fetched from mContext and works on this build,
+    // so use the same path instead of inventing a new offset for it. If the type
+    // is not registered under this name the answer is still null, exactly as
+    // before -- but a wrong answer is impossible.
+    if (!isValid()) return nullptr;
+    return mContext.getComponent<MobHurtTimeComponent>();
 }
 
 SimpleContainer* Actor::getArmorContainer()
