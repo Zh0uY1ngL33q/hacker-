@@ -23,11 +23,16 @@ void Velocity::onDisable()
 
 void Velocity::onPacketInEvent(PacketInEvent& event) const
 {
-    if (event.mPacket->getId() == PacketID::SetActorMotion)
+    if (!event.mPacket || event.mPacket->getId() != PacketID::SetActorMotion) return;
+
+    auto* player = ClientInstance::get() ? ClientInstance::get()->getLocalPlayer() : nullptr;
+    if (!player) return;
+
     {
         auto packet = std::reinterpret_pointer_cast<SetActorMotionPacket>(event.mPacket);
+        if (!packet) return;
 
-        if (packet->mRuntimeID == ClientInstance::get()->getLocalPlayer()->getRuntimeID())
+        if (packet->mRuntimeID == player->getRuntimeID())
         {
             if (mMode.mValue == Mode::Full)
             {

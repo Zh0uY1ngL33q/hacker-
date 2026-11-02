@@ -13,6 +13,7 @@
 #include <SDK/Minecraft/MinecraftSim.hpp>
 #include <Utils/MiscUtils/ColorUtils.hpp>
 #include <atomic>
+#include <chrono>
 #include <omp.h>
 
 std::unordered_map<uintptr_t, std::shared_ptr<Detour>> PacketReceiveHook::mDetours;
@@ -33,8 +34,34 @@ namespace {
     }
 }
 
+namespace {
+    // Two numbers every ten seconds: how often this callback runs, and how often a
+    // packet actually reaches PacketInEvent. A non-zero first with a zero second
+    // means the guards below are rejecting everything, which in game reads as
+    // "Velocity / chat modules do nothing" with no other symptom at all.
+    std::atomic<uint32_t> sPipelineCalled{ 0 };
+    std::atomic<uint32_t> sPipelineDispatched{ 0 };
+
+    void reportPacketPipeline(bool dispatched)
+    {
+        ++sPipelineCalled;
+        if (dispatched) ++sPipelineDispatched;
+
+        static std::atomic<long long> sLastMs{ 0 };
+        const long long now = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now().time_since_epoch()).count();
+        long long expected = sLastMs.load(std::memory_order_relaxed);
+        if (now - expected < 10000) return;
+        if (!sLastMs.compare_exchange_strong(expected, now)) return;
+
+        spdlog::info("[pkt] packet callback {} calls, {} dispatched to PacketInEvent",
+                     sPipelineCalled.load(), sPipelineDispatched.load());
+    }
+}
+
 void* PacketReceiveHook::onPacketSend(void* _this, void* networkIdentifier, void* netEventCallback, std::shared_ptr<Packet> packet)
 {
+    reportPacketPipeline(false);
     // Never mutate the map: an id outside the hooked set has no owner here.
     auto* detour = detourFor(packet);
     if (!detour)
@@ -73,6 +100,7 @@ void* PacketReceiveHook::onPacketSend(void* _this, void* networkIdentifier, void
     }
 
     auto holder = nes::make_holder<PacketInEvent>(packet, networkIdentifier, netEventCallback);
+    reportPacketPipeline(true);
     gFeatureManager->mDispatcher->trigger(holder);
     if (holder->isCancelled()) return nullptr;
 
