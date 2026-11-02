@@ -6,6 +6,7 @@
 #include <SDK/Minecraft/Actor/Actor.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
 #include <SDK/Minecraft/Rendering/GuiData.hpp>
+#include <Utils/MiscUtils/MathUtils.hpp>
 #include <cmath>
 
 float JumpCircles::toRadians(float deg)
@@ -99,7 +100,7 @@ void JumpCircles::onDisable()
                 };
 
                 if (corrected.OWorldToScreen(RenderUtils::transform.mOrigin, currentPos, screenPosCurr, MathUtils::fov,
-                                         ClientInstance::get()->getGuiData()->mResolution))
+                                         MathUtils::displaySize))
                 {
                     if (!firstPoint) {
                         ImGui::GetBackgroundDrawList()->AddLine(

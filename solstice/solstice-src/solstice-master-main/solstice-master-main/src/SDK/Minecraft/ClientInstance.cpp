@@ -93,19 +93,24 @@ LevelRenderer* ClientInstance::getLevelRenderer()
 
 LoopbackPacketSender* ClientInstance::getPacketSender()
 {
-    const int offset = OffsetProvider::ClientInstance_mPacketSender;
-    if (offset <= 0 || offset >= 0x8000) return nullptr;
-    // Current 1.21.120 hits include [vtable+0x228] and [vtable+0x9a0],
-    // not ClientInstance fields. A small positive number is not sufficient.
-    const auto match = OffsetProvider::mSigMatchCounts.find("ClientInstance_mPacketSender");
-    if (match == OffsetProvider::mSigMatchCounts.end() || match->second != 1)
-        return nullptr;
-    return readPacketSenderMember(this, offset);
+    // The offset is now a measured constant (see OffsetProvider), not a signature
+    // result: the previous signature pointed at a virtual call site and answered
+    // 0x228, which is the *pointer* of vtable slot 69. Reading a member there gave
+    // null every time, so every module that sends a packet -- Aura's attacks,
+    // Scaffold's placements, all of chat -- was writing into nothing.
+    return readPacketSenderMember(this, OffsetProvider::ClientInstance_mPacketSender);
 }
 
 GuiData* ClientInstance::getGuiData()
 {
-    return hat::member_at<GuiData*>(this, OffsetProvider::ClientInstance_mGuiData);
+    // A wrong member offset here does not crash, it feeds garbage into every
+    // projection that asks for mResolution, so validate the object before
+    // handing it out. GuiData starts with a vtable in the game image, which is
+    // what isPlausibleObject tests.
+    auto* gui = hat::member_at<GuiData*>(this, OffsetProvider::ClientInstance_mGuiData);
+    if (!InstanceLocator::isPlausibleObject(gui))
+        return nullptr;
+    return gui;
 }
 
 bgfx_context* ClientInstance::getBGFX()

@@ -253,8 +253,17 @@ void ImRenderUtils::fillCircle(ImVec2 center, float radius, const ImColor& color
 ImVec2 ImRenderUtils::getScreenSize()
 {
     if (OpenGLGui::isActive()) return ImGui::GetIO().DisplaySize;
-    glm::vec2 resolution = ClientInstance::get()->getGuiData()->mResolution;
-    return ImVec2(resolution.x, resolution.y);
+    // getGuiData() answers null when the member does not look like a GuiData, so
+    // ask for it once and keep the ImGui size as the fallback -- that is the same
+    // size the renderer is using, and it is always available.
+    if (auto* ci = ClientInstance::get()) {
+        if (auto* guiData = ci->getGuiData()) {
+            const glm::vec2 resolution = guiData->mResolution;
+            if (resolution.x > 0.f && resolution.y > 0.f)
+                return ImVec2(resolution.x, resolution.y);
+        }
+    }
+    return ImGui::GetIO().DisplaySize;
 }
 
 bool ImRenderUtils::isFullScreen()

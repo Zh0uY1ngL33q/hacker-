@@ -9,6 +9,7 @@
 #include <SDK/Minecraft/Actor/ItemActor.hpp>
 #include <SDK/Minecraft/Inventory/Item.hpp>
 #include <SDK/Minecraft/Rendering/GuiData.hpp>
+#include <Utils/MiscUtils/MathUtils.hpp>
 #include <Features/Events/BaseTickEvent.hpp>
 #include <Features/Modules/Player/InvManager.hpp>
 
@@ -116,7 +117,7 @@ void ItemESP::onRenderEvent(RenderEvent& event)
         glm::vec3 origin = RenderUtils::transform.mOrigin;
         glm::vec2 screen = glm::vec2(0, 0);
 
-        if (!RenderUtils::transform.mMatrix.OWorldToScreen(origin, pos, screen, ci->getFov(), ci->getGuiData()->mResolution)) continue;
+        if (!RenderUtils::transform.mMatrix.OWorldToScreen(origin, pos, screen, ci->getFov(), MathUtils::displaySize)) continue;
 
         if (!mShowNames.mValue) continue;
         std::string name = actor.name;

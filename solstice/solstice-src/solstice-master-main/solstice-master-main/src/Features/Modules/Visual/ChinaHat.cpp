@@ -6,6 +6,7 @@
 #include <SDK/Minecraft/Actor/Actor.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
 #include <SDK/Minecraft/Rendering/GuiData.hpp>
+#include <Utils/MiscUtils/MathUtils.hpp>
 #include <SDK/Minecraft/Options.hpp>
 #include <SDK/Minecraft/Rendering/GuiData.hpp>
 
@@ -42,7 +43,7 @@ void ChinaHat::onRenderEvent(RenderEvent& event) {
     glm::vec3 hatTip = {pos.x, pos.y + height + (0.5f * mSize.mValue), pos.z};
 
     if (!corrected.OWorldToScreen(RenderUtils::transform.mOrigin, hatTip, screenPos1, MathUtils::fov,
-                                  ClientInstance::get()->getGuiData()->mResolution))
+                                  MathUtils::displaySize))
         return;
 
     glm::vec2 screenPos2 = {0, 0};
@@ -58,7 +59,7 @@ void ChinaHat::onRenderEvent(RenderEvent& event) {
         glm::vec3 thisPos = {x, y, z};
 
         if (!corrected.OWorldToScreen(RenderUtils::transform.mOrigin, thisPos, screenPos3, MathUtils::fov,
-                                      ClientInstance::get()->getGuiData()->mResolution))
+                                      MathUtils::displaySize))
             continue;
 
         if (i > 0 && (screenPos2.x != 0 && screenPos2.y != 0)) {
@@ -82,6 +83,6 @@ void ChinaHat::onRenderEvent(RenderEvent& event) {
 
         corrected.OWorldToScreen(RenderUtils::transform.mOrigin,
                                  thisPos, screenPos2, MathUtils::fov,
-                                 ClientInstance::get()->getGuiData()->mResolution);
+                                 MathUtils::displaySize);
     }
 }

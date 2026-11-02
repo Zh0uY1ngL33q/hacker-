@@ -9,6 +9,7 @@
 #include <SDK/Minecraft/Actor/Actor.hpp>
 #include <SDK/Minecraft/Actor/ActorPartModel.hpp>
 #include <SDK/Minecraft/Rendering/GuiData.hpp>
+#include <Utils/MiscUtils/MathUtils.hpp>
 
 void BoneEsp::onEnable()
 {
@@ -64,7 +65,7 @@ void BoneEsp::onRenderEvent(RenderEvent& event)
 
 
             glm::vec2 screenPos;
-            if (!RenderUtils::transform.mMatrix.OWorldToScreen(RenderUtils::transform.mOrigin, worldPos, screenPos, MathUtils::fov, ClientInstance::get()->getGuiData()->mResolution)) continue;
+            if (!RenderUtils::transform.mMatrix.OWorldToScreen(RenderUtils::transform.mOrigin, worldPos, screenPos, MathUtils::fov, MathUtils::displaySize)) continue;
 
             // Draw a circle at the bone's position
             ImGui::GetBackgroundDrawList()->AddCircleFilled(ImVec2(screenPos.x, screenPos.y), 5, IM_COL32(255, 0, 0, 255));

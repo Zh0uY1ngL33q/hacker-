@@ -113,7 +113,19 @@ public:
     // stays ambiguous and would otherwise pin 0, making getLevelRenderer report
     // the vtable as the object.
     DEFINE_FIELD(ClientInstance_mLevelRenderer, 0xF0);
-    DEFINE_INDEX_FIELD(ClientInstance_mPacketSender, "48 8B ? ? ? ? ? FF 15 ? ? ? ? 4C 8B C0 48 8B ? 48 8B ? 10 48 8B ? 49 8B ? FF 15 ? ? ? ?", 3, OffsetType::FieldOffset);
+    // The old signature for this read a disp out of a *virtual call site*
+    // (`mov rax,[obj]; mov rax,[rax+slot]; call guard`) and produced 0x228, which
+    // is ClientInstance's vtable slot 69 -- a several-hundred-byte function, not a
+    // getter. Two independent measurements give 0x108 instead:
+    //   1. ClientInstance's own vtable (RVA 0x8ddb590) has `mov rax,[rcx+0x108];
+    //      ret` at slot 308, i.e. getPacketSender() exists as a virtual getter of
+    //      exactly this member;
+    //   2. LoopbackPacketSender's constructor (RVA 0x1352270, vtable 0x8da3230) is
+    //      called right after a 0x68-byte allocation, and the result is stored by
+    //      `mov [rsi+0x108], rax` inside ClientInstance::initialize.
+    // Same table also confirms mLevelRenderer at 0xF0 (slot 197) and the block
+    // source at 0x118 (slot 318), so the surrounding layout is unchanged.
+    DEFINE_FIELD(ClientInstance_mPacketSender, 0x108);
     //DEFINE_INDEX_FIELD(ClientInstance_mGuiData, "48 8B ? ? ? ? ? 48 8B ? 48 85 ? 74 ? 33 C9 48 89 ? 48 89 ? ? 48 8B ? ? 48 85 ? 74 ? F0 FF ? ? 48 8B ? ? 48 8B ? ? 48 8B ? ? 48 89 ? 48 89 ? ? 48 85 ? 74 ? E8 ? ? ? ? 48 8B ? 48 85 ? 74 ? 48 83 38 ? 74 ? 48 8B ? 48 83 C4 ? 5B C3 E8 ? ? ? ? CC CC CC CC CC CC CC CC CC CC CC CC 48 8B ? ? ? ? ? C3 CC CC CC CC CC CC CC CC 48 89 ? ? ? 57", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(MinecraftGame_playUi, "48 8B 49 08 48 8B 01 48 8B 80 ? ? ? ? FF 15 ? ? ? ? 48 83 C4 38", 3, OffsetType::Index);
     // Confirm the node+0x28 ClientInstance and getLocalPlayer vslot 35. The
@@ -200,7 +212,17 @@ public:
     DEFINE_FIELD(Block_mRuntimeId, 0xC0);
     DEFINE_FIELD(Block_mLegacy, 0x30);
     DEFINE_FIELD(ClientInstance_getScreenName, 266); // i will make sig for it later (maybe)
-    DEFINE_FIELD(ClientInstance_mGuiData, 0x590); // i will make sig for it later (maybe)
+    // Measured, not guessed. GuiData is a 0xB38-byte allocation created by
+    // ClientInstance's UI setup (RVA 0x1A37720) and stored by
+    // `mov [rbx+0x6C0], rax` right after its constructor returns; the same
+    // function reads [rbx+0x6E8], and that byte is also read by the routine that
+    // allocates LoopbackPacketSender into [rsi+0x108] -- i.e. both run on
+    // ClientInstance, which is what ties the two offsets to the same object.
+    // The neighbouring members 0x680/0x688/0x6A0/0x6A8/0x6B0/0x6B8 all have
+    // one-line virtual getters in ClientInstance's own vtable, which is what a
+    // cluster of subsystem pointers looks like. 0x590 held something else, so
+    // every mResolution read was garbage.
+    DEFINE_FIELD(ClientInstance_mGuiData, 0x6C0);
     DEFINE_FIELD(BlockPalette_mLevel, 0x80);
 
 
