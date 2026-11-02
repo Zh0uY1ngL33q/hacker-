@@ -494,6 +494,17 @@ std::string Actor::getLocalName()
     // IrcClient on its first live BaseTickEvent.
     std::string name;
     if (copyActorStringAt(this, OffsetProvider::Actor_mLocalName, name)) return name;
+
+    // The field cannot be read (or written) here, but the identity is still
+    // available: getRawName() ends in Actor_getNameTag, whose signature does
+    // resolve, and that is what the IRC client, the copy-name command and the
+    // session overlay need. Without this fallback all of them saw an empty name
+    // and treated the player as unnamed.
+    const std::string fallback = getRawName();
+    if (!fallback.empty() && fallback != "Unknown?" && fallback != "What?") {
+        return fallback;
+    }
+
     static bool warned = false;
     if (!warned) {
         warned = true;
