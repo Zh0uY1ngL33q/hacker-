@@ -45,7 +45,9 @@ void AutoTool::onBaseTickEvent(BaseTickEvent& event)
     }
 
     auto blockSource = ClientInstance::get()->getBlockSource();
-    auto blockPos = player->getLevel()->getHitResult()->mBlockPos;
+    auto* hit = player->getLevel()->getHitResult();
+    if (!hit || hit->mType != HitType::BLOCK) return;
+    auto blockPos = hit->mBlockPos;
 
     auto block = blockSource->getBlock(blockPos);
     if (!block) return;

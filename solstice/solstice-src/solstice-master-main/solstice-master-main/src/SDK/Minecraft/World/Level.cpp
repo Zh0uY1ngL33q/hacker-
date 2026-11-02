@@ -7,9 +7,16 @@
 #include <libhat.hpp>
 #include <cstring>
 #include <atomic>
+#include <algorithm>
+#include <cmath>
 #include <SDK/OffsetProvider.hpp>
 #include <SDK/Minecraft/InstanceLocator.hpp>
 #include <SDK/Minecraft/Actor/SyncedPlayerMovementSettings.hpp>
+#include <SDK/Minecraft/World/HitResult.hpp>
+#include <SDK/Minecraft/ClientInstance.hpp>
+#include <SDK/Minecraft/Actor/Actor.hpp>
+#include <SDK/Minecraft/Rendering/LevelRenderer.hpp>
+#include <Utils/GameUtils/ActorUtils.hpp>
 
 std::unordered_map<mce::UUID, PlayerListEntry>* Level::getPlayerList()
 {
@@ -22,13 +29,120 @@ std::unordered_map<mce::UUID, PlayerListEntry>* Level::getPlayerList()
     return InstanceLocator::isReadableMemory(map, 0x8) ? map : nullptr;
 }
 
+namespace {
+
+// Crosshair range. Vanilla survival reach is a little over 5 blocks for blocks
+// and 6 for entities; one number is enough here because the caller decides what
+// to do with the target.
+constexpr float kHitRayLength = 6.0f;
+
+// Entry distance of a ray against an axis-aligned box, or false when it misses.
+// A component of the direction that is exactly zero would divide by zero, so it
+// is nudged; the resulting t stays finite because the box is finite too.
+bool rayAgainstBox(const glm::vec3& origin, const glm::vec3& dir,
+                   const glm::vec3& boxMin, const glm::vec3& boxMax,
+                   float maxDistance, float& distance)
+{
+    float tMin = 0.f;
+    float tMax = maxDistance;
+    for (int axis = 0; axis < 3; ++axis)
+    {
+        const float d = std::fabs(dir[axis]) < 1e-6f ? (dir[axis] < 0.f ? -1e-6f : 1e-6f) : dir[axis];
+        float t1 = (boxMin[axis] - origin[axis]) / d;
+        float t2 = (boxMax[axis] - origin[axis]) / d;
+        if (t1 > t2) std::swap(t1, t2);
+        tMin = std::max(tMin, t1);
+        tMax = std::min(tMax, t2);
+        if (tMin > tMax) return false;
+    }
+    distance = tMin;
+    return true;
+}
+
+// One instance, overwritten per call: every caller reads fields immediately and
+// none of them keep the pointer. Returning null when the ray hits nothing keeps
+// the "no target" answer honest instead of handing back a stale hit.
+HitResult sRaycastHit{};
+
+HitResult* raycastHitResult()
+{
+    auto* client = ClientInstance::get();
+    if (!client) return nullptr;
+    auto* player = client->getLocalPlayer();
+    if (!player) return nullptr;
+
+    glm::vec3 origin{};
+    bool haveOrigin = false;
+    if (auto* renderer = client->getLevelRenderer())
+        if (auto* rendererPlayer = renderer->getRendererPlayer())
+            if (auto* camera = rendererPlayer->getCameraPos())
+            {
+                origin = *camera;
+                haveOrigin = true;
+            }
+
+    if (!haveOrigin)
+    {
+        auto* renderPosition = player->getRenderPositionComponent();
+        if (!renderPosition) return nullptr;
+        origin = renderPosition->mPosition + PLAYER_HEIGHT_VEC;
+    }
+
+    auto* rotation = player->getActorRotationComponent();
+    if (!rotation) return nullptr;
+
+    // Same basis the projection uses: yaw 0 faces +Z, positive pitch looks down.
+    constexpr float kDeg2Rad = 3.14159265358979323846f / 180.f;
+    const float yaw = rotation->mYaw * kDeg2Rad;
+    const float pitch = rotation->mPitch * kDeg2Rad;
+    const float cp = std::cos(pitch);
+    const float sp = std::sin(pitch);
+    const glm::vec3 direction{ -std::sin(yaw) * cp, -sp, std::cos(yaw) * cp };
+
+    float nearest = kHitRayLength;
+    Actor* target = nullptr;
+    for (auto* actor : ActorUtils::getActorList(false, true))
+    {
+        if (!actor || actor == player) continue;
+        const AABB box = actor->getAABB();
+        float distance = 0.f;
+        if (!rayAgainstBox(origin, direction, box.mMin, box.mMax, nearest, distance)) continue;
+        nearest = distance;
+        target = actor;
+    }
+
+    if (!target) return nullptr;
+
+    sRaycastHit = HitResult{};
+    sRaycastHit.mStartPos = origin;
+    sRaycastHit.mRayDir = direction;
+    sRaycastHit.mType = HitType::ENTITY;
+    sRaycastHit.mPos = origin + direction * nearest;
+    sRaycastHit.mBlockPos = glm::ivec3(glm::floor(sRaycastHit.mPos));
+    sRaycastHit.mEntity.id = target->mContext.mEntityId;
+    return &sRaycastHit;
+}
+
+} // namespace
+
 HitResult* Level::getHitResult()
 {
     static auto vIndex = OffsetProvider::Level_getHitResult;
-    // SUSPECT in 1.21.120 (-151183361): huge/negative vtable index.
-    if (vIndex < 2 || vIndex >= 4096)
-        return nullptr;
-    return MemUtils::callVirtualFunc<HitResult*>(vIndex, this);
+    // The vtable index is unusable on 1.21.120 (the signature is ambiguous and
+    // resolves negative), so every call used to answer null. Ten modules read the
+    // crosshair target through here; TriggerBot, SkinStealer and MidclickAction
+    // dereference the result without checking, which is where the null crash came
+    // from, and the others silently did nothing.
+    //
+    // The accessor is only ever a raycast, so perform it: cast from the camera
+    // along the view direction and report the nearest actor box in the same
+    // HitResult layout. Block hits are deliberately not synthesised -- reading the
+    // level's voxels needs a BlockSource this SDK does not have on this build --
+    // so a ray that hits no entity still returns null.
+    if (vIndex >= 2 && vIndex < 4096)
+        if (auto* hit = MemUtils::callVirtualFunc<HitResult*>(vIndex, this))
+            return hit;
+    return raycastHitResult();
 }
 
 SyncedPlayerMovementSettings* Level::getPlayerMovementSettings()

@@ -74,7 +74,12 @@ void SkinStealer::onBaseTickEvent(BaseTickEvent& event)
     auto player = event.mActor;
     if (!player) return;
 
-    EntityId targetId = player->getLevel()->getHitResult()->mEntity.id;
+    // getHitResult() answers null whenever the crosshair is not on an entity, and
+    // this dereferenced it unconditionally on every tick.
+    auto* hit = player->getLevel()->getHitResult();
+    if (!hit || hit->mType != HitType::ENTITY) return;
+
+    EntityId targetId = hit->mEntity.id;
 
     Actor* targeted = nullptr;
     for (auto actor : ActorUtils::getActorList())

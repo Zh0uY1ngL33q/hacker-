@@ -34,8 +34,11 @@ void FastMine::onBaseTickEvent(BaseTickEvent& event)
 {
     auto player = event.mActor;
 
-    glm::ivec3 blockPos = player->getLevel()->getHitResult()->mBlockPos;
-    int side = player->getLevel()->getHitResult()->mFacing;
+    auto* hit = player->getLevel()->getHitResult();
+    if (!hit || hit->mType != HitType::BLOCK) return;
+
+    glm::ivec3 blockPos = hit->mBlockPos;
+    int side = hit->mFacing;
     Block* block = ClientInstance::get()->getBlockSource()->getBlock(blockPos);
     float breakProgress = player->getGameMode()->mBreakProgress;
 

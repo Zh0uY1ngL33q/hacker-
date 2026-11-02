@@ -72,6 +72,7 @@ void MidclickAction::onBaseTickEvent(BaseTickEvent& event)
     {
         spdlog::info("Midclick!");
         auto hitResult = player->getLevel()->getHitResult();
+        if (!hitResult) return;
         if (hitResult->mType == ENTITY && mAddFriend.mValue)
         {
             auto entity = hitResult->mEntity.id;
