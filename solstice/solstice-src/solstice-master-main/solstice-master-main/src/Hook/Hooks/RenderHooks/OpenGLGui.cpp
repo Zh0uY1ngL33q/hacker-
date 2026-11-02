@@ -1,10 +1,12 @@
 #include "OpenGLGui.hpp"
 
 #include <atomic>
+#include <algorithm>
 #include <chrono>
 #include <exception>
 #include <mutex>
 #include <thread>
+#include <vector>
 #include <gl/GL.h>
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
@@ -17,8 +19,10 @@
 #include <Features/Modules/Visual/ClickGui.hpp>
 #include <Features/Modules/Visual/HudEditor.hpp>
 #include <Features/Modules/Visual/TargetHUD.hpp>
+#include <SDK/Minecraft/Actor/Actor.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
 #include <SDK/Minecraft/Rendering/LevelRenderer.hpp>
+#include <Utils/GameUtils/ActorUtils.hpp>
 #include <Utils/MiscUtils/RenderUtils.hpp>
 #include <cmath>
 #include <Utils/FontHelper.hpp>
@@ -74,6 +78,61 @@ namespace {
         m[2] = glm::vec4(-forward, 0.f);
         m[3] = glm::vec4(0.f, 0.f, 0.f, 1.f);
         return m;
+    }
+
+    struct ViewCandidate {
+        uint32_t offset = 0;
+        glm::mat4 matrix{ 1.f };
+        float forwardDot = 0.f;
+    };
+
+    // The camera basis identifies a view matrix without knowing any convention:
+    // three orthonormal columns and a (0,0,0,1) fourth column. Every such block
+    // inside an object is returned, sorted by how well its -Z axis matches the
+    // direction the player is looking, which is what makes the right one
+    // unambiguous instead of a guess. Translation is dropped: OWorldToScreen
+    // subtracts the origin itself, so the matrix it consumes is rotation only.
+    std::vector<ViewCandidate> scanForViewMatrix(const void* object, size_t bytes, const glm::vec3& forward)
+    {
+        std::vector<ViewCandidate> hits;
+        if (!object) return hits;
+        auto* base = reinterpret_cast<const uint8_t*>(object);
+        const auto unit = [](const glm::vec3& v) { return std::fabs(glm::length(v) - 1.f) < 2e-2f; };
+        for (size_t page = 0; page < bytes; page += 0x1000) {
+            MEMORY_BASIC_INFORMATION mbi{};
+            if (!VirtualQuery(base + page, &mbi, sizeof(mbi))) break;
+            if (mbi.State != MEM_COMMIT || (mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD)) != 0) continue;
+            const size_t span = std::min<size_t>(0x1000, bytes - page);
+            for (size_t off = 0; off + 64 <= span; off += 4) {
+                const float* f = reinterpret_cast<const float*>(base + page + off);
+                // Only the rotation is used: OWorldToScreen subtracts the origin
+                // itself, so any translation in the stored block is dropped below.
+                if (std::fabs(f[15] - 1.f) > 1e-6f) continue;
+                const glm::vec3 c0(f[0], f[1], f[2]);
+                const glm::vec3 c1(f[4], f[5], f[6]);
+                const glm::vec3 c2(f[8], f[9], f[10]);
+                if (!unit(c0) || !unit(c1) || !unit(c2)) continue;
+                if (std::fabs(glm::dot(c0, c1)) > 2e-2f) continue;
+                if (std::fabs(glm::dot(c0, c2)) > 2e-2f) continue;
+                if (std::fabs(glm::dot(c1, c2)) > 2e-2f) continue;
+                // Right-handed only: cross(right, up) has to land on the back
+                // axis, otherwise the block is a reflection and every projection
+                // through it comes out mirrored.
+                if (glm::dot(glm::cross(c0, c1), c2) < 0.9f) continue;
+                ViewCandidate hit;
+                hit.offset = static_cast<uint32_t>(page + off);
+                hit.matrix[0] = glm::vec4(c0, 0.f);
+                hit.matrix[1] = glm::vec4(c1, 0.f);
+                hit.matrix[2] = glm::vec4(c2, 0.f);
+                hit.matrix[3] = glm::vec4(0.f, 0.f, 0.f, 1.f);
+                hit.forwardDot = glm::dot(-c2, forward);
+                hits.push_back(hit);
+            }
+        }
+        std::sort(hits.begin(), hits.end(), [](const ViewCandidate& a, const ViewCandidate& b) {
+            return a.forwardDot > b.forwardDot;
+        });
+        return hits;
     }
     std::atomic<bool> glGuiStop{false};
     std::atomic<unsigned> glGuiWindowCalls{0};
@@ -356,18 +415,45 @@ void OpenGLGui::render(HDC dc) try
                         // view matrix on this build: its third column measures
                         // (0, 0, 0, 1) -- no direction at all -- so the projected
                         // z is constant and OWorldToScreen's `z > 0` guard rejects
-                        // every point. Reconstruct it from the player's rotation,
-                        // but only when the game matrix disagrees with it: if a
-                        // later build does fill 0x368 correctly, that one wins.
+                        // every point. Look for the one the game actually renders
+                        // with, and only fall back to a reconstruction from the
+                        // player's rotation when no candidate exists.
+                        static bool sViewSearched = false;
+                        static bool sViewFound = false;
+                        static uint32_t sViewOffset = 0;
+                        static glmatrixf sViewMatrix{ glm::mat4(1.f) };
+                        glm::vec3 forward{ 0.f, 0.f, 1.f };
+                        float yawDeg = 0.f, pitchDeg = 0.f;
                         if (auto* rot = player->getActorRotationComponent()) {
-                            const glmatrixf built = viewMatrixFromRotation(rot->mYaw, rot->mPitch);
-                            const glm::vec3 gameAxis{ view[2] };
-                            const glm::vec3 builtAxis{ built[2] };
-                            const float gameLen = glm::length(gameAxis);
-                            const float builtLen = glm::length(builtAxis);
-                            const bool usable = gameLen > 1e-4f && builtLen > 1e-4f
-                                && glm::dot(gameAxis / gameLen, builtAxis / builtLen) > 0.9f;
-                            if (!usable) view = built;
+                            yawDeg = rot->mYaw;
+                            pitchDeg = rot->mPitch;
+                            constexpr float kD2R = 3.14159265358979323846f / 180.f;
+                            const float y = yawDeg * kD2R, p = pitchDeg * kD2R;
+                            forward = { -std::sin(y) * std::cos(p), -std::sin(p), std::cos(y) * std::cos(p) };
+                            if (!sViewSearched) {
+                                sViewSearched = true;
+                                const struct { const void* object; size_t bytes; const char* name; } targets[] = {
+                                    { ci, 0x1800, "ClientInstance" },
+                                    { lr, 0x1800, "LevelRenderer" },
+                                    { rp, 0x1800, "LevelRendererPlayer" },
+                                };
+                                float best = 0.999f;
+                                for (const auto& target : targets) {
+                                    int logged = 0;
+                                    for (const auto& candidate : scanForViewMatrix(target.object, target.bytes, forward)) {
+                                        if (logged++ < 3)
+                                            spdlog::info("[view] {} +0x{:X} forward-dot {:.4f}", target.name, candidate.offset, candidate.forwardDot);
+                                        if (candidate.forwardDot > best) {
+                                            best = candidate.forwardDot;
+                                            sViewMatrix = glmatrixf(candidate.matrix);
+                                            sViewOffset = candidate.offset;
+                                            sViewFound = true;
+                                        }
+                                    }
+                                }
+                                spdlog::info("[view] search done found={} offset=+0x{:X} dot={:.4f}", sViewFound, sViewOffset, best);
+                            }
+                            view = sViewFound ? sViewMatrix : viewMatrixFromRotation(yawDeg, pitchDeg);
                         }
                         RenderUtils::transform = FrameTransform{
                             view, *cam, rpc->mPosition, ci->getFov() };
@@ -380,6 +466,46 @@ void OpenGLGui::render(HDC dc) try
                         // working transform alone did not fix.
                         MathUtils::fov = RenderUtils::transform.mFov;
                         MathUtils::origin = RenderUtils::transform.mOrigin;
+
+                        // Temporary: one line per second, 30 lines total, showing
+                        // where a real target lands, so a blank or misplaced box
+                        // can be read off instead of described.
+                        static long long sDiagMs = 0;
+                        static int sDiagLeft = 30;
+                        const long long diagNow = glNowMs();
+                        if (sDiagLeft > 0 && diagNow - sDiagMs >= 1000) {
+                            const auto diagActors = ActorUtils::getActorList(false, true);
+                            // Nothing to measure until something other than the
+                            // local player exists, so the budget is not spent in
+                            // an empty world.
+                            if (diagActors.size() > 1) {
+                            sDiagMs = diagNow;
+                            --sDiagLeft;
+                            const glm::vec3 eye = *cam;
+                            const float selfDist = glm::distance(eye, rpc->mPosition);
+                            spdlog::info("[view] yaw={:.1f} pitch={:.1f} eye=({:.2f},{:.2f},{:.2f}) selfDist={:.2f} actors={} found={}",
+                                         yawDeg, pitchDeg, eye.x, eye.y, eye.z, selfDist, diagActors.size(), sViewFound);
+                            for (auto* target : diagActors) {
+                                if (target == player) continue;
+                                const AABB box = target->getAABB();
+                                const auto points = MathUtils::getImBoxPoints(box);
+                                if (points.empty()) {
+                                    spdlog::info("[view]   target aabb=({:.1f},{:.1f},{:.1f})..({:.1f},{:.1f},{:.1f}) no box",
+                                                 box.mMin.x, box.mMin.y, box.mMin.z, box.mMax.x, box.mMax.y, box.mMax.z);
+                                } else {
+                                    float x0 = points[0].x, x1 = points[0].x, y0 = points[0].y, y1 = points[0].y;
+                                    for (const auto& point : points) {
+                                        x0 = std::min(x0, point.x); x1 = std::max(x1, point.x);
+                                        y0 = std::min(y0, point.y); y1 = std::max(y1, point.y);
+                                    }
+                                    spdlog::info("[view]   target screen=({:.0f},{:.0f})..({:.0f},{:.0f}) aabb=({:.1f},{:.1f},{:.1f}) display=({:.0f},{:.0f})",
+                                                 x0, y0, x1, y1, box.mMin.x, box.mMin.y, box.mMin.z,
+                                                 MathUtils::displaySize.x, MathUtils::displaySize.y);
+                                }
+                                break;
+                            }
+                            }
+                        }
                     }
                     }
                 }
