@@ -261,6 +261,14 @@ public:
     /// is flipped. Anything that writes into the game's code should ask first.
     static bool isPatchableCode(uintptr_t address, size_t size);
 
+    /// True if `address` is committed memory inside the host module.
+    ///
+    /// Data patches need the same question answered as code patches, minus the
+    /// executable requirement: a resolver that lands on the wrong instruction
+    /// makes the offset arithmetic that follows point outside the image, and a
+    /// float written there corrupts whatever happens to live at that address.
+    static bool isInHostModule(uintptr_t address, size_t size);
+
 private:
     template<typename T>
     static T readMemory(uintptr_t address);

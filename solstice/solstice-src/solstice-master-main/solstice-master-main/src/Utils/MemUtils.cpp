@@ -409,13 +409,10 @@ bool MemUtils::isValidPtr(uintptr_t address)
     return false;
 }
 
-bool MemUtils::isPatchableCode(uintptr_t address, size_t size)
+bool MemUtils::isInHostModule(uintptr_t address, size_t size)
 {
     if (address < 0x10000 || size == 0) return false;
 
-    // Must live inside the host module: an unresolved resolver can return an
-    // ordinary heap or data address, and patching that corrupts unrelated state
-    // instead of the function it was meant to be.
     MODULEINFO info{};
     if (!GetModuleInformation(GetCurrentProcess(), GetModuleHandleW(nullptr), &info, sizeof(info)))
         return false;
@@ -427,7 +424,19 @@ bool MemUtils::isPatchableCode(uintptr_t address, size_t size)
     if (!VirtualQuery(reinterpret_cast<void*>(address), &mbi, sizeof(mbi)))
         return false;
     if (mbi.State != MEM_COMMIT) return false;
-    if ((mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD)) != 0) return false;
+    return (mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD)) == 0;
+}
+
+bool MemUtils::isPatchableCode(uintptr_t address, size_t size)
+{
+    if (!isInHostModule(address, size)) return false;
+
+    // Must also be executable: an unresolved resolver can return an ordinary heap
+    // or data address, and patching that corrupts unrelated state instead of the
+    // function it was meant to be.
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (!VirtualQuery(reinterpret_cast<void*>(address), &mbi, sizeof(mbi)))
+        return false;
     const DWORD executable = PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY;
     return (mbi.Protect & executable) != 0;
 }
