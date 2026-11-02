@@ -20,6 +20,7 @@
 #include <SDK/Minecraft/ClientInstance.hpp>
 #include <SDK/Minecraft/Rendering/LevelRenderer.hpp>
 #include <Utils/MiscUtils/RenderUtils.hpp>
+#include <cmath>
 #include <Utils/FontHelper.hpp>
 #include <Utils/Keyboard.hpp>
 #include <Utils/MiscUtils/MathUtils.hpp>
@@ -35,6 +36,38 @@ namespace {
     bool glGuiReportedOpenDraw = false;
     bool glGuiReportedMismatch = false;
     long long glNowMs() { return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count(); }
+
+    // Minecraft yaw: 0 faces +Z and increasing yaw turns clockwise seen from
+    // above; pitch is positive when looking down. Both in degrees, matching
+    // ActorRotationComponent.
+    //
+    // This exists because the matrix read at ClientInstance+0x368 does not always
+    // carry a view-space Z axis. The ESP probe measured its third row as
+    // (0, 0, 0, 1), which makes every projection's z constant, so OWorldToScreen's
+    // `z > 0` guard rejected every single point -- ESP, Tracers and Nametags all
+    // drew nothing while the camera origin and fov were correct.
+    glmatrixf viewMatrixFromRotation(float yawDeg, float pitchDeg)
+    {
+        constexpr float kDeg2Rad = 3.14159265358979323846f / 180.f;
+        const float yaw = yawDeg * kDeg2Rad;
+        const float pitch = pitchDeg * kDeg2Rad;
+        const float cp = std::cos(pitch), sp = std::sin(pitch);
+        const float cy = std::cos(yaw), sy = std::sin(yaw);
+
+        const glm::vec3 forward{ -sy * cp, -sp, cy * cp };
+        const glm::vec3 right{ cy, 0.f, sy };
+        const glm::vec3 up = glm::cross(right, forward);
+
+        // OWorldToScreen treats (*this)[n] as a row and dots it with the world
+        // offset. A glm::mat4 is column-major, so the columns assigned below are
+        // the rows it will read.
+        glmatrixf m{ glm::mat4(1.0f) };
+        m[0] = glm::vec4(right, 0.f);
+        m[1] = glm::vec4(up, 0.f);
+        m[2] = glm::vec4(-forward, 0.f);
+        m[3] = glm::vec4(0.f, 0.f, 0.f, 1.f);
+        return m;
+    }
     std::atomic<bool> glGuiStop{false};
     std::atomic<unsigned> glGuiWindowCalls{0};
     ImGuiContext* glGuiContext = nullptr;
@@ -310,19 +343,33 @@ void OpenGLGui::render(HDC dc) try
             if (auto* lr = ci->getLevelRenderer()) {
                 if (auto* rp = lr->getRendererPlayer()) {
                     if (auto* cam = rp->getCameraPos()) {
-                        if (auto* rpc = player->getRenderPositionComponent()) {
-                            RenderUtils::transform = FrameTransform{
-                                ci->getViewMatrix(), *cam, rpc->mPosition, ci->getFov() };
-                            // getBoxPoints() and getImBoxPoints() read these three
-                            // statics, not the transform members, and they are
-                            // otherwise only filled by D3DHook::igBeginFrame -- i.e.
-                            // never on this path. With fov and origin at zero
-                            // OWorldToScreen returns false and every ESP box, tracer
-                            // and hat collapses to nothing, which is exactly what a
-                            // working transform alone did not fix.
-                            MathUtils::fov = RenderUtils::transform.mFov;
-                            MathUtils::origin = RenderUtils::transform.mOrigin;
+                    if (auto* rpc = player->getRenderPositionComponent()) {
+                        glmatrixf view = ci->getViewMatrix();
+                        // Reject the matrix when its view-space Z axis is missing.
+                        // Measured on this build: row2 = (0,0,0,1), so every
+                        // projection returned false on the z > 0 guard. Fall back
+                        // to the player's own rotation rather than trusting it.
+                        const glm::vec4 zAxis = view[2];
+                        const bool degenerate = std::fabs(zAxis.x) < 1e-4f
+                                             && std::fabs(zAxis.y) < 1e-4f
+                                             && std::fabs(zAxis.z) < 1e-4f;
+                        if (degenerate) {
+                            if (auto* rot = player->getActorRotationComponent()) {
+                                view = viewMatrixFromRotation(rot->mYaw, rot->mPitch);
+                            }
                         }
+                        RenderUtils::transform = FrameTransform{
+                            view, *cam, rpc->mPosition, ci->getFov() };
+                        // getBoxPoints() and getImBoxPoints() read these three
+                        // statics, not the transform members, and they are
+                        // otherwise only filled by D3DHook::igBeginFrame -- i.e.
+                        // never on this path. With fov and origin at zero
+                        // OWorldToScreen returns false and every ESP box, tracer
+                        // and hat collapses to nothing, which is exactly what a
+                        // working transform alone did not fix.
+                        MathUtils::fov = RenderUtils::transform.mFov;
+                        MathUtils::origin = RenderUtils::transform.mOrigin;
+                    }
                     }
                 }
             }
