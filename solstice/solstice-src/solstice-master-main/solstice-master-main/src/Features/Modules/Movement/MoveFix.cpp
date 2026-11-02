@@ -62,15 +62,22 @@ void MoveFix::onBaseTickEvent(BaseTickEvent& event)
         move = MathUtils::getMovement();
     if (move.x == 0.f && move.y == 0.f) return;
 
-    // Rotating the local input by -delta makes the game's own yaw rotation cancel
-    // out, leaving the world-space direction the keys asked for.
+    // The game builds the world move direction from the camera, and Aura only
+    // rewrites the actor's rotation, so by default the body faces the target while
+    // the walk keeps the camera heading -- a straight line along where the player
+    // was originally aiming, with the body pointed somewhere else. Vanilla cannot
+    // produce that: it keeps facing and walking direction locked together.
+    //
+    // Rotating the local input by +delta re-locks them: W now means "forward
+    // relative to where the body is facing", so the walk follows the aim toward the
+    // target instead of the camera.
     //
     // MoveInputComponent packs the vector as (x = strafe, y = forward) -- see
     // MathUtils::getMovement, which ends in ret.x = side; ret.y = forward -- so the
     // two components are rotated in that order, not the other way round.
-    const float radians = glm::radians(-delta * strength);
+    const float radians = glm::radians(delta * strength);
     const float c = std::cos(radians);
     const float s = std::sin(radians);
-    input->mMoveVector = glm::vec2(move.x * c + move.y * s,
-                                   move.y * c - move.x * s);
+    input->mMoveVector = glm::vec2(move.x * c - move.y * s,
+                                   move.y * c + move.x * s);
 }

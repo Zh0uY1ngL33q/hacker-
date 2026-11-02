@@ -5,27 +5,29 @@
 
 #include <Features/Modules/Module.hpp>
 
-// Keeps the walking direction attached to the keys when the aim is rotated.
+// Makes the walk follow the aim instead of the camera.
 //
-// Bedrock turns the movement input into a world direction with the actor's own
-// yaw, so anything that writes ActorRotationComponent -- Aura aiming at a target,
-// Scaffold facing the placement side -- also turns the walk. Holding W while Aura
-// aims sideways walks sideways, which is the "impossible movement" the server can
-// see and rubber-band.
+// Bedrock builds the world move direction from the camera, while Aura and
+// Scaffold only rewrite the actor's rotation. The body therefore points at the
+// target while W still means "the way the camera looks", so the player walks a
+// straight line along the original heading with the body facing somewhere else --
+// a combination vanilla cannot produce, because vanilla keeps facing and walking
+// locked together.
 //
-// This rotates the input back by the same angle, so the world direction stays
-// where the keys pointed. The slider is how much of that rotation is cancelled:
-// 0 leaves the game alone, 1 preserves the direction completely, values in
-// between split the difference (which is what most clients expose).
+// Each tick this rotates the local input by the same angle the body turned, which
+// re-locks the two: W becomes "forward relative to where the body faces", and the
+// walk follows the aim toward the target. The slider is how much of the turn is
+// applied: 0 leaves the game alone (camera walking), 1 follows the aim exactly,
+// and values in between trail behind it, which is the slight arc most clients show.
 class MoveFix : public ModuleBase<MoveFix> {
 public:
     NumberSetting mStrength = NumberSetting(
         "Strength",
-        "Fraction of the aim rotation that is cancelled out of the walk direction. "
-        "0 = vanilla, 1 = the direction you pressed is kept exactly.",
+        "How much of the aim rotation is applied to the walk. "
+        "0 = walk where the camera looks, 1 = walk where the body faces.",
         1.0f, 0.0f, 1.0f, 0.05f);
 
-    MoveFix() : ModuleBase("MoveFix", "Keeps your walk direction when the aim is rotated",
+    MoveFix() : ModuleBase("MoveFix", "Walks where you aim instead of where the camera looks",
                            ModuleCategory::Movement, 0, false) {
         addSettings(&mStrength);
 
