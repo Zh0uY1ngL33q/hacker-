@@ -14,6 +14,7 @@
 #include <Features/Modules/Misc/Friends.hpp>
 #include <Features/Modules/Combat/LegitCriticals.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
+#include <SDK/Minecraft/InstanceLocator.hpp>
 #include <SDK/Minecraft/Options.hpp>
 #include <Utils/GameUtils/ActorUtils.hpp>
 #include <SDK/Minecraft/Actor/Actor.hpp>
@@ -361,6 +362,21 @@ void Aura::onRenderEvent(RenderEvent& event)
         angleOffset += (mUpDownSpeed.mValue * 30.f) * ImGui::GetIO().DeltaTime;
         float radius = (float)mSpheresRadius.mValue;
 
+        // getGuiData() is a plain member read with no validation, and the projection
+        // below dereferenced whatever it returned once per sphere. Hoisted out of the
+        // loop so the plausibility check runs once per frame, and bailing here draws
+        // nothing instead of crashing.
+        auto* clientInstance = ClientInstance::get();
+        auto* guiData = clientInstance ? clientInstance->getGuiData() : nullptr;
+        if (!guiData || !InstanceLocator::isPlausibleObject(guiData)) return;
+        const glm::vec2 displaySize = guiData->mResolution;
+        // A wrong-but-readable GuiData would pass the plausibility check and then feed
+        // the projection a nonsense resolution; the draw would land nowhere useful and
+        // the failure would be invisible. A screen is positive and smaller than 32k.
+        if (!(displaySize.x > 0.f && displaySize.y > 0.f &&
+              displaySize.x < 32768.f && displaySize.y < 32768.f))
+            return;
+
         for (int i = 0; i < mSpheresAmount.mValue; i++) {
             float angle = (i / (float)mSpheresAmount.mValue) * 360.f;
             angle += angleOffset;
@@ -377,7 +393,7 @@ void Aura::onRenderEvent(RenderEvent& event)
             if (!corrected.OWorldToScreen(
                     RenderUtils::transform.mOrigin,
                     thisPos, screenPos, MathUtils::fov,
-                    ClientInstance::get()->getGuiData()->mResolution))
+                    displaySize))
                 continue;
 
             ImColor color = ColorUtils::getThemedColor(0);
