@@ -427,6 +427,13 @@ bool MemUtils::isInHostModule(uintptr_t address, size_t size)
     return (mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD)) == 0;
 }
 
+bool MemUtils::isFunctionEntry(uintptr_t address)
+{
+    if (!isPatchableCode(address, 1)) return false;
+    const auto* bytes = reinterpret_cast<const unsigned char*>(address);
+    return bytes[-1] == 0xCC && bytes[-2] == 0xCC;
+}
+
 bool MemUtils::isPatchableCode(uintptr_t address, size_t size)
 {
     if (!isInHostModule(address, size)) return false;

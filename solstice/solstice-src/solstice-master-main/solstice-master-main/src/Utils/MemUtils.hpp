@@ -269,6 +269,15 @@ public:
     /// float written there corrupts whatever happens to live at that address.
     static bool isInHostModule(uintptr_t address, size_t size);
 
+    /// True if `address` looks like the first instruction of a function.
+    ///
+    /// MSVC pads the gap between functions with int3 and emits unwind data for
+    /// everything it compiles, so a real entry is reached across 0xCC padding.
+    /// This is the cheapest way to reject a signature that resolved into the
+    /// middle of an unrelated function -- which is what Actor_getNameTag does on
+    /// 1.21.120, where the refitted pattern starts with four wildcards.
+    static bool isFunctionEntry(uintptr_t address);
+
 private:
     template<typename T>
     static T readMemory(uintptr_t address);

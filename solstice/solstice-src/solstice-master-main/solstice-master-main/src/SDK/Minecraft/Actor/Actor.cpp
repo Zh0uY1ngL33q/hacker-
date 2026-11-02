@@ -419,9 +419,22 @@ const std::string& Actor::getNameTag()
 {
     static auto func = SigManager::Actor_getNameTag;
     static const std::string empty;
-    // The advertised address for this signature is outside the image on
-    // 1.21.120, so treat a non-executable target as unresolved.
-    if (!IsExecutableAddress(reinterpret_cast<LPVOID>(func))) return empty;
+    // This signature's refitted pattern begins with four wildcards, and on
+    // 1.21.120 the rel32 it reads points into the middle of an unrelated 251-byte
+    // function -- 0x29D84E9, inside 0x29D84B0..0x29D85AB. Reading it as a
+    // std::string& function meant jumping there with `this` in rcx and taking
+    // whatever the surrounding code left in rax. Require an actual function
+    // entry; otherwise report that there is no name rather than call into a body.
+    static const bool usable = MemUtils::isFunctionEntry(func);
+    if (!usable) {
+        static bool warned = false;
+        if (!warned) {
+            warned = true;
+            spdlog::warn("Actor::getNameTag: Actor_getNameTag resolved to 0x{:X}, which is not a function entry; names unavailable",
+                         static_cast<uintptr_t>(func));
+        }
+        return empty;
+    }
     auto* result = MemUtils::callFastcall<std::string*>(func, this);
     if (!result || !InstanceLocator::isReadableMemory(result, sizeof(std::string))) return empty;
     return *result;
