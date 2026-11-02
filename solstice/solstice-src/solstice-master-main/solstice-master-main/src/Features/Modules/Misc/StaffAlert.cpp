@@ -182,6 +182,8 @@ void StaffAlert::onBaseTickEvent(BaseTickEvent& event)
 
     // ---- Event handling ----
     std::unordered_map<mce::UUID, PlayerListEntry>* playerList = player->getLevel()->getPlayerList();
+    // Null on 1.21.120; the loop below dereferenced it unconditionally.
+    if (!playerList) return;
     std::vector<std::string> playerNames;
 
     for (auto& entry : *playerList | std::views::values)

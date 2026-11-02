@@ -47,7 +47,11 @@ void Spammer::onBaseTickEvent(BaseTickEvent& event)
 
     std::vector<std::string> mentions;
 
-    for (auto& [uuid, p] : *player->getLevel()->getPlayerList())
+    // Null on 1.21.120; the loop below dereferenced the result directly.
+    auto* playerList = player->getLevel()->getPlayerList();
+    if (!playerList) return;
+
+    for (auto& [uuid, p] : *playerList)
     {
         if (p.mId == player->getActorUniqueIDComponent()->mUniqueID) continue;
         if (p.mName.contains(player->getRawName())) continue;

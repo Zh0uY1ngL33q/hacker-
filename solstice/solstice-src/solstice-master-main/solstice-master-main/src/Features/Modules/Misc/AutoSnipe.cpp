@@ -23,6 +23,9 @@ std::vector<std::string> getDaPlayerList() {
     if(!player) return playerNames;
 
     std::unordered_map<mce::UUID, PlayerListEntry>* playerList = player->getLevel()->getPlayerList();
+    // Level_getPlayerList does not resolve on 1.21.120, so this is null every
+    // time; dereferencing it was a guaranteed crash as soon as AutoSnipe ran.
+    if (!playerList) return playerNames;
 
     for (auto& entry : *playerList | std::views::values)
     {

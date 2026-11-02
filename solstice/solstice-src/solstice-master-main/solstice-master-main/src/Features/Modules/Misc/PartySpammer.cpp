@@ -145,6 +145,9 @@ void PartySpammer::onBaseTickEvent(BaseTickEvent& event)
         if (mLastCommandRequestPacketSent + 1000 > NOW) return;
 
         std::unordered_map<mce::UUID, PlayerListEntry>* playerList = player->getLevel()->getPlayerList();
+        // Null on 1.21.120 (the vtable index does not resolve); command mode used
+        // to dereference it and crash on the first tick it ran.
+        if (!playerList) return;
         std::string names = "";
 
         int inviteCount = 0;
