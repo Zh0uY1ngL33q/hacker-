@@ -68,9 +68,10 @@ void MoveFix::onBaseTickEvent(BaseTickEvent& event)
     // was originally aiming, with the body pointed somewhere else. Vanilla cannot
     // produce that: it keeps facing and walking direction locked together.
     //
-    // Rotating the local input by +delta re-locks them: W now means "forward
-    // relative to where the body is facing", so the walk follows the aim toward the
-    // target instead of the camera.
+    // Rotating the local input by delta * strength blends the two: at 1 the walk is
+    // fully re-locked to the body and heads at the target (identical to Aura's
+    // Strafe), at 0 it is untouched, and in between it keeps the camera heading
+    // with a bend towards the aim.
     //
     // MoveInputComponent packs the vector as (x = strafe, y = forward) -- see
     // MathUtils::getMovement, which ends in ret.x = side; ret.y = forward -- so the

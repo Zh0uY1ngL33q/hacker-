@@ -5,29 +5,31 @@
 
 #include <Features/Modules/Module.hpp>
 
-// Makes the walk follow the aim instead of the camera.
+// Blends the walk between "where the camera looks" and "where the body faces".
 //
-// Bedrock builds the world move direction from the camera, while Aura and
-// Scaffold only rewrite the actor's rotation. The body therefore points at the
-// target while W still means "the way the camera looks", so the player walks a
-// straight line along the original heading with the body facing somewhere else --
-// a combination vanilla cannot produce, because vanilla keeps facing and walking
-// locked together.
+// The three states, measured in game with the aim turned onto a target that sits
+// left-front of the camera:
 //
-// Each tick this rotates the local input by the same angle the body turned, which
-// re-locks the two: W becomes "forward relative to where the body faces", and the
-// walk follows the aim toward the target. The slider is how much of the turn is
-// applied: 0 leaves the game alone (camera walking), 1 follows the aim exactly,
-// and values in between trail behind it, which is the slight arc most clients show.
+//   off        walk along the camera, body facing the target  -- straight line,
+//              fastest, and impossible for vanilla to produce
+//   Strength 1 walk along the body, i.e. straight at the target -- this is what
+//              Aura's own Strafe sub-option produces, and the two are equivalent
+//   Strength k the body's turn is applied only k of the way, so the walk keeps
+//              the camera heading with a bend towards the aim -- still moving
+//              forward as asked, with the turn showing up as an arc
+//
+// The default sits between the last two on purpose: full strength duplicates
+// Strafe, and zero is the broken vanilla state.
 class MoveFix : public ModuleBase<MoveFix> {
 public:
     NumberSetting mStrength = NumberSetting(
         "Strength",
-        "How much of the aim rotation is applied to the walk. "
-        "0 = walk where the camera looks, 1 = walk where the body faces.",
-        1.0f, 0.0f, 1.0f, 0.05f);
+        "How much of the body's turn is applied to the walk. "
+        "0 = walk where the camera looks (vanilla), 1 = walk where the body faces "
+        "(same as Aura's Strafe).",
+        0.35f, 0.0f, 1.0f, 0.05f);
 
-    MoveFix() : ModuleBase("MoveFix", "Walks where you aim instead of where the camera looks",
+    MoveFix() : ModuleBase("MoveFix", "Blends the walk between the camera and the aim",
                            ModuleCategory::Movement, 0, false) {
         addSettings(&mStrength);
 
