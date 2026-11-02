@@ -61,6 +61,7 @@
 #include "Movement/Jesus.hpp"
 #include "Movement/Jetpack.hpp"
 #include "Movement/LongJump.hpp"
+#include "Movement/MoveFix.hpp"
 #include "Movement/NoJumpDelay.hpp"
 #include "Movement/NoSlowDown.hpp"
 #include "Movement/Phase.hpp"
@@ -168,6 +169,7 @@ void ModuleManager::init()
     mModules.emplace_back(std::make_shared<FastStop>());
     mModules.emplace_back(std::make_shared<Step>());
     mModules.emplace_back(std::make_shared<LongJump>());
+    mModules.emplace_back(std::make_shared<MoveFix>());
     mModules.emplace_back(std::make_shared<Spider>());
     mModules.emplace_back(std::make_shared<ServerSneak>());
     mModules.emplace_back(std::make_shared<AirJump>());
