@@ -263,8 +263,15 @@ void Aura::onRenderEvent(RenderEvent& event)
 
         if (mRotating)
         {
-            glm::vec2 rots = MathUtils::getRots(*player->getPos(), mTargetedAABB);
-            auto rot = player->getActorRotationComponent();
+            // Component getters answer null while an actor is without the component
+            // or between ticks, and RenderEvent is dispatched once per frame on the
+            // GL path now -- this wrote through both without looking, which is the
+            // access violation the module was crashing with.
+            auto* pos = player->getPos();
+            auto* rot = player->getActorRotationComponent();
+            if (!pos || !rot) return;
+
+            glm::vec2 rots = MathUtils::getRots(*pos, mTargetedAABB);
             rot->mPitch = rots.x;
             rot->mYaw = rots.y;
             rot->mOldPitch = rots.x;
@@ -289,10 +296,16 @@ void Aura::onRenderEvent(RenderEvent& event)
 
         if (!actor || !actor->isPlayer()) return;
 
-        auto playerPos = player->getRenderPositionComponent()->mPosition;
-        auto actorPos = actor->getRenderPositionComponent()->mPosition;
-        auto state = actor->getStateVectorComponent();
-        auto shape = player->getAABBShapeComponent();
+        auto* playerRenderPos = player->getRenderPositionComponent();
+        auto* actorRenderPos = actor->getRenderPositionComponent();
+        auto* state = actor->getStateVectorComponent();
+        auto* shape = player->getAABBShapeComponent();
+        // Four component reads, none of which is guaranteed while the target is
+        // being torn down; the old code dereferenced all of them.
+        if (!playerRenderPos || !actorRenderPos || !state || !shape) return;
+
+        auto playerPos = playerRenderPos->mPosition;
+        auto actorPos = actorRenderPos->mPosition;
 
         glm::vec3 pos = actorPos - glm::vec3(0.f, 1.62f, 0.f);
         glm::vec3 pos2 = state->mPos - glm::vec3(0.f, 1.62f, 0.f);
@@ -579,15 +592,20 @@ void Aura::onPacketOutEvent(PacketOutEvent& event)
     auto player = ClientInstance::get()->getLocalPlayer();
     if (!player) return;
 
+    // Same null read as in onRenderEvent: getPos() answers null while the actor is
+    // between ticks, and this is on the packet path so it runs even with no target.
+    auto* pos = player->getPos();
+    if (!pos) return;
+
     if (event.mPacket->getId() == PacketID::PlayerAuthInput) {
         auto pkt = event.getPacket<PlayerAuthInputPacket>();
-        glm::vec2 rots = MathUtils::getRots(*player->getPos(), mTargetedAABB);
+        glm::vec2 rots = MathUtils::getRots(*pos, mTargetedAABB);
         pkt->mRot = rots;
         pkt->mYHeadRot = rots.y;
         if (mRotateMode.mValue == RotateMode::Flick) mRotating = false;
     } else if (event.mPacket->getId() == PacketID::MovePlayer) {
         auto pkt = event.getPacket<MovePlayerPacket>();
-        glm::vec2 rots = MathUtils::getRots(*player->getPos(), mTargetedAABB);
+        glm::vec2 rots = MathUtils::getRots(*pos, mTargetedAABB);
         pkt->mRot = rots;
         pkt->mYHeadRot = rots.y;
     } else if (event.mPacket->getId() == PacketID::Animate)
@@ -665,8 +683,13 @@ Actor* Aura::findObstructingActor(Actor* player, Actor* target)
     if (mBypassMode.mValue == BypassMode::Raycast)
     {
         std::map<Actor*, AABBShapeComponent> actorHitboxes;
-        glm::vec3 rayStart = *player->getPos();
-        glm::vec3 rayEnd = *target->getPos();
+        auto* playerPos = player ? player->getPos() : nullptr;
+        auto* targetPos = target ? target->getPos() : nullptr;
+        // Both actors can be mid-teardown here; reading the position off either one
+        // without a check is the same null write that crashed the render path.
+        if (!playerPos || !targetPos) return target;
+        glm::vec3 rayStart = *playerPos;
+        glm::vec3 rayEnd = *targetPos;
         glm::vec3 currentRayPos = rayStart;
 
         // Check for obstructing actors
