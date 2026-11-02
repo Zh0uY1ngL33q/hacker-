@@ -253,10 +253,22 @@ CameraPresetComponent* Actor::getCameraPresetComponent()
 
 ContainerManagerModel* Actor::getContainerManagerModel()
 {
-    // Unresolved offset is 0; member_at(this, 0) would hand consumers a fake
-    // non-null pointer into the vtable. Refuse instead.
-    if (OffsetProvider::Actor_mContainerManagerModel == 0) return nullptr;
-    return hat::member_at<ContainerManagerModel*>(this, OffsetProvider::Actor_mContainerManagerModel);
+    // Actor_mContainerManagerModel does not resolve, but the same member is
+    // declared a second time as Actor_mContainerModel and its signature does:
+    // a single-hit match at 0x5AA5F26 that reads [rcx+0xCE8], and the two small
+    // functions around it are `cmp [rcx+0xCE8],0; setne` and
+    // `mov rcx,[rcx+0xCE8]; test; mov rax,[rcx]; call [rax+0x18]; cmp al,dl`
+    // i.e. has-a-container plus a byte-typed validity test on its vtable slot 3.
+    // That is this field, so use it when the primary name is unresolved.
+    const int offset = OffsetProvider::Actor_mContainerManagerModel
+        ? OffsetProvider::Actor_mContainerManagerModel
+        : OffsetProvider::Actor_mContainerModel;
+    if (offset <= 0) return nullptr;
+    auto* model = hat::member_at<ContainerManagerModel*>(this, offset);
+    // Consumers read mContainerType out of this, so a wrong field would be read as
+    // a container type rather than crash. Only answer when it looks like an object.
+    if (!InstanceLocator::isPlausibleObject(model)) return nullptr;
+    return model;
 }
 
 JumpControlComponent* Actor::getJumpControlComponent()

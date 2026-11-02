@@ -17,11 +17,11 @@ uint32_t ContainerScreenControllerHook::onContainerTick(class ContainerScreenCon
 {
     auto original = mDetour->getOriginal<&ContainerScreenControllerHook::onContainerTick>();
 
-    // Repairing the entry address must not activate an offset-zero member read
-    // while Actor_mContainerManagerModel is still unresolved on this build.
-    const int modelOffset = OffsetProvider::Actor_mContainerManagerModel;
-    if (modelOffset <= 0 || modelOffset >= 0x8000 ||
-        !gFeatureManager || !gFeatureManager->mDispatcher)
+    // The offset this used to gate on (Actor_mContainerManagerModel) does not
+    // resolve; getContainerManagerModel() falls back to the same member's other
+    // declaration (Actor_mContainerModel, 0xCE8) and validates the result, so the
+    // gate is now the returned pointer rather than a number.
+    if (!gFeatureManager || !gFeatureManager->mDispatcher)
         return original(csc);
     auto* client = ClientInstance::get();
     if (!InstanceLocator::isPlausibleObject(client)) return original(csc);

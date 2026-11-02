@@ -4,30 +4,41 @@
 //
 
 #include <Utils/MemUtils.hpp>
-/*Address of signature = Minecraft.Windows.exe + 0x01B2E0A0
-"\x48\x83\xEC\x00\x48\x0F\x00\x00\x00\x48\x83\xC0\x00\x74\x00\x48\x83\xF8\x00\x48\x8B", "xxx?xx???xxx?x?xxx?xx"
-"48 83 EC ? 48 0F ? ? ? 48 83 C0 ? 74 ? 48 83 F8 ? 48 8B"*/
+
+/// <summary>
+/// The client's packet sender. Never instantiated by us -- this is a view of a game
+/// object, so every call is a virtual call through that object's own vtable.
+///
+/// The slot numbers are measured on 1.21.120 rather than inferred from a C++
+/// virtual declaration order, because the two candidate slots are not equivalent:
+///
+///   slot 2  `mov r8,rdx; lea rdx,[rcx+0x20]; ...`  -- (this, packet) only.
+///           PacketSendHook detours exactly this slot (packetSendTarget reads
+///           table[2]) to fire PacketOutEvent, so it is the send the game uses.
+///   slot 3  same shape but also reads r9, i.e. it takes a third argument that
+///           this SDK does not have. Calling it with two hands the function an
+///           uninitialised register.
+///
+/// Sending through slot 2 therefore both matches the game and keeps module-sent
+/// packets visible to our own outbound hook, which is what several modules listen
+/// to. The old declaration put sendToServer on slot 3 and would have gone to the
+/// three-argument variant.
 class LoopbackPacketSender {
 public:
     CLASS_FIELD(uintptr_t**, vtable, 0x0);
     CLASS_FIELD(class NetworkSystem*, mNetworkSystem, 0x20);
 
-    virtual ~LoopbackPacketSender() = 0;
-private:
-    virtual void _0() = 0;
-public:
-    /// <summary>
-    /// Sends a packet to the server.
-    /// Packets sent with this function will trigger the PacketOutEvent.
-    /// </summary>
-    /// <param name="packet">The packet to send.</param>
-    virtual void send(void* packet) = 0;
-    /// <summary>
-    /// Sends a packet to the server.
-    /// Calling this function will NOT trigger the PacketOutEvent.
-    /// </summary>
-    /// <param name="packet">The packet to send.</param>
-    virtual void sendToServer(void* packet) = 0;
+    /// Sends a packet to the server. Fires PacketOutEvent, because that hook is
+    /// installed on this exact slot.
+    void send(void* packet)
+    {
+        MemUtils::callVirtualFunc<void, void*>(2, this, packet);
+    }
 
-    // (none of the other funcs here matter)
+    /// The name most call sites use. Routed through the two-argument send for the
+    /// reason above.
+    void sendToServer(void* packet)
+    {
+        send(packet);
+    }
 };
