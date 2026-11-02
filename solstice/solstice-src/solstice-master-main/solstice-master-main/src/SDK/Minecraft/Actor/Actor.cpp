@@ -3,6 +3,7 @@
 //
 
 #include "Actor.hpp"
+#include <atomic>   // std::atomic counter in COMPONENT_GET_FUNC's log throttle
 
 #include <SDK/OffsetProvider.hpp>
 #include <SDK/SigManager.hpp>
@@ -57,7 +58,15 @@ componentType* Actor::funcName() \
 { \
     if (!isValid()) \
     { \
-        spdlog::debug("Actor::{}: isValid() failed", #funcName); \
+        /* Not an error. An entt view still hands out entities whose destruction  \
+           is in flight, so every caller that walks the actor list hits this a few \
+           times a second -- the log filled with 141 identical lines and buried   \
+           everything that mattered. Report the first hit, then one in every 512, \
+           which keeps the count without the noise. */ \
+        static std::atomic<uint32_t> sMisses{0}; \
+        const uint32_t misses = ++sMisses; \
+        if (misses == 1 || misses % 512 == 0) \
+            spdlog::debug("Actor::{}: isValid() failed ({} so far)", #funcName, misses); \
         return nullptr; \
     } \
     auto component = mContext.getComponent<componentType>(); \
