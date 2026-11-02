@@ -42,7 +42,7 @@ namespace {
     // ActorRotationComponent.
     //
     // This exists because the matrix read at ClientInstance+0x368 does not always
-    // carry a view-space Z axis. The ESP probe measured its third row as
+    // carry a view-space Z axis. The ESP probe measured its third column as
     // (0, 0, 0, 1), which makes every projection's z constant, so OWorldToScreen's
     // `z > 0` guard rejected every single point -- ESP, Tracers and Nametags all
     // drew nothing while the camera origin and fov were correct.
@@ -54,8 +54,15 @@ namespace {
         const float cp = std::cos(pitch), sp = std::sin(pitch);
         const float cy = std::cos(yaw), sy = std::sin(yaw);
 
+        // Minecraft's basis is right-handed with the camera looking down its own
+        // -Z: with yaw = 0 the forward axis is +Z and the screen-right axis is
+        // -X (stand facing +Z with +Y up and your right hand points at -X). The
+        // camera's own X axis is therefore cross(worldUp, -forward), which works
+        // out to (-cos yaw, 0, -sin yaw). Using +cos/+sin here inverted it, and
+        // because up is derived from right the vertical axis flipped too: every
+        // box landed mirrored through the centre of the screen.
         const glm::vec3 forward{ -sy * cp, -sp, cy * cp };
-        const glm::vec3 right{ cy, 0.f, sy };
+        const glm::vec3 right{ -cy, 0.f, -sy };
         const glm::vec3 up = glm::cross(right, forward);
 
         // OWorldToScreen treats (*this)[n] as a row and dots it with the world
@@ -345,18 +352,22 @@ void OpenGLGui::render(HDC dc) try
                     if (auto* cam = rp->getCameraPos()) {
                     if (auto* rpc = player->getRenderPositionComponent()) {
                         glmatrixf view = ci->getViewMatrix();
-                        // Reject the matrix when its view-space Z axis is missing.
-                        // Measured on this build: row2 = (0,0,0,1), so every
-                        // projection returned false on the z > 0 guard. Fall back
-                        // to the player's own rotation rather than trusting it.
-                        const glm::vec4 zAxis = view[2];
-                        const bool degenerate = std::fabs(zAxis.x) < 1e-4f
-                                             && std::fabs(zAxis.y) < 1e-4f
-                                             && std::fabs(zAxis.z) < 1e-4f;
-                        if (degenerate) {
-                            if (auto* rot = player->getActorRotationComponent()) {
-                                view = viewMatrixFromRotation(rot->mYaw, rot->mPitch);
-                            }
+                        // The matrix read at ClientInstance+0x368 is not a usable
+                        // view matrix on this build: its third column measures
+                        // (0, 0, 0, 1) -- no direction at all -- so the projected
+                        // z is constant and OWorldToScreen's `z > 0` guard rejects
+                        // every point. Reconstruct it from the player's rotation,
+                        // but only when the game matrix disagrees with it: if a
+                        // later build does fill 0x368 correctly, that one wins.
+                        if (auto* rot = player->getActorRotationComponent()) {
+                            const glmatrixf built = viewMatrixFromRotation(rot->mYaw, rot->mPitch);
+                            const glm::vec3 gameAxis{ view[2] };
+                            const glm::vec3 builtAxis{ built[2] };
+                            const float gameLen = glm::length(gameAxis);
+                            const float builtLen = glm::length(builtAxis);
+                            const bool usable = gameLen > 1e-4f && builtLen > 1e-4f
+                                && glm::dot(gameAxis / gameLen, builtAxis / builtLen) > 0.9f;
+                            if (!usable) view = built;
                         }
                         RenderUtils::transform = FrameTransform{
                             view, *cam, rpc->mPosition, ci->getFov() };
