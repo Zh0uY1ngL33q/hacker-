@@ -19,6 +19,7 @@
 
 #include "ActorType.hpp"
 #include "Components/ActorTypeComponent.hpp"
+#include "Components/NameableComponent.hpp"
 #include "Components/RuntimeIDComponent.hpp"
 #include "Components/FlagComponent.hpp"
 #include "Components/FallDistanceComponent.hpp"
@@ -98,6 +99,7 @@ COMPONENT_GET_FUNC(getCameraDirectLookComponent, CameraDirectLookComponent)
 COMPONENT_GET_FUNC(getMaxAutoStepComponent, MaxAutoStepComponent)
 COMPONENT_GET_FUNC(getAttributesComponent, AttributesComponent)
 COMPONENT_GET_FUNC(getCameraComponent, CameraComponent)
+COMPONENT_GET_FUNC(getNameableComponent, NameableComponent)
 COMPONENT_GET_FUNC(getActorDataFlagComponent, ActorDataFlagComponent)
 
 void Actor::swing()
@@ -506,6 +508,58 @@ const std::string& Actor::getNameTag()
             warned = true;
             spdlog::warn("Actor::getNameTag: Actor_getNameTag resolved to 0x{:X}, which is not a function entry; names unavailable",
                          static_cast<uintptr_t>(func));
+        }
+
+        // The component route. ComponentHashes.hpp already lists
+        // "class NameableComponent" (0xE2748E81), and every other component in this
+        // SDK is fetched by type name, so the lookup works if the declaration
+        // matches -- which is why the component is declared as a `class`, not a
+        // struct. Only the type name is known, not the layout, so whatever sits at
+        // the front of it is validated as an MSVC std::string before it is believed.
+        if (auto* nameable = getNameableComponent())
+        {
+            const auto* raw = reinterpret_cast<const uint8_t*>(nameable);
+            for (int off = 0; off <= 0x20; off += 8)
+            {
+                const auto* p = raw + off;
+                uint64_t size = 0, cap = 0;
+                std::memcpy(&size, p + 0x10, 8);
+                std::memcpy(&cap, p + 0x18, 8);
+                if (size == 0 || size > 64 || cap < size || cap > 0x1000) continue;
+
+                const char* data = nullptr;
+                if (cap <= 15)
+                {
+                    data = reinterpret_cast<const char*>(p);
+                }
+                else
+                {
+                    uintptr_t ptr = 0;
+                    std::memcpy(&ptr, p, 8);
+                    if (!InstanceLocator::isReadableMemory(reinterpret_cast<void*>(ptr),
+                                                           static_cast<size_t>(size)))
+                        continue;
+                    data = reinterpret_cast<const char*>(ptr);
+                }
+
+                bool printable = true;
+                for (uint64_t i = 0; i < size; ++i)
+                {
+                    const auto c = static_cast<unsigned char>(data[i]);
+                    if (c < 0x20 || c > 0x7E) { printable = false; break; }
+                }
+                if (!printable) continue;
+
+                static std::string cached;
+                cached.assign(data, static_cast<size_t>(size));
+                static bool reported = false;
+                if (!reported)
+                {
+                    reported = true;
+                    spdlog::info("[actor] NameableComponent +0x{:X} holds \"{}\"", off, cached);
+                }
+                return cached;
+            }
         }
 
         // One dump, for the local player only: the log line above says the name is

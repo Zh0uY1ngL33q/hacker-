@@ -36,6 +36,8 @@
 #define PLAYER_HEIGHT 1.62f
 #define PLAYER_HEIGHT_VEC glm::vec3(0.f, PLAYER_HEIGHT, 0.f)
 
+class NameableComponent;
+
 class Actor {
 public:
     unsigned char filler[0x408]; // ItemActor::ItemActor on bds line 35 ItemStack::ItemStack((ItemActor *)((char *)this + 1024));
@@ -154,6 +156,7 @@ public:
     RawMoveInputComponent* getRawMoveInputComponent();
     ActorRotationComponent* getActorRotationComponent();
     AABBShapeComponent* getAABBShapeComponent();
+    NameableComponent* getNameableComponent();
     BlockMovementSlowdownMultiplierComponent* getBlockMovementSlowdownMultiplierComponent();
     ActorUniqueIDComponent* getActorUniqueIDComponent();
     ContainerManagerModel* getContainerManagerModel();
