@@ -58,6 +58,10 @@ void PacketUtils::sendToSelf(const std::shared_ptr<Packet>& packet)
 
 void PacketUtils::queueSend(std::shared_ptr<Packet> packet, bool bypassHook)
 {
+    // A null packet would sit in the queue until the tick flush, where the sender
+    // calls getId() on it -- a crash one tick later, far away from whatever failed
+    // to build it. Dropping it here keeps the failure local.
+    if (!packet) return;
     BaseTickHook::mQueuedPackets.emplace_back(packet, bypassHook);
 }
 
