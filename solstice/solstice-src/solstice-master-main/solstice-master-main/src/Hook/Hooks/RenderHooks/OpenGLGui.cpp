@@ -490,6 +490,37 @@ void OpenGLGui::render(HDC dc) try
                         MathUtils::fov = RenderUtils::transform.mFov;
                         MathUtils::origin = RenderUtils::transform.mOrigin;
 
+                        // One-shot self-check: a point ten blocks straight ahead
+                        // must land at the centre of the screen. The matrix, the fov
+                        // factors and the display size all enter that one number, so
+                        // a wrong one is a number in the log instead of boxes in the
+                        // wrong place -- and it is the only test that does not depend
+                        // on judging a picture by eye.
+                        static bool sProjectionChecked = false;
+                        if (!sProjectionChecked)
+                        {
+                            sProjectionChecked = true;
+                            constexpr float kDegToRad = 3.14159265358979323846f / 180.f;
+                            const float yawRad = yawDeg * kDegToRad;
+                            const float pitchRad = pitchDeg * kDegToRad;
+                            const glm::vec3 forward{
+                                -std::sin(yawRad) * std::cos(pitchRad),
+                                -std::sin(pitchRad),
+                                 std::cos(yawRad) * std::cos(pitchRad) };
+                            glm::vec2 screen{};
+                            if (view.OWorldToScreen(*cam, *cam + forward * 10.f, screen,
+                                                    MathUtils::fov, MathUtils::displaySize))
+                                spdlog::info("[proj] ahead -> ({:.1f}, {:.1f}) centre ({:.1f}, {:.1f}) fov ({:.3f}, {:.3f})",
+                                             screen.x, screen.y,
+                                             MathUtils::displaySize.x * 0.5f,
+                                             MathUtils::displaySize.y * 0.5f,
+                                             MathUtils::fov.x, MathUtils::fov.y);
+                            else
+                                spdlog::info("[proj] ahead rejected: fov ({:.3f}, {:.3f}) size ({:.0f}, {:.0f})",
+                                             MathUtils::fov.x, MathUtils::fov.y,
+                                             MathUtils::displaySize.x, MathUtils::displaySize.y);
+                        }
+
                     }
                     }
                 }
