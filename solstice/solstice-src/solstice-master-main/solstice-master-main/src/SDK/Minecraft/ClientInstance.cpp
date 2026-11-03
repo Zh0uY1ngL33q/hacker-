@@ -14,6 +14,8 @@
 #include <Utils/Structs.hpp>
 #include <SDK/Minecraft/Rendering/GuiData.hpp>
 #include <cmath>
+#include <spdlog/spdlog.h>
+#include <atomic>
 
 #include "KeyboardMouseSettings.hpp"
 #include <Windows.h>
@@ -169,8 +171,31 @@ Options* ClientInstance::getOptions()
 
 std::string ClientInstance::getScreenName()
 {
+    const int slot = static_cast<int>(OffsetProvider::ClientInstance_getScreenName);
+    if (slot < 2 || slot >= 4096)
+        return "no_screen";
+
+    // The wrapper behind this slot (0x1A19600 on this build) does
+    // `mov rcx,[rcx+0xD8]; mov rax,[rcx]; ... call [rax+0x658]` -- it hands the
+    // call to a sub-object and then builds the string out of what comes back.
+    // 0xD8 has not been confirmed to be an object pointer on 1.21.120, and a
+    // wrong pointer there is a jump into arbitrary memory rather than a null
+    // read, so refuse the call unless the member looks like an object.
+    void* sub = hat::member_at<void*>(this, 0xD8);
+    if (!InstanceLocator::isPlausibleObject(sub))
+    {
+        static bool warned = false;
+        if (!warned)
+        {
+            warned = true;
+            spdlog::warn("[ui] getScreenName: ClientInstance+0xD8 (0x{:X}) is not a plausible object; reporting no_screen",
+                         reinterpret_cast<uintptr_t>(sub));
+        }
+        return "no_screen";
+    }
+
     std::string name = "no_screen";
-    name = MemUtils::callVirtualFunc<std::string&, std::string&>(OffsetProvider::ClientInstance_getScreenName, this, name);
+    name = MemUtils::callVirtualFunc<std::string&, std::string&>(slot, this, name);
     return name;
 }
 
@@ -200,6 +225,17 @@ bool ClientInstance::getMouseGrabbed()
     // name is unavailable this falls back to "screen open", which is the same
     // answer as before, so a failure here cannot make a module run wild.
     const std::string screen = getScreenName();
+
+    // One line every five seconds while the answer is being established: a slot
+    // that never worked and a slot that works both look identical from inside the
+    // modules that consume this, and "hotkeys do nothing" is the only symptom.
+    // The name itself is the verdict -- hud_screen means the chain is live.
+    static std::atomic<long long> sLastLog{ 0 };
+    const long long now = static_cast<long long>(GetTickCount64());
+    long long expected = sLastLog.load(std::memory_order_relaxed);
+    if (now - expected >= 5000 && sLastLog.compare_exchange_strong(expected, now))
+        spdlog::info("[ui] screen=\"{}\" screenOpen={}", screen, screen != "hud_screen");
+
     if (screen.empty() || screen == "no_screen")
         return true;
     return screen != "hud_screen";
