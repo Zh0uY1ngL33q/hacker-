@@ -438,6 +438,57 @@ std::string Actor::getRawName()
     return name;
 }
 
+namespace {
+
+// Dump every std::string-shaped member of one actor. The name field cannot be
+// reached through its signature on this build, and guessing offsets has already
+// produced one wrong answer, so the field is located by content instead: the
+// local player's own name appears verbatim in the log together with its offset.
+void dumpStringMembers(Actor* actor, const char* tag)
+{
+    auto* base = reinterpret_cast<uint8_t*>(actor);
+    spdlog::info("[actor] {} std::string-shaped members of 0x{:X}:", tag,
+                 reinterpret_cast<uintptr_t>(actor));
+    for (int off = 0x8; off < 0x1400; off += 8)
+    {
+        auto* p = base + off;
+        if (!InstanceLocator::isReadableMemory(p, 0x20)) continue;
+
+        uint64_t size = 0, cap = 0;
+        std::memcpy(&size, p + 0x10, 8);
+        std::memcpy(&cap, p + 0x18, 8);
+        if (size == 0 || size > 64 || cap < size || cap > 0x1000) continue;
+
+        const char* data = nullptr;
+        if (cap <= 15)
+        {
+            data = reinterpret_cast<const char*>(p);
+        }
+        else
+        {
+            uintptr_t ptr = 0;
+            std::memcpy(&ptr, p, 8);
+            if (!InstanceLocator::isReadableMemory(reinterpret_cast<void*>(ptr),
+                                                   static_cast<size_t>(size)))
+                continue;
+            data = reinterpret_cast<const char*>(ptr);
+        }
+
+        bool printable = true;
+        for (uint64_t i = 0; i < size; ++i)
+        {
+            const auto c = static_cast<unsigned char>(data[i]);
+            if (c < 0x20 || c > 0x7E) { printable = false; break; }
+        }
+        if (!printable) continue;
+
+        spdlog::info("[actor]   +0x{:X} size={} cap={} \"{}\"", off, size, cap,
+                     std::string(data, static_cast<size_t>(size)));
+    }
+}
+
+}  // namespace
+
 const std::string& Actor::getNameTag()
 {
     static auto func = SigManager::Actor_getNameTag;
@@ -456,13 +507,28 @@ const std::string& Actor::getNameTag()
             spdlog::warn("Actor::getNameTag: Actor_getNameTag resolved to 0x{:X}, which is not a function entry; names unavailable",
                          static_cast<uintptr_t>(func));
         }
+
+        // One dump, for the local player only: the log line above says the name is
+        // unavailable, and without this the only way to find the field is to guess
+        // another offset.
+        static bool dumped = false;
+        if (!dumped)
+        {
+            if (auto* ci = ClientInstance::get())
+            {
+                if (ci->getLocalPlayer() == this)
+                {
+                    dumped = true;
+                    dumpStringMembers(this, "local player");
+                }
+            }
+        }
         return empty;
     }
     auto* result = MemUtils::callFastcall<std::string*>(func, this);
     if (!result || !InstanceLocator::isReadableMemory(result, sizeof(std::string))) return empty;
     return *result;
 }
-
 void Actor::setNametag(const std::string& name)
 {
     static auto func = SigManager::Actor_setNameTag;
