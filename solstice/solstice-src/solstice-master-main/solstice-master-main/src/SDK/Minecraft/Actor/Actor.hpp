@@ -47,12 +47,19 @@ public:
     CLASS_FIELD(std::string, mEntityIdentifier, OffsetProvider::Actor_mEntityIdentifier);
 
     bool getStatusFlag(ActorFlags flag) {
-        auto data = getActorDataFlagComponent();
+        // The flag component is an entt lookup and answers null whenever the type
+        // name does not register on this build -- exactly the case for several
+        // components here. Six modules read this (Speed, Anticheat, AntiBot,
+        // AntiImmobile, ServerSneak, AutoReport), so a null dereference was one
+        // component-name mismatch away from crashing all of them.
+        auto* data = getActorDataFlagComponent();
+        if (!data) return false;
         return data->getStatusFlag(flag);
     }
 
     void setStatusFlag(ActorFlags flag, bool value) {
-        auto data = getActorDataFlagComponent();
+        auto* data = getActorDataFlagComponent();
+        if (!data) return;
         data->setStatusFlag(flag, value);
     }
 
