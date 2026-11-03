@@ -4,6 +4,7 @@
 
 #include "ClientInstance.hpp"
 
+#include <windows.h>
 #include <libhat/Access.hpp>
 #include <SDK/OffsetProvider.hpp>
 #include <SDK/SigManager.hpp>
@@ -221,9 +222,10 @@ bool ClientInstance::getMouseGrabbed()
     // doing anything, and BlockESP never drew.
     //
     // The screen name is the state the callers actually care about: hud_screen is
-    // the only screen that holds the mouse, every other one releases it. When the
-    // name is unavailable this falls back to "screen open", which is the same
-    // answer as before, so a failure here cannot make a module run wild.
+    // the only screen that holds the mouse, every other one releases it. The name
+    // comes from virtual slot 266, which forwards into a sub-object; if that chain
+    // is not usable the answer falls back to cursor visibility rather than to a
+    // constant, because a constant true here stops every module hotkey.
     const std::string screen = getScreenName();
 
     // One line every five seconds while the answer is being established: a slot
@@ -234,11 +236,22 @@ bool ClientInstance::getMouseGrabbed()
     const long long now = static_cast<long long>(GetTickCount64());
     long long expected = sLastLog.load(std::memory_order_relaxed);
     if (now - expected >= 5000 && sLastLog.compare_exchange_strong(expected, now))
-        spdlog::info("[ui] screen=\"{}\" screenOpen={}", screen, screen != "hud_screen");
+        spdlog::info("[ui] screen=\"{}\"", screen);
 
-    if (screen.empty() || screen == "no_screen")
-        return true;
-    return screen != "hud_screen";
+    if (!screen.empty() && screen != "no_screen")
+        return screen != "hud_screen";
+
+    // The name is unavailable, so fall back to what the OS knows: the game hides
+    // the cursor while it owns the mouse for gameplay and shows it whenever a
+    // screen needs pointing at. Reporting "screen open" here is what killed every
+    // hotkey -- KeyHook gates all module binds on this single answer -- so the
+    // fallback leans the other way and assumes gameplay unless the cursor says
+    // otherwise.
+    CURSORINFO cursor{};
+    cursor.cbSize = sizeof(cursor);
+    if (GetCursorInfo(&cursor))
+        return (cursor.flags & CURSOR_SHOWING) != 0;
+    return false;
 }
 
 void ClientInstance::grabMouse()

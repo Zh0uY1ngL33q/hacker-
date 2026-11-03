@@ -82,14 +82,19 @@ void InventoryMove::onBaseTickEvent(BaseTickEvent& event)
         return;
     }
 
-    if (screenName != "hud_screen") input->mIsMoveLocked = true;
-    else input->mIsMoveLocked = false;
+    // Only lock when a screen is actually known to be open. getScreenName answers
+    // "no_screen" when slot 266 is unusable, and treating that as "a container is
+    // open" set mIsMoveLocked on every tick -- which stops movement instead of
+    // enabling it, the opposite of what this module is for.
+    const bool screenKnown = !screenName.empty() && screenName != "no_screen";
+    if (screenKnown)
+        input->mIsMoveLocked = screenName != "hud_screen";
 
     input->mForward = w;
     input->mBackward = s;
     input->mLeft = a;
     input->mRight = d;
-    if (screenName != "hud_screen") // I hate this game
+    if (screenKnown && screenName != "hud_screen") // I hate this game
     {
         input->mIsJumping = space;
         input->mIsJumping2 = space;
@@ -142,14 +147,19 @@ void InventoryMove::onRenderEvent(RenderEvent& event)
         return;
     }
 
-    if (screenName != "hud_screen") input->mIsMoveLocked = true;
-    else input->mIsMoveLocked = false;
+    // Only lock when a screen is actually known to be open. getScreenName answers
+    // "no_screen" when slot 266 is unusable, and treating that as "a container is
+    // open" set mIsMoveLocked on every tick -- which stops movement instead of
+    // enabling it, the opposite of what this module is for.
+    const bool screenKnown = !screenName.empty() && screenName != "no_screen";
+    if (screenKnown)
+        input->mIsMoveLocked = screenName != "hud_screen";
 
     input->mForward = w;
     input->mBackward = s;
     input->mLeft = a;
     input->mRight = d;
-    if (screenName != "hud_screen") // I hate this game
+    if (screenKnown && screenName != "hud_screen") // I hate this game
     {
         input->mIsJumping = space;
         input->mIsJumping2 = space;
