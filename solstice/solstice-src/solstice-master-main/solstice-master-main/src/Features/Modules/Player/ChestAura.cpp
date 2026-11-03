@@ -30,7 +30,10 @@ void ChestAura::onBaseTickEvent(BaseTickEvent& event) {
     if (NOW - mTimeOfLastChestOpen < mDelay.mValue) return;
 
     auto player = ClientInstance::get()->getLocalPlayer();
-    if (!player || player->getStatusFlag(ActorFlags::Noai) || ClientInstance::get()->getScreenName() != "hud_screen") return;
+    // getMouseGrabbed answers "a screen is open" and falls back to cursor
+    // visibility when the screen name is unavailable; comparing the name made
+    // this module dead whenever the name stopped resolving.
+    if (!player || player->getStatusFlag(ActorFlags::Noai) || ClientInstance::get()->getMouseGrabbed()) return;
 
     const glm::vec3 playerPos = *player->getPos();
     std::vector<glm::vec3> chests;

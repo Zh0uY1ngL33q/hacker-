@@ -43,7 +43,8 @@ void Keystrokes::onRenderEvent(RenderEvent& event)
     auto player = ClientInstance::get()->getLocalPlayer();
     if (!player) return;
 
-    if(ClientInstance::get()->getScreenName() != "hud_screen") return;
+    // Draw whenever no screen is open, without depending on the screen name.
+    if (ClientInstance::get()->getMouseGrabbed()) return;
 
     auto ci = ClientInstance::get();
     auto moveCo = player->getMoveInputComponent();
