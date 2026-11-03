@@ -30,8 +30,14 @@ public:
 
     /// Sends a packet to the server. Fires PacketOutEvent, because that hook is
     /// installed on this exact slot.
+    ///
+    /// The vtable check is what makes ClientInstance::getPacketSender able to hand
+    /// back a null object instead of a null pointer: 37 call sites write
+    /// `getPacketSender()->sendToServer(...)` without looking, and a null `this`
+    /// would fault before this body ran.
     void send(void* packet)
     {
+        if (!packet || !vtable) return;
         MemUtils::callVirtualFunc<void, void*>(2, this, packet);
     }
 

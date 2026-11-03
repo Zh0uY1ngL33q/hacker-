@@ -112,7 +112,24 @@ LoopbackPacketSender* ClientInstance::getPacketSender()
     // 0x228, which is the *pointer* of vtable slot 69. Reading a member there gave
     // null every time, so every module that sends a packet -- Aura's attacks,
     // Scaffold's placements, all of chat -- was writing into nothing.
-    return readPacketSenderMember(this, OffsetProvider::ClientInstance_mPacketSender);
+    auto* sender = readPacketSenderMember(this, OffsetProvider::ClientInstance_mPacketSender);
+    if (sender && sender->vtable)
+        return sender;
+
+    // 37 call sites dereference the result immediately, so a null pointer here is a
+    // crash rather than a dropped packet. Answer with an object whose vtable is
+    // empty instead: LoopbackPacketSender::send refuses it, nothing is sent, and
+    // the reason is logged once.
+    static LoopbackPacketSender sUnavailable{};
+    static bool warned = false;
+    if (!warned)
+    {
+        warned = true;
+        spdlog::warn("[net] packet sender unavailable (member 0x{:X} reads 0x{:X}); outgoing packets are dropped",
+                     OffsetProvider::ClientInstance_mPacketSender,
+                     reinterpret_cast<uintptr_t>(sender));
+    }
+    return &sUnavailable;
 }
 
 GuiData* ClientInstance::getGuiData()
