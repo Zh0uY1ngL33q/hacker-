@@ -550,15 +550,17 @@ const std::string& Actor::getNameTag()
                 }
                 if (!printable) continue;
 
-                static std::string cached;
-                cached.assign(data, static_cast<size_t>(size));
+                // Return the component's own string, not a copy: the answer is a
+                // reference, and several actors are asked for their names every
+                // frame, so a shared cache would hand one actor another's name.
                 static bool reported = false;
                 if (!reported)
                 {
                     reported = true;
-                    spdlog::info("[actor] NameableComponent +0x{:X} holds \"{}\"", off, cached);
+                    spdlog::info("[actor] NameableComponent +0x{:X} holds \"{}\"", off,
+                                 std::string(data, static_cast<size_t>(size)));
                 }
-                return cached;
+                return *reinterpret_cast<const std::string*>(raw + off);
             }
         }
 
