@@ -49,26 +49,37 @@ glmatrixf ClientInstance::getViewMatrix()
 
 glm::vec2 ClientInstance::getFov()
 {
-    // These are not angles. OWorldToScreen multiplies the projected offset by
-    // them, so each one is 1/tan(fov/2) for that axis: about (0.87, 1.43) for the
-    // game's default 70 degree vertical fov at 16:9.
+    // OWorldToScreen multiplies the projected offset by these, so what it needs is
+    // 1/tan(fov/2) per axis -- about (0.87, 1.43) for the default 70 degree
+    // vertical fov at 16:9.
     //
-    // On 1.21.120 the offsets below no longer hold that field. The ESP probe reads
-    // (0.00, -1.7014118e+38), i.e. -FLT_MAX, and a multiplier that size makes
-    // every projection fail -- which is why ESP, Tracers, Nametags and ItemESP all
-    // drew nothing even once the camera origin was correct.
-    float x = hat::member_at<float>(this, OffsetProvider::ClientInstance_mFovX);
-    float y = hat::member_at<float>(this, OffsetProvider::ClientInstance_mFovY);
+    // The pair this reads lives at 0x720/0x724 on 1.21.120, not 0x728/0x72C: the
+    // client's own vtable has `movss xmm0,[rcx+0x720]; ret` at slot 455,
+    // `movss [rcx+0x720],xmm1; ret` at 456 and `movss xmm0,[rcx+0x724]; ret` at
+    // 457 -- a get/set/get triple over two adjacent floats. The old offsets read
+    // -FLT_MAX, which is what made every projection fail.
+    //
+    // The stored form is not fixed evidence yet: it can be the multiplier itself
+    // or the angle in degrees. Accept both rather than betting on one -- a
+    // multiplier lands in (0.1, 10), an angle in (30, 130) -- and fall back to the
+    // default only when neither reading is sane.
+    constexpr float kPi = 3.14159265358979323846f;
+    const auto toFactor = [](float v) -> float {
+        if (!std::isfinite(v)) return 0.f;
+        if (v > 0.1f && v < 10.f) return v;
+        if (v > 30.f && v < 130.f)
+            return 1.f / std::tan(v * 0.5f * kPi / 180.f);
+        return 0.f;
+    };
 
-    const auto usable = [](float v) { return std::isfinite(v) && v > 0.1f && v < 10.f; };
-    if (usable(x) && usable(y))
+    const float x = toFactor(hat::member_at<float>(this, OffsetProvider::ClientInstance_mFovX));
+    const float y = toFactor(hat::member_at<float>(this, OffsetProvider::ClientInstance_mFovY));
+    if (x > 0.f && y > 0.f)
         return { x, y };
 
     // Rebuild the factors for the default fov instead, so world-to-screen keeps
-    // producing sane coordinates. This is an approximation: if the player has
-    // changed the fov setting the boxes will be slightly off-centre, but visible
-    // beats blank, and the real offsets can be filled in once they are known.
-    constexpr float kPi = 3.14159265358979323846f;
+    // producing sane coordinates. Used only when the member does not read as a fov
+    // at all.
     constexpr float kDefaultVerticalFovDeg = 70.f;
     const float yFactor = 1.f / std::tan(kDefaultVerticalFovDeg * 0.5f * kPi / 180.f);
 

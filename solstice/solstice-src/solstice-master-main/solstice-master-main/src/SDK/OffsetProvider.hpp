@@ -207,8 +207,13 @@ public:
     // object found the rotation at 0x358 with its -Z axis matching the player's
     // forward to 1.0000, which is 16 bytes -- exactly one column -- earlier.
     DEFINE_FIELD(ClientInstance_mViewMatrix, 0x358);
-    DEFINE_FIELD(ClientInstance_mFovX, 0x728);
-    DEFINE_FIELD(ClientInstance_mFovY, 0x73C);
+    // 0x728/0x73C read as -FLT_MAX, which made every projection fail. The pair
+    // actually sits at 0x720/0x724: the client's vtable carries
+    // `movss xmm0,[rcx+0x720]; ret` at slot 455, the matching
+    // `movss [rcx+0x720],xmm1; ret` at 456 and `movss xmm0,[rcx+0x724]; ret` at
+    // 457 -- a get/set/get triple over two adjacent floats, i.e. one property.
+    DEFINE_FIELD(ClientInstance_mFovX, 0x720);
+    DEFINE_FIELD(ClientInstance_mFovY, 0x724);
     DEFINE_FIELD(Block_mRuntimeId, 0xC0);
     DEFINE_FIELD(Block_mLegacy, 0x30);
     DEFINE_FIELD(ClientInstance_getScreenName, 266); // i will make sig for it later (maybe)
