@@ -120,21 +120,27 @@ int ItemUtils::getItemValue(ItemStack* item) {
 
 int ItemUtils::getBestItem(SItemType type, bool hotbarOnly)
 {
-    auto player = ClientInstance::get()->getLocalPlayer();
+    auto* ci = ClientInstance::get();
+    if (!ci) return -1;
+    auto player = ci->getLocalPlayer();
+    if (!player) return -1;
     auto supplies = player->getSupplies();
+    if (!supplies) return -1;
     auto container = supplies->getContainer();
+    if (!container) return -1;
 
     int bestSlot = supplies->mSelectedSlot;
     int bestValue = 0;
 
     for (int i = 0; i < 36; i++)
     {
-        auto item = container->getItem(i);
-        if (!item->mItem) continue;
-
         if (hotbarOnly && i > 8) break;
+        auto item = container->getItem(i);
+        if (!item || !item->mItem) continue;
+        auto* descriptor = item->getItem();
+        if (!descriptor) continue;
 
-        if (item->getItem()->getItemType() == type)
+        if (descriptor->getItemType() == type)
         {
             int value = getItemValue(item);
             if (value > bestValue)
@@ -511,22 +517,27 @@ bool ItemUtils::isFireSword(ItemStack* stack)
 
 int ItemUtils::getFireSword(bool hotbarOnly)
 {
-    auto player = ClientInstance::get()->getLocalPlayer();
+    auto* ci = ClientInstance::get();
+    if (!ci) return -1;
+    auto player = ci->getLocalPlayer();
     if (!player) return -1;
+    auto* supplies = player->getSupplies();
+    if (!supplies) return -1;
+    auto* container = supplies->getContainer();
+    if (!container) return -1;
 
     int slot = -1;
 
     for (int i = 0; i < 36; i++)
     {
-        ItemStack* stack = player->getSupplies()->getContainer()->getItem(i);
-        if (!stack->mItem) continue;
+        if (hotbarOnly && i > 8) break;
+        ItemStack* stack = container->getItem(i);
+        if (!stack || !stack->mItem) continue;
         if (isFireSword(stack))
         {
             slot = i;
             break;
         }
-
-        if (hotbarOnly && i > 8) break;
     }
 
     return slot;

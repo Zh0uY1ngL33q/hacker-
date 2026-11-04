@@ -199,10 +199,30 @@ std::shared_ptr<InventoryTransactionPacket> ActorUtils::createAttackTransaction(
     ItemStack emptyHand{};
     cit->mItemInHand = NetworkItemStackDescriptor(held ? *held : emptyHand);
     auto unique = actor->getActorUniqueIDComponent();
-    cit->mActorId = unique ? unique->mUniqueID : -1;
+
+    // ItemUseOnEntityTransaction carries an ActorRuntimeID on the wire, not the
+    // persistent unique id. The two are different numbers on a live actor; sending
+    // the unique id makes the server unable to resolve the target, which looks
+    // exactly like "attacked but nothing happened". Fall back to the unique id only
+    // when the runtime component is missing.
+    const int64_t runtimeId = actor->getRuntimeID();
+    const int64_t uniqueId = unique ? unique->mUniqueID : -1;
+    cit->mActorId = runtimeId > 0 ? runtimeId : uniqueId;
     cit->mActionType = ItemUseOnActorInventoryTransaction::ActionType::Attack;
     cit->mClickPos = actor->getAABB().getClosestPoint(*pos);
     cit->mPlayerPos = *pos;
+
+    // One line, once. The values are what the server will see; if the hit still
+    // does not land, this says whether the id, the type or the slot was wrong.
+    static bool reported = false;
+    if (!reported)
+    {
+        reported = true;
+        spdlog::info("[aura] transaction actorId={} (runtime={} unique={}) action={} slot={} type={}",
+                     cit->mActorId, runtimeId, uniqueId,
+                     static_cast<int>(cit->mActionType), slot,
+                     static_cast<int>(cit->type));
+    }
 
     pkt->mTransaction = std::move(cit);
 

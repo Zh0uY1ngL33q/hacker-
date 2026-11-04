@@ -29,10 +29,29 @@
 #include <SDK/Minecraft/Network/Packets/RemoveActorPacket.hpp>
 #include <SDK/Minecraft/Rendering/GuiData.hpp>
 
+namespace {
+    // The third-person switch is a three-link pointer chain (client -> options ->
+    // IntOption). Any link can be unavailable on this build, and the old code
+    // dereferenced all three both on enable and on every tick with a target.
+    void setThirdPerson(int value)
+    {
+        auto* ci = ClientInstance::get();
+        if (!ci) return;
+        auto* options = ci->getOptions();
+        if (!options || !options->mThirdPerson) return;
+        options->mThirdPerson->value = value;
+    }
+}
+
 int Aura::getSword(Actor* target) {
-    auto player = ClientInstance::get()->getLocalPlayer();
+    auto* ci = ClientInstance::get();
+    if (!ci) return -1;
+    auto player = ci->getLocalPlayer();
+    if (!player) return -1;
     auto supplies = player->getSupplies();
+    if (!supplies) return -1;
     auto container = supplies->getContainer();
+    if (!container) return -1;
 
     if (gFriendManager->isFriend(target) && mFistFriends.mValue)
     {
@@ -42,8 +61,10 @@ int Aura::getSword(Actor* target) {
         {
             if (mHotbarOnly.mValue && i > 8) break;
             auto item = container->getItem(i);
-            if (!item->mItem) continue;
-            if (item->getItem()->mItemId == 267)
+            if (!item || !item->mItem) continue;
+            auto* descriptor = item->getItem();
+            if (!descriptor) continue;
+            if (descriptor->mItemId == 267)
             {
                 fishSlot = i;
                 break;
@@ -60,23 +81,23 @@ int Aura::getSword(Actor* target) {
         {
             if (mHotbarOnly.mValue && i > 8) break;
             auto item = container->getItem(i);
-            if (!item->mItem || item->getItem()->mItemId == 0)
-            {
-                return i;
-            }
+            if (!item || !item->mItem) return i;
+            auto* descriptor = item->getItem();
+            if (!descriptor || descriptor->mItemId == 0) return i;
         }
 
         for (int i = 0; i < 36; i++)
         {
             if (mHotbarOnly.mValue && i > 8) break;
             auto item = container->getItem(i);
+            if (!item) continue;
             if (item->mItem && !ItemUtils::hasItemType(item))
             {
                 return i;
             }
         }
 
-        return player->getSupplies()->mSelectedSlot;
+        return supplies->mSelectedSlot;
     }
 
     int bestSword = ItemUtils::getBestItem(SItemType::Sword, mHotbarOnly.mValue);
@@ -91,20 +112,25 @@ int Aura::getSword(Actor* target) {
 
 bool Aura::shouldUseFireSword(Actor* target)
 {
-    auto player = ClientInstance::get()->getLocalPlayer();
-    auto supplies = player->getSupplies();
-    auto container = supplies->getContainer();
+#ifdef __PRIVATE_BUILD__
+    // Called on every attack even though it is off by default. Before, it walked
+    // the inventory (four unchecked member reads) just to reach the final
+    // `return false` -- one missing component aborted the whole tick inside the
+    // SEH wrapper. Bail out before touching the inventory instead.
+    if (!mAutoFireSword.mValue || !target) return false;
+    auto* ci = ClientInstance::get();
+    if (!ci) return false;
+    auto* player = ci->getLocalPlayer();
+    if (!player) return false;
+    auto* supplies = player->getSupplies();
+    if (!supplies || !supplies->getContainer()) return false;
 
     int fireSw = ItemUtils::getFireSword(mHotbarOnly.mValue);
-#ifdef __PRIVATE_BUILD__ //anyway doesnt bypass without spoof
-    if (fireSw != -1 && mAutoFireSword.mValue && !target->isOnFire())
+    if (fireSw != -1 && !target->isOnFire())
     {
         return true;
     }
-    else
-    {
-        return false;
-    }
+    return false;
 #else
     return false;
 #endif
@@ -119,7 +145,7 @@ void Aura::onEnable()
     gFeatureManager->mDispatcher->listen<BobHurtEvent, &Aura::onBobHurtEvent, nes::event_priority::FIRST>(this);
     gFeatureManager->mDispatcher->listen<BoneRenderEvent, &Aura::onBoneRenderEvent, nes::event_priority::FIRST>(this);
 
-    if (mThirdPerson.mValue && !mThirdPersonOnlyOnAttack.mValue) ClientInstance::get()->getOptions()->mThirdPerson->value = 1;
+    if (mThirdPerson.mValue && !mThirdPersonOnlyOnAttack.mValue) setThirdPerson(1);
 }
 
 bool chargingBow = false;
@@ -131,11 +157,14 @@ void Aura::onDisable()
     gFeatureManager->mDispatcher->deafen<PacketInEvent, &Aura::onPacketInEvent>(this);
     gFeatureManager->mDispatcher->deafen<RenderEvent, &Aura::onRenderEvent>(this);
     gFeatureManager->mDispatcher->deafen<BobHurtEvent, &Aura::onBobHurtEvent>(this);
+    // onEnable also registers BoneRenderEvent; leaking that listener kept
+    // onBoneRenderEvent running after the module was disabled.
+    gFeatureManager->mDispatcher->deafen<BoneRenderEvent, &Aura::onBoneRenderEvent>(this);
     sHasTarget = false;
     sTarget = nullptr;
     mRotating = false;
 
-    if (mThirdPerson.mValue && !mThirdPersonOnlyOnAttack.mValue) ClientInstance::get()->getOptions()->mThirdPerson->value = 0;
+    if (mThirdPerson.mValue && !mThirdPersonOnlyOnAttack.mValue) setThirdPerson(0);
 }
 
 void Aura::rotate(Actor* target)
@@ -176,17 +205,23 @@ void Aura::shootBow(Actor* target)
     return;
 #endif
 
+    auto* supplies = player->getSupplies();
+    auto* container = supplies ? supplies->getContainer() : nullptr;
+    if (!container) return;
+
     int bowSlot = -1;
     int arrowSlot = -1;
     for (int i = 0; i < 36; i++)
     {
-        auto item = player->getSupplies()->getContainer()->getItem(i);
-        if (!item->mItem) continue;
-        if (item->getItem()->mName.contains("bow"))
+        auto item = container->getItem(i);
+        if (!item || !item->mItem) continue;
+        auto* descriptor = item->getItem();
+        if (!descriptor) continue;
+        if (descriptor->mName.contains("bow"))
         {
             bowSlot = i;
         }
-        if (item->getItem()->mName.contains("arrow"))
+        if (descriptor->mName.contains("arrow"))
         {
             arrowSlot = i;
         }
@@ -203,7 +238,7 @@ void Aura::shootBow(Actor* target)
     if (useTicks == 0)
     {
         spdlog::info("Starting to use bow");
-        player->getSupplies()->getContainer()->startUsingItem(bowSlot);
+        container->startUsingItem(bowSlot);
         chargingBow = true;
         useTicks++;
     }
@@ -215,7 +250,7 @@ void Aura::shootBow(Actor* target)
     {
         spdlog::info("Releasing bow");
         rotate(target);
-        player->getSupplies()->getContainer()->releaseUsingItem(bowSlot);
+        container->releaseUsingItem(bowSlot);
         chargingBow = false;
         useTicks = 0;
     }
@@ -225,6 +260,9 @@ void Aura::throwProjectiles(Actor* target)
 {
     auto player = ClientInstance::get()->getLocalPlayer();
     if (!player) return;
+    auto* supplies = player->getSupplies();
+    auto* container = supplies ? supplies->getContainer() : nullptr;
+    if (!container) return;
 
     static uint64_t lastThrow = 0;
     int64_t throwDelay = mThrowDelay.mValue * 50.f;
@@ -235,9 +273,11 @@ void Aura::throwProjectiles(Actor* target)
     if (mThrowProjectiles.mValue)
         for (int i = 0; i < 36; i++)
         {
-            auto item = player->getSupplies()->getContainer()->getItem(i);
-            if (!item->mItem) continue;
-            if (item->getItem()->mName.contains("snowball"))
+            auto item = container->getItem(i);
+            if (!item || !item->mItem) continue;
+            auto* descriptor = item->getItem();
+            if (!descriptor) continue;
+            if (descriptor->mName.contains("snowball"))
             {
                 snowballSlot = i;
                 break;
@@ -251,10 +291,12 @@ void Aura::throwProjectiles(Actor* target)
         return;
     }
 
-    int oldSlot = player->getSupplies()->mSelectedSlot;
-    player->getSupplies()->mSelectedSlot = snowballSlot;
-    player->getGameMode()->baseUseItem(player->getSupplies()->getContainer()->getItem(snowballSlot));
-    player->getSupplies()->mSelectedSlot = oldSlot;
+    int oldSlot = supplies->mSelectedSlot;
+    supplies->mSelectedSlot = snowballSlot;
+    auto* gameMode = player->getGameMode();
+    auto* heldStack = container->getItem(snowballSlot);
+    if (gameMode && heldStack) gameMode->baseUseItem(heldStack);
+    supplies->mSelectedSlot = oldSlot;
 
     lastThrow = NOW;
 
@@ -281,20 +323,22 @@ void Aura::onRenderEvent(RenderEvent& event)
     // once per tick now, from the same target box.
 
     if (mVisuals.mValue) {
-        auto player = ClientInstance::get()->getLocalPlayer();
+        auto* ci = ClientInstance::get();
+        if (!ci) return;
+        auto player = ci->getLocalPlayer();
         if (!player) return;
 
-        auto actor = Aura::sTarget;
-
-        // try to call isPlayer in the try_call
-        if (!TRY_CALL([&]() { bool isPlayer = actor->isPlayer(); }))
+        Actor* actor = Aura::sTarget;
+        // The old code called actor->isPlayer() inside a SEH wrapper and then
+        // refused to draw anything that was not a player. Aura targets mobs too,
+        // so that condition made the visuals permanently blank in PvE, and a null
+        // target produced an exception log every frame.
+        if (!actor || !InstanceLocator::isReadableMemory(actor, 0x8))
         {
             Aura::sTarget = nullptr;
             Aura::sHasTarget = false;
             return;
         }
-
-        if (!actor || !actor->isPlayer()) return;
 
         auto* playerRenderPos = player->getRenderPositionComponent();
         auto* actorRenderPos = actor->getRenderPositionComponent();
@@ -410,7 +454,13 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
 {
     auto player = event.mActor; // Local player
     if (!player) return;
-    if (player->getHealth() <= 0) return; // kai plz add actor->isAlive() thankz
+    // No liveness gate here on purpose. getHealth() answers 0 both for a dead
+    // player and for an actor whose AttributesComponent cannot be fetched on this
+    // build, and isValid() reaches back through ClientInstance (which can be null
+    // during a world change) from OUTSIDE the SEH wrapper below. Either one can
+    // silence the whole module -- or crash it -- for a reason unrelated to combat.
+    // BaseTickHook already guarantees this actor is the local player; everything
+    // downstream is inside the wrapper.
 
     // Defense: a target may be freed mid-despawn (use-after-free on a still-committed
     // heap page). isValidPtr() / isPlayer() can BOTH pass on such a pointer, then a later
@@ -426,6 +476,7 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
         auto actors = ActorUtils::getActorList(false, true);
         static std::unordered_map<Actor*, int64_t> lastAttacks = {};
         bool isMoving = Keyboard::isUsingMoveKeys();
+        int attacksThisTick = 0;
 
         // Sort actors by lastAttack if mode is switch
         if (mMode.mValue == Mode::Switch)
@@ -474,8 +525,11 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
                 }
             }
 
-            if (mRotateMode.mValue == RotateMode::Normal)
-                rotate(actor);
+            // Rotate is deliberately not called here. The old code called it for
+            // every candidate in the loop (and again below for Flick), so a tick
+            // with several nearby entities wrote the body rotation several times
+            // with different targets -- the head twitch. It happens once, at the
+            // actor the attack packet is actually aimed at.
             foundAttackable = true;
             sTarget = actor;
             sTargetRuntimeID = actor->getRuntimeID();
@@ -496,22 +550,28 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
                 }
                 else player->swing();
             }
-            int slot = -1;
-            int bestWeapon = getSword(actor);
-            mHotbarOnly.mValue ? slot = bestWeapon : slot = player->getSupplies()->mSelectedSlot;
+
+            // getSword walks the inventory through getSupplies()->getContainer().
+            // With the default SwitchMode::None its result is unused, so calling it
+            // on every attack was a needless trip through four unchecked member
+            // reads -- and any one of them aborts the whole tick inside the SEH
+            // wrapper, silently. Only look for a weapon when something needs it.
+            const bool needWeapon = mSwitchMode.mValue != SwitchMode::None || mHotbarOnly.mValue;
+            const int bestWeapon = needWeapon ? getSword(actor) : -1;
+            auto* slotSupplies = player->getSupplies();
+            if (!slotSupplies) break;
+            int slot = mHotbarOnly.mValue ? bestWeapon : slotSupplies->mSelectedSlot;
 
             auto ogActor = actor;
             actor = findObstructingActor(player, actor);
 
-            if (mSwitchMode.mValue == SwitchMode::Full)
+            if (mSwitchMode.mValue == SwitchMode::Full && supplies)
             {
                 supplies->mSelectedSlot = bestWeapon;
             }
 
-            if (mRotateMode.mValue == RotateMode::Flick)
-            {
+            if (mRotateMode.mValue != RotateMode::None)
                 rotate(actor);
-            }
 
             // LegitCriticals now listens to outbound attack packets itself to open the crit window; no call from this module needed.
             // 1.21.120: Level::getHitResult() offset is ambiguous/SUSPECT; deleted entirely, do not touch.
@@ -534,7 +594,18 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
                 }
 #endif
 
-                PacketUtils::queueSend(attackTransaction, false);
+                if (!attackTransaction)
+                {
+                    static std::atomic<long long> sLastNoPacket{ 0 };
+                    long long prev = sLastNoPacket.load(std::memory_order_relaxed);
+                    if (now - prev >= 2000 && sLastNoPacket.compare_exchange_strong(prev, now))
+                        spdlog::warn("[aura] attack decided but the transaction could not be built; nothing sent");
+                }
+                else
+                {
+                    PacketUtils::queueSend(attackTransaction, false);
+                    ++attacksThisTick;
+                }
 
                 if (spoofed)
                 {
@@ -542,6 +613,7 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
                     PacketUtils::queueSend(pkt, false);
                 }
             } else {
+                if (!supplies) continue;
                 int oldSlot = supplies->mSelectedSlot;
                 if (mSwitchMode.mValue == SwitchMode::Spoof)
                 {
@@ -561,7 +633,14 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
                 }
 #endif
 
-                player->getGameMode()->attack(actor);
+                // getGameMode() is a plain member read and can answer a stale or
+                // null pointer; calling attack() through it was an unguarded jump.
+                auto* gameMode = player->getGameMode();
+                if (gameMode)
+                {
+                    gameMode->attack(actor);
+                    ++attacksThisTick;
+                }
                 supplies->mSelectedSlot = oldSlot;
 
                 if (spoofed)
@@ -582,13 +661,28 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
                 long long previous = sLastLog.load(std::memory_order_relaxed);
                 if (now - previous >= 1000 && sLastLog.compare_exchange_strong(previous, now))
                 {
-                    spdlog::info("[aura] attack dist={:.2f} synched={} visible={}",
+                    spdlog::info("[aura] attack dist={:.2f} synched={} visible={} sent={} actors={} rotating={}",
                                  actor->distanceTo(player),
                                  mAttackMode.mValue == AttackMode::Synched,
-                                 player->canSee(actor));
+                                 player->canSee(actor),
+                                 attacksThisTick > 0,
+                                 actors.size(),
+                                 mRotating);
                 }
             }
             if (mMode.mValue == Mode::Single || mMode.mValue == Mode::Switch) break;
+        }
+
+        // Always-on heartbeat, even when nothing was attacked. Without this the
+        // only possible observation is "no damage", which cannot distinguish a tick
+        // that never ran from a filter that rejected every entity.
+        {
+            static std::atomic<long long> sLastState{ 0 };
+            long long prev = sLastState.load(std::memory_order_relaxed);
+            if (now - prev >= 2000 && sLastState.compare_exchange_strong(prev, now))
+                spdlog::info("[aura] state actors={} attackable={} attacks={} range={:.1f} aps={:.1f} cooldownLeft={} rotating={}",
+                             actors.size(), foundAttackable, attacksThisTick,
+                             mRange.mValue, aps, delay - (now - lastAttack), mRotating);
         }
 
         if (!foundAttackable)
@@ -600,24 +694,33 @@ void Aura::onBaseTickEvent(BaseTickEvent& event)
 
         if (mThirdPerson.mValue && mThirdPersonOnlyOnAttack.mValue && sHasTarget) {
             if (!mIsThirdPerson) {
-                ClientInstance::get()->getOptions()->mThirdPerson->value = 1;
+                setThirdPerson(1);
                 mIsThirdPerson = true;
             }
         }
         else if (mThirdPerson.mValue && mThirdPersonOnlyOnAttack.mValue && !sHasTarget) {
             if (mIsThirdPerson) {
-                ClientInstance::get()->getOptions()->mThirdPerson->value = 0;
+                setThirdPerson(0);
                 mIsThirdPerson = false;
             }
         }
     });
-    // On !ok the whole tick's entity work was aborted by an access violation on a
-    // dangling target; skipping it is the intended safe behavior (no crash).
+    // The SEH wrapper used to swallow the exception in complete silence, so an
+    // access violation on a dangling actor looked exactly like "aura does nothing".
+    // Skipping the tick is still the right reaction, but it must be observable.
+    if (!ok)
+    {
+        static std::atomic<long long> sLastSeh{ 0 };
+        const long long now = NOW;
+        long long prev = sLastSeh.load(std::memory_order_relaxed);
+        if (now - prev >= 2000 && sLastSeh.compare_exchange_strong(prev, now))
+            spdlog::error("[aura] tick aborted by an access violation; this tick sent no packets");
+    }
 }
 
 void Aura::onPacketOutEvent(PacketOutEvent& event)
 {
-    if (!mRotating) return;
+    if (!mRotating || !event.mPacket) return;
 
     auto player = ClientInstance::get()->getLocalPlayer();
     if (!player) return;
@@ -629,12 +732,14 @@ void Aura::onPacketOutEvent(PacketOutEvent& event)
 
     if (event.mPacket->getId() == PacketID::PlayerAuthInput) {
         auto pkt = event.getPacket<PlayerAuthInputPacket>();
+        if (!pkt) return;
         glm::vec2 rots = MathUtils::getRots(*pos, mTargetedAABB);
         pkt->mRot = rots;
         pkt->mYHeadRot = rots.y;
         if (mRotateMode.mValue == RotateMode::Flick) mRotating = false;
     } else if (event.mPacket->getId() == PacketID::MovePlayer) {
         auto pkt = event.getPacket<MovePlayerPacket>();
+        if (!pkt) return;
         glm::vec2 rots = MathUtils::getRots(*pos, mTargetedAABB);
         pkt->mRot = rots;
         pkt->mYHeadRot = rots.y;
@@ -644,7 +749,12 @@ void Aura::onPacketOutEvent(PacketOutEvent& event)
     } else if (event.mPacket->getId() == PacketID::InventoryTransaction)
     {
         auto pkt = event.getPacket<InventoryTransactionPacket>();
-        auto cit = pkt->mTransaction.get();
+        if (!pkt) return;
+        // Game-generated transactions can arrive with no complex transaction
+        // attached; reading cit->type on one of those was an access violation in
+        // the outbound hook, outside the tick's SEH wrapper.
+        auto* cit = pkt->mTransaction.get();
+        if (!cit) return;
 
         if (cit->type == ComplexInventoryTransaction::Type::ItemUseTransaction)
         {
@@ -656,6 +766,7 @@ void Aura::onPacketOutEvent(PacketOutEvent& event)
     } else if (event.mPacket->getId() == PacketID::MobEquipment)
     {
         auto pkt = event.getPacket<MobEquipmentPacket>();
+        if (!pkt) return;
         mLastSlot = pkt->mSlot;
     }
 
@@ -663,6 +774,7 @@ void Aura::onPacketOutEvent(PacketOutEvent& event)
 
 void Aura::onPacketInEvent(PacketInEvent& event)
 {
+    if (!event.mPacket) return;
     if (event.mPacket->getId() == PacketID::RemoveActor)
     {
         auto packet = event.getPacket<RemoveActorPacket>();
