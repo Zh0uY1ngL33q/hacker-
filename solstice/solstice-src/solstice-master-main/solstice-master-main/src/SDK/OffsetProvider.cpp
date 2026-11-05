@@ -48,9 +48,14 @@ hat::scan_result OffsetProvider::scanSig(hat::signature_view sig, const std::str
         mSigMissing[name]     = false;
         mSigScanCount++;
 
-        if (matches > 1) {
+        // Strict uniqueness: exactly one match. A count of 0 means find() and
+        // countMatches() disagreed (different readable windows, or the image
+        // changed under us) -- publishing that address would be a guess.
+        if (matches != 1) {
             mSigs[name] = 0;
-            mStatus.set(name, ResolveStatus::Ambiguous, resolved, 0, matches);
+            mStatus.set(name,
+                        matches > 1 ? ResolveStatus::Ambiguous : ResolveStatus::Inconsistent,
+                        resolved, 0, matches);
             return {};
         }
 
@@ -76,11 +81,15 @@ bool OffsetProvider::plausibleOffset(const std::string& name, long long value, b
     // so it is a mis-matched signature rather than a field, and member_at()
     // would perform an unaligned read that ends in a garbage pointer.
     const bool insideVtable = !isIndex && value > 0 && value < 8;
+    // callVirtualFunc() rejects index <= 0 (MSVC slot 0 is the scalar-deleting
+    // destructor). Reporting index 0 as Ok would claim a usable mapping that
+    // the call layer silently turns into a no-op.
+    const bool zeroIndex = isIndex && value == 0;
 
     // Called from the initializers, which initialize() runs under an OpenMP
     // parallel for, so the record has to be serialised like the other maps.
     std::lock_guard lock(mSigMutex);
-    if (inRange && !insideVtable) {
+    if (inRange && !insideVtable && !zeroIndex) {
         // Attach the value that was actually published to the Ok entry, so the
         // report shows the derived offset rather than just the match address.
         const auto e = mStatus.get(name);
@@ -98,6 +107,16 @@ void OffsetProvider::registerHardcoded(const std::string& name, int value)
 {
     // Called once, serially, from initialize() before the parallel scan.
     mHardcoded.emplace_back(name, value);
+}
+
+void OffsetProvider::rejectOffset(const std::string& name, ResolveStatus status, long long value)
+{
+    // Called from the initializers under the OpenMP parallel for, so the map
+    // writes are serialised exactly like scanSig()/plausibleOffset().
+    std::lock_guard lock(mSigMutex);
+    mSigs[name] = 0;
+    mSigImplausible[name] = value;
+    mStatus.set(name, status, 0, value, 0);
 }
 
 bool OffsetProvider::initialize()
@@ -130,6 +149,11 @@ bool OffsetProvider::initialize()
         Solstice::console->critical("[offsets] AMBIGUOUS {} matched {} places @ {} -- refused, value stays 0",
                                     name, e.matches, MemUtils::getMbMemoryString(e.address));
     }
+    for (const auto& name : mStatus.namesWith(ResolveStatus::Inconsistent)) {
+        const auto e = mStatus.get(name);
+        Solstice::console->critical("[offsets] INCONSISTENT {} -- find() hit but the count saw {} matches; refused",
+                                    name, e.matches);
+    }
     for (const auto& name : mStatus.namesWith(ResolveStatus::Implausible)) {
         const auto e = mStatus.get(name);
         Solstice::console->critical("[offsets] IMPLAUSIBLE {} derived {} -- refused, value stays 0", name, e.value);
@@ -152,19 +176,24 @@ bool OffsetProvider::initialize()
         }
     }
 
+    // The verdict covers SCANNED mappings only. Hardcoded constants are listed
+    // separately and never contribute to an "everything is OK" conclusion:
+    // CLASS_FIELD declarations and literal offsets in other headers are not in
+    // this list, so this is a DEFINE_FIELD audit, not a whole-SDK one.
+    const bool ok = mStatus.allOk();
+    Solstice::console->info(
+        "[offsets] scanned mappings: ok={}/{} missing={} ambiguous={} inconsistent={} implausible={} out-of-range={} (verdict={}) in {}ms",
+        mStatus.count(ResolveStatus::Ok), mStatus.size(),
+        mStatus.count(ResolveStatus::Missing), mStatus.count(ResolveStatus::Ambiguous),
+        mStatus.count(ResolveStatus::Inconsistent), mStatus.count(ResolveStatus::Implausible),
+        mStatus.count(ResolveStatus::OutOfRange), ok ? "OK" : "NOT TRUSTWORTHY", end - start);
+
     if (!mHardcoded.empty()) {
-        Solstice::console->warn("[audit] {} hardcoded fields are constants, NOT runtime-verified mappings:",
+        Solstice::console->warn("[offsets] hardcoded mappings: {} UNVERIFIED (DEFINE_FIELD audit only; CLASS_FIELD and literal offsets are NOT covered)",
                                 mHardcoded.size());
         for (const auto& [name, value] : mHardcoded)
             Solstice::console->warn("[audit]   {} = 0x{:X}", name, static_cast<unsigned>(value));
     }
-
-    const bool ok = mStatus.allOk();
-    Solstice::console->info(
-        "[offsets] initialized in {}ms, {} entries: ok={} missing={} ambiguous={} implausible={} out-of-range={}",
-        end - start, mStatus.size(), mStatus.count(ResolveStatus::Ok),
-        mStatus.count(ResolveStatus::Missing), mStatus.count(ResolveStatus::Ambiguous),
-        mStatus.count(ResolveStatus::Implausible), mStatus.count(ResolveStatus::OutOfRange));
 
     // No self-termination. The outcome belongs to the caller, which decides
     // whether to abort, dump diagnostics or let a human opt in explicitly.

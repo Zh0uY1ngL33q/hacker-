@@ -226,6 +226,10 @@ void Solstice::init(HMODULE hModule)
         console->critical("[init] target image was not decrypted within 30s; aborting before any signature scan");
         ExceptionHandler::makeCrashLog("Target image was not decrypted before the signature scan", 0xFF03);
         SigFuzz::stopAsync();
+        // The filter installed by ExceptionHandler::init() lives in this DLL;
+        // restore the previous one before unloading or the process keeps a
+        // callback into freed memory.
+        ExceptionHandler::shutdown();
         spdlog::shutdown();
         Logger::deinitialize();
         FreeLibraryAndExitThread(hModule, 0);
@@ -262,6 +266,12 @@ void Solstice::init(HMODULE hModule)
                           failedSigs, badSigs, badOffsets,
                           sigTable.count(ResolveStatus::Ok) + offTable.count(ResolveStatus::Ok),
                           sigTable.size() + offTable.size());
+        // The verdict above is about SCANNED mappings only. Hardcoded constants
+        // are unverified by definition and must not be folded into an optimistic
+        // "everything resolved" conclusion.
+        console->critical("[init] scanned verdict only; {} hardcoded DEFINE_FIELD constants are UNVERIFIED "
+                          "(CLASS_FIELD and literal offsets elsewhere are not even in that list)",
+                          OffsetProvider::hardcodedFields().size());
 
         // Both artefacts are produced here:
         //
@@ -280,7 +290,9 @@ void Solstice::init(HMODULE hModule)
         // would write over the "press ENTER" line while it waits for input.
         SigFuzz::writeReport();
 
-#ifdef __DEBUG__
+// __DEBUG__ is defined unconditionally in CMakeLists.txt and gates unrelated
+// debug behaviour. Human opt-in is a separate, explicitly enabled build option.
+#ifdef SOLSTICE_ALLOW_UNVERIFIED_MAPPINGS
         console->critical("Solstice should not be used in this state.");
         console->info("Type 'DEBUG' to continue, or press ENTER to exit.");
         std::string input;
@@ -290,6 +302,7 @@ void Solstice::init(HMODULE hModule)
             SigManager::deinitialize();
             OffsetProvider::deinitialize();
             SigFuzz::stopAsync();
+            ExceptionHandler::shutdown();
             spdlog::shutdown();
             Logger::deinitialize();
 
@@ -305,10 +318,17 @@ void Solstice::init(HMODULE hModule)
                               "every SDK result in this session is untrusted", failedSigs);
         }
 #else
+        console->critical("[init] mapping table is not trustworthy and no override was enabled; "
+                          "refusing to start. The classification report above is complete.");
         ExceptionHandler::makeCrashLog("Failed to find signatures/offsets!", 0xFF01);
-        int* p = nullptr;
-        *p = 0;
-        exit(0);
+        // The unhandled-exception filter points into this DLL. Restore the
+        // previous one before the module is unloaded so no dangling callback
+        // remains in the process.
+        SigFuzz::stopAsync();
+        ExceptionHandler::shutdown();
+        spdlog::shutdown();
+        Logger::deinitialize();
+        FreeLibraryAndExitThread(hModule, 0);
 #endif
     }
 

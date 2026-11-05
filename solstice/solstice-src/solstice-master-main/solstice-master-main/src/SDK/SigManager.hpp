@@ -59,7 +59,14 @@ class SigManager {
     static inline ResolveTable mStatus;
 public:
     static inline bool mIsInitialized = false;
-    static ResolveEntry entryStatus(const std::string& name) { return mStatus.get(name); }
+    // entryStatus() is reached from DEFINE_SIG initializers running under the
+    // OpenMP parallel for, while other threads are inserting into mStatus.
+    // Serialise the read with the same mutex as scanSig()'s writes.
+    static ResolveEntry entryStatus(const std::string& name)
+    {
+        std::lock_guard<std::mutex> lock(mSigMutex);
+        return mStatus.get(name);
+    }
     static const ResolveTable& statusTable() { return mStatus; }
     static inline std::unordered_map<std::string, uintptr_t> mSigs;
 

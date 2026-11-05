@@ -253,15 +253,21 @@ def eval_field(img: Image, entry):
     ctype = entry.get("ctype", "int")
     fmt = FIELD_WIDTHS.get(ctype, ("i",))[0]
     raw = struct.unpack_from("<" + fmt, img.buf, hits[0] + idx)[0]
-    val = raw // 8 if entry["kind"] == "Index" else raw
+    is_index = entry["kind"] == "Index"
+    # A vtable slot displacement is always a multiple of sizeof(void*).
+    # The runtime now refuses a non-aligned one; mirror that verdict here.
+    aligned = (not is_index) or (raw % 8 == 0)
+    val = raw // 8 if is_index else raw
     # See eval_sig: the client refuses ambiguous hits, so mark them unusable
     # here too instead of presenting a derived value nobody will ever use.
     return {"name": entry["name"],
             "status": "ambiguous" if len(hits) > 1 else "ok",
-            "usable": len(hits) == 1,
+            "usable": len(hits) == 1 and aligned,
             "matches": len(hits),
             "value": val,
             "raw": raw,
+            "aligned": aligned,
+            "note": "" if aligned else "vtable displacement %d is not 8-byte aligned" % raw,
             "hit": hex(hits[0])}
 
 

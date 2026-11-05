@@ -409,6 +409,25 @@ bool MemUtils::isValidPtr(uintptr_t address)
     return false;
 }
 
+bool MemUtils::isReadableRange(uintptr_t address, size_t size)
+{
+    if (address < 0x10000 || size == 0) return false;
+
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (!VirtualQuery(reinterpret_cast<void*>(address), &mbi, sizeof(mbi))) return false;
+    if (mbi.State != MEM_COMMIT) return false;
+    // MEM_COMMIT alone is not enough: PAGE_NOACCESS and PAGE_GUARD pages are
+    // committed but still fault when read.
+    if (mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD)) return false;
+
+    const uintptr_t begin = reinterpret_cast<uintptr_t>(mbi.BaseAddress);
+    if (address < begin) return false;
+    // The whole requested range has to be inside this one region; otherwise a
+    // following page with different protection would not have been checked.
+    if (address - begin + size > mbi.RegionSize) return false;
+    return true;
+}
+
 bool MemUtils::isInHostModule(uintptr_t address, size_t size)
 {
     if (address < 0x10000 || size == 0) return false;

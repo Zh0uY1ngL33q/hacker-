@@ -58,9 +58,22 @@ LONG WINAPI TopLevelExceptionHandler(const PEXCEPTION_POINTERS pExceptionInfo)
     return EXCEPTION_EXECUTE_HANDLER;
 }
 
+namespace {
+    // SetUnhandledExceptionFilter returns the previous filter. Keep it so an
+    // early abort can restore it before FreeLibraryAndExitThread unloads the
+    // module that contains TopLevelExceptionHandler.
+    LPTOP_LEVEL_EXCEPTION_FILTER gPreviousFilter = nullptr;
+}
+
 void ExceptionHandler::init()
 {
-    SetUnhandledExceptionFilter(TopLevelExceptionHandler);
+    gPreviousFilter = SetUnhandledExceptionFilter(TopLevelExceptionHandler);
+}
+
+void ExceptionHandler::shutdown()
+{
+    SetUnhandledExceptionFilter(gPreviousFilter);
+    gPreviousFilter = nullptr;
 }
 
 void ExceptionHandler::makeCrashLog(const std::string& text, DWORD exceptionCode)

@@ -49,10 +49,13 @@ hat::scan_result SigManager::scanSig(hat::signature_view sig, const std::string&
     // rather than *the* address. Refuse it: returning an empty result keeps the
     // variable at 0 instead of publishing a guess that initialize() would then
     // have reported as "found".
-    if (matches > 1) {
+    // Strict uniqueness: exactly one match. matches == 0 means find() and the
+    // independent count disagreed, so the hit is not trustworthy either.
+    if (matches != 1) {
         mSigs[name] = 0;
         mSigMatchCounts[name] = matches;
-        mStatus.set(name, ResolveStatus::Ambiguous,
+        mStatus.set(name,
+                    matches > 1 ? ResolveStatus::Ambiguous : ResolveStatus::Inconsistent,
                     reinterpret_cast<uintptr_t>(result.get()), 0, matches);
         return {};
     }
@@ -86,6 +89,11 @@ bool SigManager::initialize()
         Solstice::console->critical("[signatures] AMBIGUOUS {} matched {} places @ {} -- refused",
                                     name, e.matches, MemUtils::getMbMemoryString(e.address));
     }
+    for (const auto& name : mStatus.namesWith(ResolveStatus::Inconsistent)) {
+        const auto e = mStatus.get(name);
+        Solstice::console->critical("[signatures] INCONSISTENT {} -- find() hit but the count saw {} matches; refused",
+                                    name, e.matches);
+    }
     for (const auto& name : mStatus.namesWith(ResolveStatus::Missing))
         Solstice::console->critical("[signatures] MISSING {}", name);
 
@@ -103,12 +111,14 @@ bool SigManager::initialize()
         }
     }
 
+    // Scanned mappings only; this is not a verdict on the whole SDK.
     const bool ok = mStatus.allOk();
     Solstice::console->info(
-        "[signatures] initialized in {}ms, {} entries: ok={} missing={} ambiguous={} out-of-range={}",
-        diff, mStatus.size(), mStatus.count(ResolveStatus::Ok),
+        "[signatures] scanned mappings: ok={}/{} missing={} ambiguous={} inconsistent={} out-of-range={} (verdict={}) in {}ms",
+        mStatus.count(ResolveStatus::Ok), mStatus.size(),
         mStatus.count(ResolveStatus::Missing), mStatus.count(ResolveStatus::Ambiguous),
-        mStatus.count(ResolveStatus::OutOfRange));
+        mStatus.count(ResolveStatus::Inconsistent), mStatus.count(ResolveStatus::OutOfRange),
+        ok ? "OK" : "NOT TRUSTWORTHY", diff);
 
     // Outcome is returned to Solstice::initialize(); no self-termination here.
     mIsInitialized = ok;

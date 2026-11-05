@@ -80,6 +80,13 @@ class Image:
         scanning only the largest misses .winlice, a 15 MB executable section the
         packer adds, and reports a handful of signatures as MISSING that the game
         resolves fine.
+
+        Order matters too: CodeSection::ranges() stable-sorts by section size
+        (largest first) and find() returns the FIRST hit in that order. Returning
+        PE order here makes "first match wins" point at a different byte than the
+        in-client resolver, so an offline-unique signature can be ambiguous at
+        runtime. Python's sort is stable, so equal sizes keep PE order like
+        std::stable_sort.
         """
         spans = []
         for s in self.sections:
@@ -89,10 +96,11 @@ class Image:
                 continue
             end = min(len(self.data), s["rva"] + s["vsize"])
             if end > s["rva"]:
-                spans.append((s["rva"], end))
+                spans.append((s["rva"], end, s["vsize"]))
         if not spans:
-            spans.append((0, len(self.data)))
-        return spans
+            return [(0, len(self.data))]
+        spans.sort(key=lambda item: -item[2])
+        return [(start, end) for start, end, _ in spans]
 
     def code_span(self):
         """Largest executable section, as (start, end, name)."""
@@ -234,6 +242,11 @@ def read_offset(buf, position, definition):
         raise ValueError("offset read outside image")
     raw = int.from_bytes(buf[position:position + size], "little", signed=signed)
     if definition["offset_type"] == "Index":
+        # A vtable slot displacement is always a multiple of sizeof(void*).
+        # Dividing a non-multiple by 8 invents a plausible-looking slot from a
+        # wrong byte; the runtime now refuses that mapping, so must this tool.
+        if raw % 8 != 0:
+            raise ValueError("vtable displacement %d is not 8-byte aligned" % raw)
         # C++ signed integer division truncates towards zero, not -infinity.
         return (-1 if raw < 0 else 1) * (abs(raw) // 8)
     return raw
@@ -331,17 +344,27 @@ def main():
             rva = hits[0] + d["disp_off"]
             entry["rva"] = "0x%X" % hits[0]
             if rva + 8 <= len(img.data):
-                val = read_offset(img.data, rva, d)
-                entry["field_offset"] = val
-                # Plausibility gate: a nonsense index means the pattern matched
-                # the wrong code, even though it "resolved".
-                if d["offset_type"] == "Index" and not (2 <= val < 4096):
+                try:
+                    val = read_offset(img.data, rva, d)
+                except ValueError as exc:
                     entry["status"] = "SUSPECT"
-                    entry["note"] = "implausible vtable index %d" % val
-                elif abs(val) > 0x20000:
-                    entry["status"] = "SUSPECT"
-                    entry["note"] = "implausible field offset 0x%X" % (val & 0xFFFFFFFF)
+                    entry["note"] = str(exc)
+                else:
+                    entry["field_offset"] = val
+                    # Plausibility gate: a nonsense index means the pattern
+                    # matched the wrong code, even though it "resolved".
+                    # Lower bound 1 matches callVirtualFunc(), which rejects
+                    # index <= 0 (MSVC slot 0 is the scalar-deleting destructor).
+                    if d["offset_type"] == "Index" and not (1 <= val < 4096):
+                        entry["status"] = "SUSPECT"
+                        entry["note"] = "implausible vtable index %d" % val
+                    elif abs(val) > 0x20000:
+                        entry["status"] = "SUSPECT"
+                        entry["note"] = "implausible field offset 0x%X" % (val & 0xFFFFFFFF)
 
+        # The runtime refuses every non-OK mapping (its value stays 0). Mark the
+        # offline result the same way instead of presenting a usable value.
+        entry["usable"] = entry["status"] == "OK"
         results.append(entry)
         counts[entry["status"]] += 1
 
@@ -359,13 +382,16 @@ def main():
 
     print()
     print("summary: " + ", ".join("%s=%d" % (k, v) for k, v in sorted(counts.items())))
+    print("usable scanned mappings: %d/%d" %
+          (sum(1 for e in results if e.get("usable")), len(results)))
 
     if hardcoded:
         live = [h for h in hardcoded if not h["disabled"]]
         print()
-        print("hardcoded DEFINE_FIELD with no signature (%d live, %d commented out):"
-              % (len(live), len(hardcoded) - len(live)))
-        print("  these are pure version snapshots and are the most fragile part of the build")
+        print("hardcoded mappings: %d UNVERIFIED (DEFINE_FIELD audit only; "
+              "CLASS_FIELD and literal offsets elsewhere are NOT covered)" % len(live))
+        print("  %d commented-out declarations ignored" % (len(hardcoded) - len(live)))
+        print("  these are pure version snapshots and are NEVER counted as scanned OK")
         for h in hardcoded:
             print("   %-46s = %-10s%s" % (h["name"], h["value"],
                                           "  (disabled)" if h["disabled"] else ""))

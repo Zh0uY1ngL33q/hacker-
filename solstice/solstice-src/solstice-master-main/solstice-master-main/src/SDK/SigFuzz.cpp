@@ -17,6 +17,7 @@
 #include <Solstice.hpp>
 #include <SDK/CodeSection.hpp>
 #include <SDK/OffsetProvider.hpp>
+#include <SDK/ResolveState.hpp>
 #include <SDK/SigManager.hpp>
 #include <Utils/FileUtils.hpp>
 #include <Utils/SysUtils/ModuleDump.hpp>
@@ -176,53 +177,45 @@ void SigFuzz::stopAsync() {
 bool SigFuzz::writeReport() {
     nlohmann::json root = nlohmann::json::object();
 
-    // Offsets first: the resolved table doubles as a version fingerprint, since
-    // it only contains anything when the signature table matched this build.
-    nlohmann::json offsetsFailed    = nlohmann::json::array();
-    nlohmann::json offsetsAmbiguous = nlohmann::json::array();
+    // Both providers now publish one authoritative status per entry. Derive the
+    // JSON categories from that table, NOT from mSigs: rejected mappings
+    // deliberately store 0 there, so an address-based test would collapse
+    // Missing / Ambiguous / Inconsistent / Implausible / OutOfRange into one
+    // misleading "failed" bucket -- the console report and this file would then
+    // disagree about what actually went wrong.
+    auto classify = [](const ResolveTable& table) {
+        nlohmann::json out = nlohmann::json::object();
+        out["total"] = table.size();
+        out["ok"]    = table.count(ResolveStatus::Ok);
 
-    for (const auto& [name, address] : OffsetProvider::mSigs) {
-        if (address == 0) {
-            offsetsFailed.push_back(name);
-            continue;
+        const ResolveStatus kRejected[] = {
+            ResolveStatus::Missing, ResolveStatus::Ambiguous,
+            ResolveStatus::Inconsistent, ResolveStatus::Implausible,
+            ResolveStatus::OutOfRange
+        };
+        for (const auto status : kRejected) {
+            nlohmann::json entries = nlohmann::json::array();
+            for (const auto& name : table.namesWith(status)) {
+                const auto e = table.get(name);
+                nlohmann::json item = nlohmann::json::object();
+                item["name"]    = name;
+                item["status"]  = resolveStatusName(status);
+                item["matches"] = e.matches;
+                if (e.address != 0) item["rva"] = hexRva(e.address);
+                if (e.value != 0)   item["value"] = e.value;
+                entries.push_back(item);
+            }
+            out[resolveStatusName(status)] = entries;
         }
-        const auto it = OffsetProvider::mSigMatchCounts.find(name);
-        if (it == OffsetProvider::mSigMatchCounts.end() || it->second <= 1) continue;
 
-        nlohmann::json ambiguous = nlohmann::json::object();
-        ambiguous["name"]    = name;
-        ambiguous["matches"] = it->second;
-        ambiguous["rva"]     = hexRva(address);
-        offsetsAmbiguous.push_back(ambiguous);
-    }
+        // Legacy key kept for existing consumers of sigreport.json; the
+        // "ambiguous" key is already produced by the loop above.
+        out["failed"] = out["missing"];
+        return out;
+    };
 
-    nlohmann::json signaturesFailed    = nlohmann::json::array();
-    nlohmann::json signaturesAmbiguous = nlohmann::json::array();
-
-    for (const auto& [name, address] : SigManager::mSigs) {
-        if (address == 0) {
-            signaturesFailed.push_back(name);
-            continue;
-        }
-        const auto it = SigManager::mSigMatchCounts.find(name);
-        if (it == SigManager::mSigMatchCounts.end() || it->second <= 1) continue;
-
-        nlohmann::json ambiguous = nlohmann::json::object();
-        ambiguous["name"]    = name;
-        ambiguous["matches"] = it->second;
-        ambiguous["rva"]     = hexRva(address);
-        signaturesAmbiguous.push_back(ambiguous);
-    }
-
-    nlohmann::json offsets = nlohmann::json::object();
-    offsets["total"]     = OffsetProvider::mSigs.size();
-    offsets["failed"]    = offsetsFailed;
-    offsets["ambiguous"] = offsetsAmbiguous;
-
-    nlohmann::json signatures = nlohmann::json::object();
-    signatures["total"]     = SigManager::mSigs.size();
-    signatures["failed"]    = signaturesFailed;
-    signatures["ambiguous"] = signaturesAmbiguous;
+    nlohmann::json offsets    = classify(OffsetProvider::statusTable());
+    nlohmann::json signatures = classify(SigManager::statusTable());
 
     nlohmann::json nearMisses = nlohmann::json::array();
     {

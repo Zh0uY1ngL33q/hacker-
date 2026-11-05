@@ -33,8 +33,20 @@ class SignatureVerifierTests(unittest.TestCase):
         self.assertEqual(vs.read_offset(b'\x30\x12\x00\x00', 0, d), 582)
 
     def test_signed_index_division_matches_cpp(self):
-        self.assertEqual(vs.read_offset((-9).to_bytes(4, 'little', signed=True), 0,
-                         {'read_type': 'int', 'offset_type': 'Index'}), -1)
+        # -16 is an 8-byte-aligned negative displacement: C++ integer division
+        # truncates towards zero, giving -2 rather than -3.
+        self.assertEqual(vs.read_offset((-16).to_bytes(4, 'little', signed=True), 0,
+                         {'read_type': 'int', 'offset_type': 'Index'}), -2)
+
+    def test_unaligned_vtable_displacement_is_refused(self):
+        # The runtime refuses a displacement that is not a multiple of 8; the
+        # offline scanner must not turn it into a plausible-looking slot.
+        with self.assertRaises(ValueError):
+            vs.read_offset((9).to_bytes(4, 'little', signed=True), 0,
+                           {'read_type': 'int', 'offset_type': 'Index'})
+        with self.assertRaises(ValueError):
+            vs.read_offset((-9).to_bytes(4, 'little', signed=True), 0,
+                           {'read_type': 'int', 'offset_type': 'Index'})
 
     def test_comments_and_typed_definition_parsing(self):
         with tempfile.TemporaryDirectory() as temp:

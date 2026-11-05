@@ -20,9 +20,10 @@
 #include <vector>
 
 enum class ResolveStatus {
-    Ok,           // uniquely matched, value plausible, address in range
+    Ok,           // exactly one match, value plausible, address in range
     Missing,      // pattern did not match at all
     Ambiguous,    // matched more than once -- REFUSED, not "found"
+    Inconsistent, // find() hit but the independent count saw 0 -- REFUSED
     Implausible,  // matched, but the derived index/offset cannot be real
     OutOfRange,   // resolved address outside the host module
 };
@@ -30,11 +31,12 @@ enum class ResolveStatus {
 inline const char* resolveStatusName(ResolveStatus s)
 {
     switch (s) {
-        case ResolveStatus::Ok:          return "ok";
-        case ResolveStatus::Missing:     return "missing";
-        case ResolveStatus::Ambiguous:   return "ambiguous";
-        case ResolveStatus::Implausible: return "implausible";
-        case ResolveStatus::OutOfRange:  return "out-of-range";
+        case ResolveStatus::Ok:           return "ok";
+        case ResolveStatus::Missing:      return "missing";
+        case ResolveStatus::Ambiguous:    return "ambiguous";
+        case ResolveStatus::Inconsistent: return "inconsistent";
+        case ResolveStatus::Implausible:  return "implausible";
+        case ResolveStatus::OutOfRange:   return "out-of-range";
     }
     return "unknown";
 }

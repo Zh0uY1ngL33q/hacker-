@@ -131,12 +131,16 @@ public:
     {
         if (!object || index <= 0 || index >= 4096) return false;
         const uintptr_t obj = reinterpret_cast<uintptr_t>(object);
-        if (!isValidPtr(obj)) return false;
+        if (!isReadableRange(obj, sizeof(uintptr_t))) return false;
         const uintptr_t vtable = *reinterpret_cast<uintptr_t*>(object);
-        if (!isValidPtr(vtable)) return false;
+        if (!isReadableRange(vtable, sizeof(uintptr_t))) return false;
         const uintptr_t slot = vtable + static_cast<size_t>(index) * sizeof(uintptr_t);
-        if (!isValidPtr(slot)) return false;
-        return isValidPtr(*reinterpret_cast<uintptr_t*>(slot));
+        if (!isReadableRange(slot, sizeof(uintptr_t))) return false;
+        const uintptr_t target = *reinterpret_cast<uintptr_t*>(slot);
+        // A vtable slot must point at executable code. isValidPtr() only asked
+        // for MEM_COMMIT, which also accepts ordinary read/write data pages and
+        // PAGE_NOACCESS / PAGE_GUARD regions.
+        return isPatchableCode(target, 1);
     }
 
     template <typename T>
@@ -146,7 +150,7 @@ public:
         // pointer, not a member; 0x8000 is plausibleOffset()'s member ceiling.
         if (!object || offset < 8 || offset > 0x8000) return false;
         const uintptr_t addr = reinterpret_cast<uintptr_t>(object) + offset;
-        if (!isValidPtr(addr) || !isValidPtr(addr + sizeof(T) - 1)) return false;
+        if (!isReadableRange(addr, sizeof(T))) return false;
         out = *reinterpret_cast<T*>(addr);
         return true;
     }
@@ -283,6 +287,13 @@ public:
     static std::vector<uintptr_t> findReferences(uintptr_t address);
     static uintptr_t getTopOfFunction(uintptr_t address);
     static bool isValidPtr(uintptr_t address);
+
+    /// Committed AND readable (no PAGE_NOACCESS / PAGE_GUARD) for the whole
+    /// address .. address+size range, which must lie inside one region.
+    /// isValidPtr() only checks State == MEM_COMMIT, so it accepts pages that
+    /// would still fault when read; this is the check the validation entry
+    /// points use. Not for per-tick hot paths - it issues a VirtualQuery.
+    static bool isReadableRange(uintptr_t address, size_t size);
 
     /// True if `address` is code inside the host module and safe to overwrite.
     ///

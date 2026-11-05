@@ -33,6 +33,13 @@ static void name##_initializer() { \
     const long long rawValue = static_cast<long long>( \
         *reinterpret_cast<type*>(reinterpret_cast<uintptr_t>(result.get()) + index_offset)); \
     const bool isIndex = ((offset_type) == OffsetType::Index); \
+    /* A vtable slot displacement is always a multiple of sizeof(void*).       \
+       Dividing a non-multiple by 8 silently turns a wrong byte into a         \
+       plausible-looking slot, so refuse it instead of publishing it. */       \
+    if (isIndex && (rawValue % sizeof(uintptr_t)) != 0) { \
+        rejectOffset(xorstr_(#name), ResolveStatus::Implausible, rawValue); \
+        return; \
+    } \
     const long long value = isIndex ? rawValue / 8 : rawValue; \
     if (!plausibleOffset(xorstr_(#name), value, isIndex)) return; \
     (name) = value; \
@@ -58,6 +65,13 @@ static void name##_initializer() { \
     } \
     const long long rawValue = *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(result.get()) + (index_offset)); \
     const bool isIndex = ((offset_type) == OffsetType::Index); \
+    /* A vtable slot displacement is always a multiple of sizeof(void*).       \
+       Dividing a non-multiple by 8 silently turns a wrong byte into a         \
+       plausible-looking slot, so refuse it instead of publishing it. */       \
+    if (isIndex && (rawValue % sizeof(uintptr_t)) != 0) { \
+        rejectOffset(xorstr_(#name), ResolveStatus::Implausible, rawValue); \
+        return; \
+    } \
     const long long value = isIndex ? rawValue / 8 : rawValue; \
     if (!plausibleOffset(xorstr_(#name), value, isIndex)) return; \
     (name) = static_cast<int>(value); \
@@ -92,6 +106,11 @@ class OffsetProvider {
     static hat::scan_result scanSig(hat::signature_view sig, const std::string& name, int offset = 0);
     static void registerHardcoded(const std::string& name, int value);
 
+    /// Records a value that was refused by a structural check (e.g. a vtable
+    /// displacement that is not a multiple of 8) and makes sure the entry can
+    /// never be mistaken for a resolved mapping.
+    static void rejectOffset(const std::string& name, ResolveStatus status, long long value);
+
     static inline std::vector<std::function<void()>> mSigInitializers;
     static inline std::vector<std::function<void()>> mAuditInitializers;
     static inline std::vector<std::pair<std::string, int>> mHardcoded;
@@ -101,7 +120,15 @@ class OffsetProvider {
     /// only an address cache now; never use "!= 0" as a success test.
     static inline ResolveTable mStatus;
 public:
-    static ResolveEntry entryStatus(const std::string& name) { return mStatus.get(name); }
+    // Called from the per-signature initializers, which initialize() runs under
+    // an OpenMP parallel for. Other threads are still inserting into mStatus at
+    // that moment, so even a read of a different key needs the same mutex:
+    // unordered_map is not safe for a concurrent insert + find.
+    static ResolveEntry entryStatus(const std::string& name)
+    {
+        std::lock_guard<std::mutex> lock(mSigMutex);
+        return mStatus.get(name);
+    }
     static const ResolveTable& statusTable() { return mStatus; }
     static const std::vector<std::pair<std::string, int>>& hardcodedFields() { return mHardcoded; }
 

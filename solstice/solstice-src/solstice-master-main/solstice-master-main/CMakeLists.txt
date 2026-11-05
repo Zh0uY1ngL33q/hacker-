@@ -25,6 +25,18 @@ add_compile_definitions(__PRIVATE_DEBUG__)
 add_compile_definitions(__PRIVATE_BUILD__)
 add_compile_definitions(__DEBUG__)
 
+# __DEBUG__ is defined unconditionally above and gates many unrelated debug
+# behaviours, so it must NOT be used to decide whether an operator may continue
+# past unresolved SDK mappings. That is a separate, explicit decision:
+#   cmake -DSOLSTICE_ALLOW_UNVERIFIED_MAPPINGS=ON ...
+# Default OFF means EVERY configuration (including Release) refuses to start
+# with a broken mapping table; the initialization report is still written.
+option(SOLSTICE_ALLOW_UNVERIFIED_MAPPINGS
+       "Allow an operator to continue with unresolved SDK mappings (diagnostics only)" OFF)
+if (SOLSTICE_ALLOW_UNVERIFIED_MAPPINGS)
+    add_compile_definitions(SOLSTICE_ALLOW_UNVERIFIED_MAPPINGS)
+endif ()
+
 find_program(LD_COMMAND ld)
 
 if (NOT LD_COMMAND)
