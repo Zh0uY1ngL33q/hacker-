@@ -7,6 +7,7 @@
 #include <Utils/OAuthUtils.hpp>
 
 #include "Combat/Aura.hpp"
+#include "Combat/Aura2.hpp"
 #include "Combat/AutoClicker.hpp"
 #include "Combat/Criticals.hpp"
 #include "Combat/LegitCriticals.hpp"
@@ -147,6 +148,7 @@ void ModuleManager::init()
 
     // Combat
     mModules.emplace_back(std::make_shared<Aura>());
+    mModules.emplace_back(std::make_shared<Aura2>());
     mModules.emplace_back(std::make_shared<TriggerBot>());
     mModules.emplace_back(std::make_shared<AutoClicker>());
     mModules.emplace_back(std::make_shared<Reach>());
