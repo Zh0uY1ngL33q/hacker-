@@ -83,7 +83,10 @@ public:
     BoolSetting mDisableOnDimensionChange = BoolSetting("Auto Disable", "Disable on ChangeDimension", true);
     BoolSetting mDebug = BoolSetting("Debug", "Extra per-event logging", false);
 
-    Aura2() : ModuleBase<Aura2>("Aura2", "Rewritten attack core for 1.21.120", ModuleCategory::Combat, 0, false)
+    // Enabled by default on purpose: the SDK contract probe is the whole point of
+    // this build, and it must not depend on someone opening the ClickGUI (the
+    // HUD fan-out is parked, so the GUI may not be usable yet).
+    Aura2() : ModuleBase<Aura2>("Aura2", "Rewritten attack core for 1.21.120", ModuleCategory::Combat, 0, true)
     {
         addSettings(
             &mMode,

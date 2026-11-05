@@ -567,7 +567,15 @@ void OpenGLGui::render(HDC dc) try
         // dereferencing a stale Actor used to take the whole game down on the very
         // first frame. Keep that fault local: skip this frame's HUD dispatch
         // instead of killing the process, and make it observable once.
-        if (ClientInstance::get()) {
+        // DISABLED. This fan-out runs every GL frame and reaches ~39 RenderEvent
+        // subscribers, several enabled by default. With it active the game
+        // freezes right after startup: no exception, no crash dump, no further
+        // log output -- the stage markers above only prove the FIRST frame got
+        // through. Park the fan-out until the per-subscriber path is rewritten.
+        // Aura2 does not subscribe to RenderEvent, so combat verification is
+        // unaffected. Flip this constant to restore the HUD.
+        static constexpr bool kDispatchRenderEvents = false;
+        if (kDispatchRenderEvents && ClientInstance::get()) {
             const bool dispatched = TryCallWrapper([&]() {
                 auto holder = nes::make_holder<RenderEvent>();
                 gFeatureManager->mDispatcher->trigger(holder);
