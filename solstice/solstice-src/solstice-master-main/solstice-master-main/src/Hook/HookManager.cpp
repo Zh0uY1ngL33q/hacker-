@@ -62,7 +62,15 @@ void HookManager::init(bool initLp)
         ADD_HOOK(ActorModelHook);
         ADD_HOOK(ItemRendererHook);
         ADD_HOOK(FireBlockChangedHook);
-        ADD_HOOK(RenderItemInHandHook);
+        // RenderItemInHandDescription's constructor runs many times per frame and
+        // its only consumer is Glint (disabled by default; visuals are parked).
+        // Its init() used to call MH_EnableHook on that single hot target in the
+        // middle of startup, which freezes every game thread. That is exactly
+        // where this build hung: the log ends at "Created detour for ..." with no
+        // "Enabled detour" line. The combined MH_EnableHook(MH_ALL_HOOKS) below
+        // cannot avoid it because the single-hook enable is what deadlocks.
+        // Do not create this detour at all until Glint is actually needed.
+        // ADD_HOOK(RenderItemInHandHook);
         ADD_HOOK(PreGameHook);
         ADD_HOOK(NametagRenderHook);
 
