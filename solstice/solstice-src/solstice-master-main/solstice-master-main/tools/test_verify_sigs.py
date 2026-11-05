@@ -82,5 +82,72 @@ DEFINE_SIG(ActiveSig, "E8 ? ? ? ?", SigType::RefSig, 1);
         self.assertIsNotNone(audit(bytes.fromhex('48 8B C4 48 89 58 08'), ref, md))
 
 
+    def test_offset_plausibility_matches_cpp(self):
+        # Must agree with OffsetProvider::plausibleOffset() in every case,
+        # especially the ones the old abs(val) > 0x20000 rule let through.
+        for v in (0, 8, 0x100, 0x7FFF):
+            self.assertTrue(vs.cpp_plausible_offset(v, False)[0], v)
+        for v in (-8, 1, 7, 0x8000, 0x9000, 0x20000):
+            self.assertFalse(vs.cpp_plausible_offset(v, False)[0], v)
+        for v in (1, 8, 436, 4095):
+            self.assertTrue(vs.cpp_plausible_offset(v, True)[0], v)
+        for v in (-1, 0, 4096, 17305961):
+            self.assertFalse(vs.cpp_plausible_offset(v, True)[0], v)
+
+    def test_exec_spans_clips_and_sorts_like_cpp(self):
+        img = vs.Image.__new__(vs.Image)
+        img.data = b'\0' * 0x1000
+        img.size_of_image = 0xA00
+        img.sections = [
+            {'rva': 0x100, 'vsize': 0x900, 'characteristics': 0x20000000, 'name': 'big'},
+            {'rva': 0x900, 'vsize': 0x200, 'characteristics': 0x20000000, 'name': 'tail'},
+            {'rva': 0x0,   'vsize': 0x100, 'characteristics': 0x20000000, 'name': 'zero'},
+            {'rva': 0xB00, 'vsize': 0x100, 'characteristics': 0x20000000, 'name': 'past'},
+            {'rva': 0x300, 'vsize': 0x100, 'characteristics': 0, 'name': 'data'},
+        ]
+        # "big" clips to 0x900 (0xA00-0x100), "tail" clips to 0x100
+        # (0xA00-0x900). Sort key must be the CLIPPED size.
+        self.assertEqual(img.exec_spans(), [(0x100, 0xA00), (0x900, 0xA00)])
+        self.assertEqual(img.code_span(), (0x100, 0xA00, 'big'))
+
+    def test_exec_spans_empty_when_no_executable_range(self):
+        img = vs.Image.__new__(vs.Image)
+        img.data = b'\0' * 0x100
+        img.size_of_image = 0x100
+        img.sections = [{'rva': 0x40, 'vsize': 0x10,
+                         'characteristics': 0, 'name': 'data'}]
+        self.assertEqual(img.exec_spans(), [])
+        self.assertEqual(img.code_span(), (0, 0, '<no executable range>'))
+
+    def test_mirrored_scanner_uses_the_same_rules(self):
+        # tools/scan_sigs.py is the byte-for-byte mirror of tools/re/scan_sigs.py
+        # that ships in the source ZIP. A future edit that changes only one copy
+        # must fail here instead of silently producing a different verdict.
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            'scan_sigs_mirror', Path(__file__).with_name('scan_sigs.py'))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        for v in (0, 8, 0x100, 0x7FFF, -8, 1, 7, 0x8000, 0x9000):
+            self.assertEqual(vs.cpp_plausible_offset(v, False)[0],
+                             mod.cpp_plausible_offset(v, False)[0], v)
+        for v in (1, 436, 4095, 0, 4096, -1):
+            self.assertEqual(vs.cpp_plausible_offset(v, True)[0],
+                             mod.cpp_plausible_offset(v, True)[0], v)
+
+        mimg = mod.Image.__new__(mod.Image)
+        mimg.buf = b'\0' * 0x1000
+        mimg.size_of_image = 0xA00
+        mimg.sections = [
+            {'rva': 0x100, 'vsize': 0x900, 'exec': True},
+            {'rva': 0x900, 'vsize': 0x200, 'exec': True},
+            {'rva': 0x0,   'vsize': 0x100, 'exec': True},
+            {'rva': 0xB00, 'vsize': 0x100, 'exec': True},
+            {'rva': 0x300, 'vsize': 0x100, 'exec': False},
+        ]
+        self.assertEqual(list(mimg.exec_ranges()),
+                         [(0x100, 0xA00), (0x900, 0xA00)])
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -168,7 +168,12 @@ bool OffsetProvider::initialize()
     const auto mcSize = hat::process::get_process_module().get_module_data().size();
     for (const auto& name : mStatus.namesWith(ResolveStatus::Ok)) {
         const auto e = mStatus.get(name);
-        if (e.address != 0 && (e.address < mc || e.address > mc + mcSize)) {
+        // The module covers mc <= address < mc + mcSize, right-open: an
+        // address exactly at mc + mcSize is outside it. Subtracting only after
+        // the lower-bound check avoids unsigned wraparound, and dropping the
+        // old zero-address short-circuit also catches a null result, which
+        // otherwise stayed classified as Ok.
+        if (e.address < mc || e.address - mc >= mcSize) {
             Solstice::console->critical("[offsets] OUT-OF-RANGE {} @ {}", name,
                                         MemUtils::getMbMemoryString(e.address));
             mStatus.set(name, ResolveStatus::OutOfRange, e.address, e.value, e.matches);

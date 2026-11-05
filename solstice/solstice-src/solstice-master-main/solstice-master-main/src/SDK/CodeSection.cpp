@@ -9,6 +9,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include <Utils/MemUtils.hpp>
+
 namespace {
 
 constexpr uint32_t kCsExecutable = IMAGE_SCN_MEM_EXECUTE;
@@ -126,8 +128,11 @@ std::vector<std::span<std::byte>> csReadableChunks(const CodeSection::Range& r) 
         if (chunk > r.size - off) chunk = r.size - off;
         if (chunk == 0) break;
 
+        // PAGE_EXECUTE alone does not grant read access. Use the same base
+        // protection predicate as MemUtils::isReadableRange() so the runtime
+        // scan and the validation entry agree on what "readable" means.
         const bool readable =
-            mbi.State == MEM_COMMIT && !(mbi.Protect & (PAGE_GUARD | PAGE_NOACCESS));
+            mbi.State == MEM_COMMIT && MemUtils::isReadableProtect(mbi.Protect);
 
         if (readable) {
             const size_t start = static_cast<size_t>(r.rva) + off;

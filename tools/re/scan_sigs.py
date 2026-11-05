@@ -11,6 +11,12 @@ exactly the same semantics as SigManager::scanSig / OffsetProvider::scanSig:
   * DEFINE_SIG(..., SigType::Sig, off)     -> match (+off, normally 0)
   * DEFINE_INDEX_FIELD(..., idx_off, Index)     -> int32 at match+idx_off, /8
   * DEFINE_INDEX_FIELD(..., idx_off, FieldOffset)-> int32 at match+idx_off
+
+Report scope: every result is a STATIC PRE-CHECK candidate; `usable` /
+`staticallyUsable` are NOT runtime verification results. This file is mirrored
+byte-for-byte to <solstice tree>/tools/scan_sigs.py so it ships in the source
+ZIP; keep both copies in sync with src/SDK/OffsetProvider.cpp::plausibleOffset()
+and CodeSection::ranges().
 """
 from __future__ import annotations
 
@@ -28,6 +34,11 @@ class Image:
         with open(path, "rb") as f:
             self.buf = f.read()
         self.base = self._image_base()
+        # PE32+ OptionalHeader.SizeOfImage is at opt + 56, opt = e_lfanew + 24.
+        # CodeSection::ranges() clips every executable section to it, so the
+        # offline scan must clip identically.
+        e_lfanew = struct.unpack_from("<I", self.buf, 0x3C)[0]
+        self.size_of_image = struct.unpack_from("<I", self.buf, e_lfanew + 24 + 56)[0]
         self.sections = self._sections()
 
     def _image_base(self) -> int:
@@ -57,21 +68,23 @@ class Image:
         return out
 
     def exec_ranges(self):
-        # Runtime CodeSection::ranges() stable-sorts executable ranges by size
-        # (largest first) and find() returns the FIRST hit in that order. The
-        # offline scanner has to use the same order, otherwise "first match
-        # wins" points at a different byte than the in-client resolver and an
-        # offline-unique signature can be ambiguous at runtime (and vice versa).
-        # Python's sort is stable, so equal-sized sections keep PE order just
-        # like std::stable_sort in the C++ implementation.
+        # Exactly CodeSection::ranges(): keep sections with RVA != 0,
+        # VirtualSize != 0, IMAGE_SCN_MEM_EXECUTE and RVA < SizeOfImage; clip
+        # size = min(VirtualSize, SizeOfImage - RVA); stable-sort by that
+        # CLIPPED size (largest first). Using max(vsize, rawsize) or sorting by
+        # the unclipped vsize makes "first match wins" pick a different byte
+        # than the in-client resolver. No executable range -> scan nothing.
+        image_end = min(len(self.buf), self.size_of_image)
         ranges = []
         for s in self.sections:
             if not s["exec"]:
                 continue
             start = s["rva"]
-            size = max(s["vsize"], s["rawsize"])
-            end = min(start + size, len(self.buf))
-            ranges.append((start, end, size))
+            if start == 0 or s["vsize"] == 0 or start >= image_end:
+                continue
+            size = min(s["vsize"], image_end - start)
+            if size > 0:
+                ranges.append((start, start + size, size))
         ranges.sort(key=lambda r: -r[2])
         for start, end, _ in ranges:
             yield start, end
@@ -162,6 +175,24 @@ FIELD_WIDTHS = {
 }
 
 
+def cpp_plausible_offset(value, is_index):
+    """Mirror OffsetProvider::plausibleOffset() in src/SDK/OffsetProvider.cpp.
+
+    limit = 4096 (Index) or 0x8000 (FieldOffset); accept only 0 <= v < limit,
+    reject index 0 (callVirtualFunc rejects <= 0) and field offsets 1..7 (the
+    MSVC vtable pointer). A field offset of 0 IS accepted here.
+    """
+    limit = 4096 if is_index else 0x8000
+    if not (0 <= value < limit):
+        return False, "implausible %s %d (runtime accepts 0 <= v < %d)" % (
+            "vtable index" if is_index else "field offset", value, limit)
+    if is_index and value == 0:
+        return False, "vtable index 0 is rejected by callVirtualFunc()"
+    if not is_index and 0 < value < 8:
+        return False, "field offset %d lies inside the MSVC vtable pointer" % value
+    return True, ""
+
+
 def strip_comments(src: str) -> str:
     """Remove // and /* */ comments before parsing.
 
@@ -231,10 +262,12 @@ def eval_sig(img: Image, entry):
     else:
         target = hit + off
     # Runtime now REFUSES ambiguous mappings (value stays 0), so an offline
-    # "ambiguous" entry is not a usable resolution either.
+    # "ambiguous" entry is not a usable resolution either. STATIC PRE-CHECK ONLY.
+    static_ok = len(hits) == 1
     return {"name": entry["name"],
             "status": "ambiguous" if len(hits) > 1 else "ok",
-            "usable": len(hits) == 1,
+            "staticallyUsable": static_ok,
+            "usable": static_ok,
             "matches": len(hits),
             "rva": hex(target),
             "rvaInt": target,
@@ -245,29 +278,44 @@ def eval_field(img: Image, entry):
     pat, mask = compile_pattern(entry["pattern"])
     hits = find_all(img, pat, mask, 4)
     if not hits:
-        return {"name": entry["name"], "status": "failed", "matches": 0, "value": None}
+        return {"name": entry["name"], "status": "failed", "matches": 0,
+                "staticallyUsable": False, "usable": False, "value": None}
     idx = int(entry["idx"], 0)
-    # Read with the width the C++ macro dereferences. Everything else about the
-    # scan is identical, but using 4 bytes for a uint8_t field invents values the
-    # client never computes and makes a healthy symbol look like garbage.
+    # Read with the width the C++ macro dereferences (a uint8_t disp8 must not
+    # be read as four bytes, which invents values the client never computes).
     ctype = entry.get("ctype", "int")
     fmt = FIELD_WIDTHS.get(ctype, ("i",))[0]
+    width = struct.calcsize("<" + fmt)
+    if hits[0] + idx + width > len(img.buf):
+        return {"name": entry["name"], "status": "suspect", "matches": len(hits),
+                "staticallyUsable": False, "usable": False, "value": None,
+                "note": "typed offset read outside image"}
     raw = struct.unpack_from("<" + fmt, img.buf, hits[0] + idx)[0]
     is_index = entry["kind"] == "Index"
-    # A vtable slot displacement is always a multiple of sizeof(void*).
-    # The runtime now refuses a non-aligned one; mirror that verdict here.
+    # A vtable slot displacement is always a multiple of sizeof(void*); the C++
+    # macro refuses a non-aligned one before dividing by 8.
     aligned = (not is_index) or (raw % 8 == 0)
-    val = raw // 8 if is_index else raw
-    # See eval_sig: the client refuses ambiguous hits, so mark them unusable
-    # here too instead of presenting a derived value nobody will ever use.
+    # C++ signed integer division truncates towards zero; Python // floors.
+    if is_index and aligned:
+        val = (abs(raw) // 8) * (-1 if raw < 0 else 1)
+    else:
+        val = int(raw)
+    if not aligned:
+        plausible, reason = False, "vtable displacement %d is not 8-byte aligned" % raw
+    else:
+        plausible, reason = cpp_plausible_offset(val, is_index)
+
+    status = "ambiguous" if len(hits) > 1 else ("ok" if plausible else "suspect")
+    static_ok = len(hits) == 1 and aligned and plausible
     return {"name": entry["name"],
-            "status": "ambiguous" if len(hits) > 1 else "ok",
-            "usable": len(hits) == 1 and aligned,
+            "status": status,
+            "staticallyUsable": static_ok,  # STATIC PRE-CHECK ONLY
+            "usable": static_ok,            # legacy alias
             "matches": len(hits),
             "value": val,
             "raw": raw,
             "aligned": aligned,
-            "note": "" if aligned else "vtable displacement %d is not 8-byte aligned" % raw,
+            "note": reason,
             "hit": hex(hits[0])}
 
 
@@ -281,7 +329,11 @@ def main():
     a = ap.parse_args()
 
     img = Image(a.image)
-    print(f"image={a.image} base={hex(img.base)} size={hex(len(img.buf))}")
+    spans = list(img.exec_ranges())
+    print(f"image={a.image} base={hex(img.base)} size={hex(len(img.buf))} "
+          f"sizeOfImage={hex(img.size_of_image)}")
+    print(f"scan spans: {len(spans)} executable range(s); "
+          f"STATIC PRE-CHECK ONLY, NOT a runtime verification result")
     for s in img.sections:
         print(f"  [{s['index']:2}] {s['name']!r:12} rva={s['rva']:#x} "
               f"vsize={s['vsize']:#x} exec={s['exec']}")
@@ -294,16 +346,33 @@ def main():
     rf = [eval_field(img, e) for e in fields]
 
     for label, rows in (("SIGNATURES", rs), ("OFFSETS", rf)):
-        nfail = sum(1 for r in rows if r["status"] == "failed")
+        nfail = sum(1 for r in rows if r["status"] in ("failed", "suspect"))
         namb = sum(1 for r in rows if r["status"] == "ambiguous")
-        print(f"\n=== {label}: total={len(rows)} failed={nfail} ambiguous={namb}")
+        nusable = sum(1 for r in rows if r.get("staticallyUsable"))
+        print(f"\n=== {label}: total={len(rows)} failed/suspect={nfail} "
+              f"ambiguous={namb} staticallyUsable={nusable}")
         for r in rows:
             if a.show == "all" or r["status"] == a.show:
                 extra = r.get("value", r.get("rva"))
                 print(f"  {r['status']:9} {r['name']:52} matches={r['matches']} -> {extra}")
 
     if a.json:
-        json.dump({"base": hex(img.base), "signatures": rs, "offsets": rf},
+        json.dump({"base": hex(img.base),
+                   "sizeOfImage": img.size_of_image,
+                   "scanSpans": [["0x%X" % s, "0x%X" % e] for s, e in spans],
+                   "usable_semantics":
+                       "STATIC PRE-CHECK ONLY. staticallyUsable (alias usable) "
+                       "means unique match + typed read OK + value passes "
+                       "OffsetProvider::plausibleOffset(). NOT a runtime result.",
+                   "runtime_differences": [
+                       "runtime skips uncommitted/non-readable pages "
+                       "(csReadableChunks); the offline dump contains the whole image",
+                       "runtime applies a host-module bounds check and rejects "
+                       "matches != 1 (Ambiguous/Inconsistent)",
+                       "runtime aborts if decryption times out",
+                       "DEFINE_FIELD constants are never runtime-verified",
+                   ],
+                   "signatures": rs, "offsets": rf},
                   open(a.json, "w"), indent=1)
         print(f"\nwrote {a.json}")
 

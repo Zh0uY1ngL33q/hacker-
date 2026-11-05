@@ -146,9 +146,14 @@ public:
     template <typename T>
     static bool readMemberChecked(void* object, int offset, T& out)
     {
-        // The first eight bytes of an MSVC polymorphic object are the vtable
-        // pointer, not a member; 0x8000 is plausibleOffset()'s member ceiling.
-        if (!object || offset < 8 || offset > 0x8000) return false;
+        // POLYMORPHIC objects only: the first eight bytes are the vtable
+        // pointer, so offset < 8 is never a member here. This is NOT the same
+        // predicate as OffsetProvider::plausibleOffset(), which is a static
+        // gate over all field kinds and deliberately accepts offset 0 (e.g. the
+        // first member of a non-polymorphic struct). Do not assume the two
+        // accept the same offsets. 0x8000 is the shared exclusive upper bound,
+        // so offset == 0x8000 is refused just as plausibleOffset() refuses it.
+        if (!object || offset < 8 || offset >= 0x8000) return false;
         const uintptr_t addr = reinterpret_cast<uintptr_t>(object) + offset;
         if (!isReadableRange(addr, sizeof(T))) return false;
         out = *reinterpret_cast<T*>(addr);
@@ -288,11 +293,17 @@ public:
     static uintptr_t getTopOfFunction(uintptr_t address);
     static bool isValidPtr(uintptr_t address);
 
-    /// Committed AND readable (no PAGE_NOACCESS / PAGE_GUARD) for the whole
-    /// address .. address+size range, which must lie inside one region.
-    /// isValidPtr() only checks State == MEM_COMMIT, so it accepts pages that
-    /// would still fault when read; this is the check the validation entry
-    /// points use. Not for per-tick hot paths - it issues a VirtualQuery.
+    /// True when a committed page's base protection actually grants READ.
+    /// PAGE_EXECUTE alone does not, and PAGE_GUARD / PAGE_NOACCESS fault on read.
+    /// Shared by isReadableRange() and CodeSection::csReadableChunks() so the
+    /// runtime-readable and validation-readable verdicts cannot drift apart.
+    static bool isReadableProtect(DWORD protect);
+
+    /// Committed AND readable for the whole address .. address+size range,
+    /// which must lie inside one region. isValidPtr() only checks
+    /// State == MEM_COMMIT, so it accepts PAGE_EXECUTE / PAGE_NOACCESS /
+    /// PAGE_GUARD pages that would still fault when read. Not for per-tick hot
+    /// paths - it issues a VirtualQuery.
     static bool isReadableRange(uintptr_t address, size_t size);
 
     /// True if `address` is code inside the host module and safe to overwrite.

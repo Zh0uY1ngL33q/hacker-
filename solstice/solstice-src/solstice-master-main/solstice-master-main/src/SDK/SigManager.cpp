@@ -103,7 +103,10 @@ bool SigManager::initialize()
     const auto mcSize = hat::process::get_process_module().get_module_data().size();
     for (const auto& name : mStatus.namesWith(ResolveStatus::Ok)) {
         const auto e = mStatus.get(name);
-        if (e.address != 0 && (e.address < mc || e.address > mc + mcSize)) {
+        // Module covers mc <= address < mc + mcSize, right-open. Subtract after
+        // the lower-bound test so no unsigned wraparound is possible; a null
+        // result is now caught too instead of being skipped by the old guard.
+        if (e.address < mc || e.address - mc >= mcSize) {
             Solstice::console->critical("[signatures] OUT-OF-RANGE {} @ {}", name,
                                         MemUtils::getMbMemoryString(e.address));
             mStatus.set(name, ResolveStatus::OutOfRange, e.address, 0, e.matches);

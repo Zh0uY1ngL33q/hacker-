@@ -17,6 +17,12 @@ Usage:
 
 The runtime image is WinLicense packed and only decrypted in memory, so this
 tool must be pointed at the dump, never at the on-disk exe.
+
+Report scope: every result here is a STATIC PRE-CHECK candidate. `usable` /
+`staticallyUsable` do NOT mean the mapping was verified in the live game.
+There is a second offline scanner (tools/scan_sigs.py, mirrored from
+tools/re/scan_sigs.py) -- both must stay in sync with
+src/SDK/OffsetProvider.cpp::plausibleOffset() and CodeSection::ranges().
 """
 
 import argparse
@@ -74,47 +80,51 @@ class Image:
             })
 
     def exec_spans(self):
-        """Every executable section, as (start, end) in image offsets.
+        """Executable ranges, exactly as CodeSection::ranges() builds them.
 
-        The runtime scans all of them (CodeSection::ranges), and so must this:
-        scanning only the largest misses .winlice, a 15 MB executable section the
-        packer adds, and reports a handful of signatures as MISSING that the game
-        resolves fine.
-
-        Order matters too: CodeSection::ranges() stable-sorts by section size
-        (largest first) and find() returns the FIRST hit in that order. Returning
-        PE order here makes "first match wins" point at a different byte than the
-        in-client resolver, so an offline-unique signature can be ambiguous at
-        runtime. Python's sort is stable, so equal sizes keep PE order like
-        std::stable_sort.
+        The runtime keeps (start, end) pairs where
+            size = min(VirtualSize, SizeOfImage - RVA)
+        for sections with RVA != 0, VirtualSize != 0, IMAGE_SCN_MEM_EXECUTE and
+        RVA < SizeOfImage, then stable-sorts by that CLIPPED size (largest
+        first). find() returns the first hit in that order, so the offline
+        scanner must use the same clipped size for both the span and the sort.
+        An image with no executable range yields [] -- the runtime scans
+        nothing in that case; it does NOT fall back to the whole file.
         """
+        image_end = min(len(self.data), self.size_of_image)
         spans = []
         for s in self.sections:
-            if s["vsize"] == 0:
+            rva = s["rva"]
+            if s["vsize"] == 0 or rva == 0:
                 continue
             if not (s["characteristics"] & 0x20000000):  # IMAGE_SCN_MEM_EXECUTE
                 continue
-            end = min(len(self.data), s["rva"] + s["vsize"])
-            if end > s["rva"]:
-                spans.append((s["rva"], end, s["vsize"]))
-        if not spans:
-            return [(0, len(self.data))]
+            if rva >= image_end:
+                continue
+            size = min(s["vsize"], image_end - rva)
+            if size > 0:
+                spans.append((rva, rva + size, size))
+        # Python's sort is stable, so equal clipped sizes keep PE order just
+        # like std::stable_sort in the C++ implementation.
         spans.sort(key=lambda item: -item[2])
         return [(start, end) for start, end, _ in spans]
 
     def code_span(self):
-        """Largest executable section, as (start, end, name)."""
-        best = None
+        """Largest executable range, as (start, end, name), for the report.
+
+        Derived from exec_spans() so the printed range is the same clipped
+        range the scanner actually searched.
+        """
+        spans = self.exec_spans()
+        if not spans:
+            return (0, 0, "<no executable range>")
+        start, end = spans[0]
+        name = "<unknown>"
         for s in self.sections:
-            if s["vsize"] == 0:
-                continue
-            if not (s["characteristics"] & 0x20000000):  # IMAGE_SCN_MEM_EXECUTE
-                continue
-            if best is None or s["vsize"] > best["vsize"]:
-                best = s
-        if best is None:
-            best = max(self.sections, key=lambda s: s["vsize"])
-        return (best["rva"], best["rva"] + best["vsize"], best["name"])
+            if s["rva"] == start:
+                name = s["name"]
+                break
+        return (start, end, name)
 
 
 # --------------------------------------------------------------------------
@@ -252,6 +262,33 @@ def read_offset(buf, position, definition):
     return raw
 
 
+def cpp_plausible_offset(value, is_index):
+    """Mirror OffsetProvider::plausibleOffset() in src/SDK/OffsetProvider.cpp.
+
+    Returns (ok, reason). The runtime gate is:
+
+        limit   = 4096 if is_index else 0x8000
+        inRange = 0 <= value < limit
+        refuse  = (is_index and value == 0)        # callVirtualFunc rejects <= 0
+                  or (not is_index and 0 < value < 8)  # MSVC vtable pointer
+
+    A field offset of 0 IS accepted here (this is a static gate over all field
+    kinds; readMemberChecked() is polymorphic-object only and rejects < 8).
+    The old `abs(val) > 0x20000` rule accepted 0x8000..0x20000 and negative
+    values that the runtime marks Implausible -- that divergence is the bug
+    this function removes. The index/8 alignment check lives in read_offset().
+    """
+    limit = 4096 if is_index else 0x8000
+    if not (0 <= value < limit):
+        return False, "implausible %s %d (runtime accepts 0 <= v < %d)" % (
+            "vtable index" if is_index else "field offset", value, limit)
+    if is_index and value == 0:
+        return False, "vtable index 0 is rejected by callVirtualFunc()"
+    if not is_index and 0 < value < 8:
+        return False, "field offset %d lies inside the MSVC vtable pointer" % value
+    return True, ""
+
+
 def load_definitions(src_dir):
     defs = []
 
@@ -311,6 +348,12 @@ def main():
           % (sec_name, start, end, (end - start) // (1024 * 1024)))
     print("scan spans   : %d executable section(s), %d MB total"
           % (len(spans), sum(e - s for s, e in spans) // (1024 * 1024)))
+    if not spans:
+        print("WARNING: no executable range survived the SizeOfImage clip; "
+              "every signature below will be MISSING, exactly as the runtime "
+              "would scan nothing")
+    print("offline report is a STATIC PRE-CHECK; runtime results may differ "
+          "(see --json usable_semantics / runtime_differences)")
     print("sections     :")
     for s in img.sections:
         print("   [%-12s] RVA=0x%08X vsize=0x%08X raw=0x%08X flags=0x%08X"
@@ -351,20 +394,24 @@ def main():
                     entry["note"] = str(exc)
                 else:
                     entry["field_offset"] = val
-                    # Plausibility gate: a nonsense index means the pattern
-                    # matched the wrong code, even though it "resolved".
-                    # Lower bound 1 matches callVirtualFunc(), which rejects
-                    # index <= 0 (MSVC slot 0 is the scalar-deleting destructor).
-                    if d["offset_type"] == "Index" and not (1 <= val < 4096):
+                    # Mirror OffsetProvider::plausibleOffset() EXACTLY. The old
+                    # abs(val) > 0x20000 rule accepted 0x8000..0x20000 and
+                    # negative values, while the runtime marks them Implausible.
+                    is_index = d["offset_type"] == "Index"
+                    plausible, reason = cpp_plausible_offset(val, is_index)
+                    if not plausible:
                         entry["status"] = "SUSPECT"
-                        entry["note"] = "implausible vtable index %d" % val
-                    elif abs(val) > 0x20000:
-                        entry["status"] = "SUSPECT"
-                        entry["note"] = "implausible field offset 0x%X" % (val & 0xFFFFFFFF)
+                        entry["note"] = reason
 
-        # The runtime refuses every non-OK mapping (its value stays 0). Mark the
-        # offline result the same way instead of presenting a usable value.
-        entry["usable"] = entry["status"] == "OK"
+        # STATIC PRE-CHECK ONLY, never a runtime verification result.
+        # staticallyUsable means: unique match + typed read OK + derived value
+        # passes OffsetProvider::plausibleOffset(). The live process can still
+        # refuse a mapping for reasons an offline dump cannot observe
+        # (uncommitted/non-readable pages, host-module bounds, decryption
+        # timeout). `usable` is kept as an alias for existing consumers.
+        static_ok = entry["status"] == "OK"
+        entry["staticallyUsable"] = static_ok
+        entry["usable"] = static_ok
         results.append(entry)
         counts[entry["status"]] += 1
 
@@ -382,8 +429,12 @@ def main():
 
     print()
     print("summary: " + ", ".join("%s=%d" % (k, v) for k, v in sorted(counts.items())))
-    print("usable scanned mappings: %d/%d" %
-          (sum(1 for e in results if e.get("usable")), len(results)))
+    print("statically usable scanned mappings: %d/%d  "
+          "(STATIC PRE-CHECK ONLY - NOT a runtime verification result)" %
+          (sum(1 for e in results if e.get("staticallyUsable")), len(results)))
+    print("  offline results are CANDIDATES: the runtime additionally skips "
+          "uncommitted/non-readable pages, applies a host-module bounds check, "
+          "and aborts if decryption times out")
 
     if hardcoded:
         live = [h for h in hardcoded if not h["disabled"]]
@@ -399,6 +450,27 @@ def main():
     if args.json:
         with open(args.json, "w", encoding="utf-8") as f:
             json.dump({"image": args.image, "codeSection": sec_name,
+                       "sizeOfImage": img.size_of_image,
+                       "scanSpans": [["0x%X" % s, "0x%X" % e] for s, e in spans],
+                       "usable_semantics":
+                           "STATIC PRE-CHECK ONLY. staticallyUsable (and its "
+                           "alias usable) means the pattern resolved uniquely, "
+                           "the typed read succeeded and the derived value passes "
+                           "OffsetProvider::plausibleOffset(). It is NOT a runtime "
+                           "verification result.",
+                       "runtime_differences": [
+                           "CodeSection::csReadableChunks() skips pages that are "
+                           "not committed/readable at runtime; the offline dump "
+                           "contains the whole image",
+                           "runtime rejects matches != 1 (Ambiguous/Inconsistent) "
+                           "and applies a host-module bounds check (OutOfRange)",
+                           "runtime aborts before scanning when decryption times out",
+                           "DEFINE_FIELD constants are never runtime-verified",
+                       ],
+                       "hardcoded_mappings":
+                           "%d UNVERIFIED (DEFINE_FIELD audit only; CLASS_FIELD "
+                           "and literal offsets are NOT covered)" % len(
+                               [h for h in hardcoded if not h["disabled"]]),
                        "results": results, "hardcoded": hardcoded}, f, indent=2)
         print("\nreport written to %s" % args.json)
 
