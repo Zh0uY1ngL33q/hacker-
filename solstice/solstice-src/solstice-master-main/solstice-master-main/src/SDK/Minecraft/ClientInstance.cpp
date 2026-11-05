@@ -8,6 +8,10 @@
 #include <libhat/Access.hpp>
 #include <SDK/OffsetProvider.hpp>
 #include <SDK/SigManager.hpp>
+// getPacketSender() inspects sender->vtable and constructs a fallback object of
+// this type. ClientInstance.hpp only forward-declares it, and a unity group that
+// does not happen to include the definition elsewhere fails with C2027.
+#include <SDK/Minecraft/Network/LoopbackPacketSender.hpp>
 
 #include "MinecraftGame.hpp"
 #include "InstanceLocator.hpp"

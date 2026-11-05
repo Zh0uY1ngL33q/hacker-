@@ -28,10 +28,13 @@ struct DebugCameraIsActiveComponent
     PAD(0x10);
 };
 struct AllowInsideBlockRenderComponent {};
-class NameableComponent
-{
-    PAD(0x8);
-};
+// NameableComponent is a data component, not a flag tag. Its single definition
+// lives in NameableComponent.hpp, where it is declared with the `class` keyword
+// to match the entt type hash in ComponentHashes.hpp (0xE2748E81).
+// A placeholder definition here collides (C2011) in any unity translation unit
+// that pulls in Actor.hpp/EntityContext.hpp and then NameableComponent.hpp,
+// which is exactly what Actor.cpp does.
+#include "NameableComponent.hpp"
 
 struct InteractPreventDefaultFlagComponent {}; // string: auto __cdecl entt::internal::stripped_type_name<struct InteractPreventDefaultFlagComponent>(void) noexcept
 struct OnGroundFlagComponent {}; // string: auto __cdecl entt::internal::stripped_type_name<struct OnGroundFlagComponent>(void) noexcept
