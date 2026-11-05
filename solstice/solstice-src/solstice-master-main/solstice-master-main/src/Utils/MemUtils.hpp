@@ -99,7 +99,11 @@ public:
         // signature fails or resolves to an implausible value. Calling through
         // slot 0 would destroy the object while the caller is still using it, so
         // a rejected index has to become a no-op rather than a different crash.
-        if (_this == nullptr || index <= 0) {
+        // Zero-cost guards only. isValidVirtualCall() below is the full check,
+        // but it issues VirtualQuery calls and must not run on every per-tick
+        // virtual call. 4096 is the same ceiling plausibleOffset() applies to
+        // vtable indices, so an implausible index cannot read past the table.
+        if (_this == nullptr || index <= 0 || index >= 4096) {
             if constexpr (std::is_void_v<Ret>) {
                 return;
             } else if constexpr (std::is_reference_v<Ret>) {
@@ -116,6 +120,35 @@ public:
         }
         auto vtable = *reinterpret_cast<uintptr_t**>(_this);
         return reinterpret_cast<Fn>(vtable[index])(_this, args...);
+    }
+
+    /// Unified validation entry for the two raw-access patterns in this SDK.
+    /// Deliberately NOT wired into every existing call site: isValidPtr() issues
+    /// a VirtualQuery, and doing that on each per-tick virtual call stalls the
+    /// main thread. Use these from newly written getters and from diagnostics;
+    /// callVirtualFunc keeps its zero-cost index guard above.
+    static bool isValidVirtualCall(void* object, int index)
+    {
+        if (!object || index <= 0 || index >= 4096) return false;
+        const uintptr_t obj = reinterpret_cast<uintptr_t>(object);
+        if (!isValidPtr(obj)) return false;
+        const uintptr_t vtable = *reinterpret_cast<uintptr_t*>(object);
+        if (!isValidPtr(vtable)) return false;
+        const uintptr_t slot = vtable + static_cast<size_t>(index) * sizeof(uintptr_t);
+        if (!isValidPtr(slot)) return false;
+        return isValidPtr(*reinterpret_cast<uintptr_t*>(slot));
+    }
+
+    template <typename T>
+    static bool readMemberChecked(void* object, int offset, T& out)
+    {
+        // The first eight bytes of an MSVC polymorphic object are the vtable
+        // pointer, not a member; 0x8000 is plausibleOffset()'s member ceiling.
+        if (!object || offset < 8 || offset > 0x8000) return false;
+        const uintptr_t addr = reinterpret_cast<uintptr_t>(object) + offset;
+        if (!isValidPtr(addr) || !isValidPtr(addr + sizeof(T) - 1)) return false;
+        out = *reinterpret_cast<T*>(addr);
+        return true;
     }
 
     template<typename T>

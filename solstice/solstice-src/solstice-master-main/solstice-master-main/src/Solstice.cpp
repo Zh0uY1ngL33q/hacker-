@@ -17,6 +17,7 @@
 #include <SDK/SigFuzz.hpp>
 
 #include <SDK/SigManager.hpp>
+#include <SDK/ResolveState.hpp>
 #include <SDK/Minecraft/ClientInstance.hpp>
 #include <SDK/Minecraft/InstanceLocator.hpp>
 #include <SDK/Minecraft/MinecraftGame.hpp>
@@ -216,7 +217,19 @@ void Solstice::init(HMODULE hModule)
     // themselves (entropy + x64 prologue density) rather than from a signature:
     // a probe lifted from one game version can never match another, which made
     // this loop wait out its full 30s timeout on every update.
-    CodeSection::waitUntilDecrypted(30000, 100);
+    const int decryptWait = CodeSection::waitUntilDecrypted(30000, 100);
+    if (decryptWait < 0)
+    {
+        // Encrypted bytes would produce a complete-looking table of garbage.
+        // There is no mapping to hand downstream, so stop BEFORE either
+        // initialize() runs and before any hook is installed.
+        console->critical("[init] target image was not decrypted within 30s; aborting before any signature scan");
+        ExceptionHandler::makeCrashLog("Target image was not decrypted before the signature scan", 0xFF03);
+        SigFuzz::stopAsync();
+        spdlog::shutdown();
+        Logger::deinitialize();
+        FreeLibraryAndExitThread(hModule, 0);
+    }
 
     // Snapshot the decrypted image *before* the signature scan runs. On an
     // unsupported game version the scan aborts the process (release) or blocks
@@ -226,34 +239,29 @@ void Solstice::init(HMODULE hModule)
     if (ModuleDump::isEnabled())
         dumpedThisRun = ModuleDump::dump();
 
-    OffsetProvider::initialize();
-    SigManager::initialize();
+    // Both initializers now return a verdict. It is the upstream's job to act on
+    // it: previously they always set mIsInitialized = true and the caller had
+    // no way to know the SDK was unusable.
+    const bool offsetsOk = OffsetProvider::initialize();
+    const bool sigsOk    = SigManager::initialize();
+    const bool mappingOk = offsetsOk && sigsOk;
     int64_t send = NOW;
 
-    int failedSigs = 0;
+    // Count from the authoritative status tables, never from "mSigs != 0".
+    // Both initializers already logged each rejected entry with its reason, so
+    // this is only the aggregate that decides whether startup may continue.
+    const auto& sigTable = SigManager::statusTable();
+    const auto& offTable = OffsetProvider::statusTable();
+    const int badSigs    = static_cast<int>(sigTable.size() - sigTable.count(ResolveStatus::Ok));
+    const int badOffsets = static_cast<int>(offTable.size() - offTable.count(ResolveStatus::Ok));
+    const int failedSigs = badSigs + badOffsets;
 
-    // Go through all signatures and print any that failed
-    for (const auto& [sig, result] : SigManager::mSigs)
+    if (!mappingOk || failedSigs > 0)
     {
-        if (result == 0)
-        {
-            console->critical("[signatures] Failed to find signature: {}", sig);
-            failedSigs++;
-        }
-    }
-
-    for (const auto& [sig, result] : OffsetProvider::mSigs)
-    {
-        if (result == 0)
-        {
-            console->critical("[offsets] Failed to find offset: {}", sig);
-            failedSigs++;
-        }
-    }
-
-    if (failedSigs > 0)
-    {
-        console->critical("Failed to find {} signatures/offsets!", failedSigs);
+        console->critical("Failed to find {} signatures/offsets! (signatures={} offsets={}; ok={}/{})",
+                          failedSigs, badSigs, badOffsets,
+                          sigTable.count(ResolveStatus::Ok) + offTable.count(ResolveStatus::Ok),
+                          sigTable.size() + offTable.size());
 
         // Both artefacts are produced here:
         //
@@ -287,6 +295,14 @@ void Solstice::init(HMODULE hModule)
 
             setTitle("");
             FreeLibraryAndExitThread(hModule, 0);
+        }
+        else
+        {
+            // The override is a deliberate human decision, not a resolution.
+            // Keep it visible in the log so a later crash is not attributed to
+            // a "working" mapping table.
+            console->critical("[init] OPERATOR OVERRIDE: continuing with {} unusable mappings; "
+                              "every SDK result in this session is untrusted", failedSigs);
         }
 #else
         ExceptionHandler::makeCrashLog("Failed to find signatures/offsets!", 0xFF01);

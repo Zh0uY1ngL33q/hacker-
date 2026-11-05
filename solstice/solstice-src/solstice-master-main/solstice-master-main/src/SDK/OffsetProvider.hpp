@@ -10,21 +10,32 @@ enum class OffsetType {
 };
 
 // kinda aids ik stfu
+// `type` describes the WIDTH OF THE ENCODED DISPLACEMENT (the uint8_t entries
+// in this table are disp8), not the type of the derived value. The old macro
+// used it for both: `static inline type name` plus `static_cast<type>(value)`.
+// plausibleOffset() accepts member offsets up to 0x8000, so every value above
+// 255 was silently truncated back into 0..255 and a verified mapping became a
+// wrong one. Read with `type`, store in long long.
 #define DEFINE_INDEX_FIELD_TYPED(type, name, str, index_offset, offset_type) \
 public: \
-static inline type (name) = 0; \
+static inline long long (name) = 0; \
 private: \
 static void name##_initializer() { \
     static bool initialized = false; \
     if (initialized) return; \
     initialized = true; \
     auto result = scanSig(hat::compile_signature<str>(), xorstr_(#name), index_offset); \
-    if (!result.has_result()) { SigFuzz::onFailed(xorstr_(#name), hat::compile_signature<str>()); return; } \
-    const long long rawValue = *reinterpret_cast<type*>(reinterpret_cast<uintptr_t>(result.get()) + index_offset); \
+    if (!result.has_result()) { \
+        if (entryStatus(xorstr_(#name)).status == ResolveStatus::Missing) \
+            SigFuzz::onFailed(xorstr_(#name), hat::compile_signature<str>()); \
+        return; \
+    } \
+    const long long rawValue = static_cast<long long>( \
+        *reinterpret_cast<type*>(reinterpret_cast<uintptr_t>(result.get()) + index_offset)); \
     const bool isIndex = ((offset_type) == OffsetType::Index); \
     const long long value = isIndex ? rawValue / 8 : rawValue; \
     if (!plausibleOffset(xorstr_(#name), value, isIndex)) return; \
-    (name) = static_cast<type>(value); \
+    (name) = value; \
 } \
 private: \
 static inline std::function<void()> name##_function = (mSigInitializers.emplace_back(name##_initializer), std::function<void()>()); \
@@ -40,7 +51,11 @@ static void name##_initializer() { \
     if (initialized) return; \
     initialized = true; \
     auto result = scanSig(hat::compile_signature<str>(), xorstr_(#name), index_offset); \
-    if (!result.has_result()) { SigFuzz::onFailed(xorstr_(#name), hat::compile_signature<str>()); return; } \
+    if (!result.has_result()) { \
+        if (entryStatus(xorstr_(#name)).status == ResolveStatus::Missing) \
+            SigFuzz::onFailed(xorstr_(#name), hat::compile_signature<str>()); \
+        return; \
+    } \
     const long long rawValue = *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(result.get()) + (index_offset)); \
     const bool isIndex = ((offset_type) == OffsetType::Index); \
     const long long value = isIndex ? rawValue / 8 : rawValue; \
@@ -51,23 +66,45 @@ private: \
 static inline std::function<void()> name##_function = (mSigInitializers.emplace_back(name##_initializer), std::function<void()>()); \
 public:
 
-// Defines a direct offset for a field (for offsets/indexes that can't be sigged)
+// A direct offset for a field that cannot be sigged. Unlike the scanned
+// entries these have NO evidence attached at runtime -- they are measurements
+// written into the header. Register each one so initialization can print the
+// complete list and nothing unverified can hide outside the audit.
 #define DEFINE_FIELD(name, offset) \
 public: \
-static constexpr inline int (name) = offset;
+static constexpr inline int (name) = offset; \
+private: \
+static void name##_auditFn() { registerHardcoded(xorstr_(#name), offset); } \
+static inline std::function<void()> name##_audit = \
+    (mAuditInitializers.emplace_back(name##_auditFn), std::function<void()>()); \
+public:
 
 #include <future>
 #include <libhat/Scanner.hpp>
 #include <mutex>
+#include <utility>
+#include <vector>
 
 #include <SDK/SigFuzz.hpp>
+#include <SDK/ResolveState.hpp>
 
 class OffsetProvider {
     static hat::scan_result scanSig(hat::signature_view sig, const std::string& name, int offset = 0);
+    static void registerHardcoded(const std::string& name, int value);
 
     static inline std::vector<std::function<void()>> mSigInitializers;
+    static inline std::vector<std::function<void()>> mAuditInitializers;
+    static inline std::vector<std::pair<std::string, int>> mHardcoded;
     static inline int mSigScanCount;
+
+    /// The single source of truth for what happened to each mapping. mSigs is
+    /// only an address cache now; never use "!= 0" as a success test.
+    static inline ResolveTable mStatus;
 public:
+    static ResolveEntry entryStatus(const std::string& name) { return mStatus.get(name); }
+    static const ResolveTable& statusTable() { return mStatus; }
+    static const std::vector<std::pair<std::string, int>>& hardcodedFields() { return mHardcoded; }
+
     static inline bool mIsInitialized = false;
     static inline std::unordered_map<std::string, uintptr_t> mSigs;
 
@@ -237,6 +274,9 @@ public:
     DEFINE_INDEX_FIELD(ClientInstance_mStackScene, "48 8B ? ? ? ? ? E8 ? ? ? ? 90 48 8B ? ? 48 8B ? ? 48 ? ? 74", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(Minecraft_mRealTimer, "48 8B 81 ? ? 00 00 F3 0F 10 ? ? 0F 5A ?", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(gDataUtil_MiscData_Instance, "48 8B ? ? ? ? ? 48 8B 0D ? ? ? ? 48 8D 35 ? ? ?", 3, OffsetType::FieldOffset);
-    static void initialize();
+    /// Returns true only when every mapping is ResolveStatus::Ok. The caller
+    /// MUST act on this: a false return means the SDK must not be used, and
+    /// continuing produces crashes far away from the actual bad mapping.
+    static bool initialize();
     static void deinitialize();
 };

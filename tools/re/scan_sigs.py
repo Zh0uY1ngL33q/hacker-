@@ -57,12 +57,23 @@ class Image:
         return out
 
     def exec_ranges(self):
+        # Runtime CodeSection::ranges() stable-sorts executable ranges by size
+        # (largest first) and find() returns the FIRST hit in that order. The
+        # offline scanner has to use the same order, otherwise "first match
+        # wins" points at a different byte than the in-client resolver and an
+        # offline-unique signature can be ambiguous at runtime (and vice versa).
+        # Python's sort is stable, so equal-sized sections keep PE order just
+        # like std::stable_sort in the C++ implementation.
+        ranges = []
         for s in self.sections:
             if not s["exec"]:
                 continue
             start = s["rva"]
             size = max(s["vsize"], s["rawsize"])
             end = min(start + size, len(self.buf))
+            ranges.append((start, end, size))
+        ranges.sort(key=lambda r: -r[2])
+        for start, end, _ in ranges:
             yield start, end
 
     def read(self, rva: int, n: int) -> bytes:
@@ -219,8 +230,11 @@ def eval_sig(img: Image, entry):
         target = site + 4 + rel
     else:
         target = hit + off
+    # Runtime now REFUSES ambiguous mappings (value stays 0), so an offline
+    # "ambiguous" entry is not a usable resolution either.
     return {"name": entry["name"],
             "status": "ambiguous" if len(hits) > 1 else "ok",
+            "usable": len(hits) == 1,
             "matches": len(hits),
             "rva": hex(target),
             "rvaInt": target,
@@ -240,8 +254,11 @@ def eval_field(img: Image, entry):
     fmt = FIELD_WIDTHS.get(ctype, ("i",))[0]
     raw = struct.unpack_from("<" + fmt, img.buf, hits[0] + idx)[0]
     val = raw // 8 if entry["kind"] == "Index" else raw
+    # See eval_sig: the client refuses ambiguous hits, so mark them unusable
+    # here too instead of presenting a derived value nobody will ever use.
     return {"name": entry["name"],
             "status": "ambiguous" if len(hits) > 1 else "ok",
+            "usable": len(hits) == 1,
             "matches": len(hits),
             "value": val,
             "raw": raw,

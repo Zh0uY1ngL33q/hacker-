@@ -12,6 +12,7 @@
 #include <include/libhat/include/libhat/Signature.hpp>
 
 #include <SDK/SigFuzz.hpp>
+#include <SDK/ResolveState.hpp>
 
 enum class SigType {
     Sig,
@@ -20,13 +21,16 @@ enum class SigType {
 
 #define DEFINE_SIG(name, str, sig_type, offset) \
 public: \
-static inline uintptr_t name; \
+static inline uintptr_t name = 0; \
 private: \
 static void name##_initializer() { \
     auto result = scanSig(hat::compile_signature<str>(), xorstr_(#name), offset); \
     if (!result.has_result()) { \
         name = 0; \
-        SigFuzz::onFailed(xorstr_(#name), hat::compile_signature<str>()); \
+        /* An ambiguous match is a REFUSAL, not a failed-to-find pattern. \
+           Only a genuine miss should enter the near-miss diagnostics. */ \
+        if (entryStatus(xorstr_(#name)).status == ResolveStatus::Missing) \
+            SigFuzz::onFailed(xorstr_(#name), hat::compile_signature<str>()); \
         return; \
     } \
     if (sig_type == SigType::Sig) name = reinterpret_cast<uintptr_t>(result.get()); \
@@ -49,8 +53,14 @@ class SigManager {
     /// unrelated crash later), so the writes are serialised here while the
     /// scanning itself stays parallel.
     static inline std::mutex mSigMutex;
+
+    /// Authoritative per-entry outcome. mSigs is only an address cache; the
+    /// startup report and the caller's go/no-go decision read this instead.
+    static inline ResolveTable mStatus;
 public:
     static inline bool mIsInitialized = false;
+    static ResolveEntry entryStatus(const std::string& name) { return mStatus.get(name); }
+    static const ResolveTable& statusTable() { return mStatus; }
     static inline std::unordered_map<std::string, uintptr_t> mSigs;
 
     /// Number of places each signature matched, capped. Anything above 1 means
@@ -191,7 +201,9 @@ public:
     DEFINE_SIG(RenderController_getHurtColor, "E8 ? ? ? ? 44 ? ? ? ? 4C ? ? ? 4C ? ? 48 ? ? ? ? ? ? 49 ? ? E8 ? ? ?", SigType::RefSig, 1);
     DEFINE_SIG(ScoreboardScreenController_getScoreboardSidebarTitle, "48 89 5C 24 ? 55 56 57 41 56 41 57 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 45 ? 48 8B FA 4C 8B F1 48 89 55 ? 45 33 FF ? ? ? 48 8B", SigType::Sig, 0);
     DEFINE_SIG(Scoreboard_getDisplaySlotEntries, "E8 ? ? ? ? 90 0F 57 C9 F3 0F 7F 4D ? 33", SigType::RefSig, 1);
-    static void initialize();
+    /// True only when every mapping resolved uniquely and stayed in range.
+    /// The caller must propagate this instead of continuing with a broken SDK.
+    static bool initialize();
     static void deinitialize();
 };
 
