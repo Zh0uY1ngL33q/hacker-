@@ -30,6 +30,7 @@
 #include <Utils/Keyboard.hpp>
 #include <Utils/MiscUtils/MathUtils.hpp>
 #include <Utils/ProcUtils.hpp>
+#include <Utils/MemUtils.hpp>   // TryCallWrapper: /EHsc catch(...) cannot catch 0xC0000005
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
 
@@ -537,6 +538,13 @@ void OpenGLGui::render(HDC dc) try
     // happens further down, inside the fullscreen click-through window, because
     // ImGui::NewFrame leaves no current window and this ImGui fork's PushFont
     // writes to it.
+    // One-shot stage markers. An access violation in this path is NOT caught by
+    // the /EHsc catch(...) at the bottom of the function, and this build produced
+    // no crash dump on the first-frame fault. The last stage line in the log is
+    // therefore the only reliable pointer to the faulting section.
+    static bool sStage1 = false, sStage2 = false, sStage3 = false;
+    static bool sStageNoDraw = false, sReportedDispatchFault = false;
+
     if (gFeatureManager && gFeatureManager->mModuleManager) {
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize(io.DisplaySize);
@@ -550,18 +558,32 @@ void OpenGLGui::render(HDC dc) try
             loggedHudDispatch = true;
             spdlog::info("[GUI probe] GL HUD dispatch active (RenderEvent -> all subscribers)");
         }
-        // Interface::onRenderEvent dereferences ClientInstance::get() without a
-        // null check, and this path can run before the client is fully up.
-        // TargetHUD subscribes too (TargetHUD.cpp), so nothing is called by hand
-        // here any more -- doing that would draw it twice.
+        // The dispatcher walks ~39 RenderEvent subscribers. A single one of them
+        // dereferencing a stale Actor used to take the whole game down on the very
+        // first frame. Keep that fault local: skip this frame's HUD dispatch
+        // instead of killing the process, and make it observable once.
         if (ClientInstance::get()) {
-            auto holder = nes::make_holder<RenderEvent>();
-            gFeatureManager->mDispatcher->trigger(holder);
+            const bool dispatched = TryCallWrapper([&]() {
+                auto holder = nes::make_holder<RenderEvent>();
+                gFeatureManager->mDispatcher->trigger(holder);
+            });
+            if (!dispatched && !sReportedDispatchFault) {
+                sReportedDispatchFault = true;
+                spdlog::error("[GUI] RenderEvent subscriber raised an access violation; HUD dispatch skipped for this frame");
+            }
         }
         ImGui::End();
         ImGui::PopStyleVar();
+        if (!sStage1) {
+            sStage1 = true;
+            spdlog::info("[GUI] frame stage 1/3 ok (HUD window + RenderEvent dispatch)");
+        }
     }
     ImGui::Render();
+    if (!sStage2) {
+        sStage2 = true;
+        spdlog::info("[GUI] frame stage 2/3 ok (ImGui::Render)");
+    }
     // SwapBuffers may arrive with an offscreen draw FBO still bound. Draw on
     // the window's default framebuffer, then restore the game's FBO selection.
     GLint previousFramebuffer = 0;
@@ -574,7 +596,16 @@ void OpenGLGui::render(HDC dc) try
     glDrawBuffer(glGuiDrawBuffer);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     ImDrawData* drawData = ImGui::GetDrawData();
-    ImGui_ImplOpenGL3_RenderDrawData(drawData);
+    if (drawData) {
+        ImGui_ImplOpenGL3_RenderDrawData(drawData);
+    } else if (!sStageNoDraw) {
+        sStageNoDraw = true;
+        spdlog::warn("[GUI] ImGui::GetDrawData() returned null; skipping GL submit this frame");
+    }
+    if (!sStage3) {
+        sStage3 = true;
+        spdlog::info("[GUI] frame stage 3/3 ok (GL submit)");
+    }
     if (capturing && drawData && drawData->TotalVtxCount > 0) {
         glGuiLastDrawMs.store(glNowMs());
         glGuiCapture.store(true);
