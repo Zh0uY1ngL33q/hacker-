@@ -540,8 +540,13 @@ void OpenGLGui::render(HDC dc) try
     // writes to it.
     // One-shot stage markers. An access violation in this path is NOT caught by
     // the /EHsc catch(...) at the bottom of the function, and this build produced
-    // no crash dump on the first-frame fault. The last stage line in the log is
-    // therefore the only reliable pointer to the faulting section.
+    // no crash dump. spdlog is configured with flush_on(level::err), so info-level
+    // lines sit in the stdio buffer and are lost when the process dies -- the
+    // "last log line" is not the crash point unless every marker is flushed.
+    auto logStage = [](const char* msg) {
+        spdlog::info("{}", msg);
+        spdlog::default_logger()->flush();
+    };
     static bool sStage1 = false, sStage2 = false, sStage3 = false;
     static bool sStageNoDraw = false, sReportedDispatchFault = false;
 
@@ -556,7 +561,7 @@ void OpenGLGui::render(HDC dc) try
         static bool loggedHudDispatch = false;
         if (!loggedHudDispatch) {
             loggedHudDispatch = true;
-            spdlog::info("[GUI probe] GL HUD dispatch active (RenderEvent -> all subscribers)");
+            logStage("[GUI probe] GL HUD dispatch active (RenderEvent -> all subscribers)");
         }
         // The dispatcher walks ~39 RenderEvent subscribers. A single one of them
         // dereferencing a stale Actor used to take the whole game down on the very
@@ -576,13 +581,13 @@ void OpenGLGui::render(HDC dc) try
         ImGui::PopStyleVar();
         if (!sStage1) {
             sStage1 = true;
-            spdlog::info("[GUI] frame stage 1/3 ok (HUD window + RenderEvent dispatch)");
+            logStage("[GUI] frame stage 1/3 ok (HUD window + RenderEvent dispatch)");
         }
     }
     ImGui::Render();
     if (!sStage2) {
         sStage2 = true;
-        spdlog::info("[GUI] frame stage 2/3 ok (ImGui::Render)");
+        logStage("[GUI] frame stage 2/3 ok (ImGui::Render)");
     }
     // SwapBuffers may arrive with an offscreen draw FBO still bound. Draw on
     // the window's default framebuffer, then restore the game's FBO selection.
@@ -604,7 +609,7 @@ void OpenGLGui::render(HDC dc) try
     }
     if (!sStage3) {
         sStage3 = true;
-        spdlog::info("[GUI] frame stage 3/3 ok (GL submit)");
+        logStage("[GUI] frame stage 3/3 ok (GL submit)");
     }
     if (capturing && drawData && drawData->TotalVtxCount > 0) {
         glGuiLastDrawMs.store(glNowMs());
