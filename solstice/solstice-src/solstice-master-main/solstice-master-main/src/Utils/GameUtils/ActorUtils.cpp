@@ -167,62 +167,19 @@ bool ActorUtils::isBot(Actor* actor)
 
 std::shared_ptr<InventoryTransactionPacket> ActorUtils::createAttackTransaction(Actor* actor, int slot)
 {
-    auto* client = ClientInstance::get();
-    if (!client || !actor) return nullptr;
+    auto player = ClientInstance::get()->getLocalPlayer();
 
-    auto* player = client->getLocalPlayer();
-    if (!player) return nullptr;
-
-    // Every link in this chain can answer null -- the inventory getters are plain
-    // member reads and the container is an entt lookup -- and this runs once per
-    // attack, which is now that outgoing sends actually work. Returning null lets
-    // the caller skip the swing instead of faulting inside it.
-    auto* supplies = player->getSupplies();
-    if (!supplies) return nullptr;
-
-    if (slot == -1) slot = supplies->mSelectedSlot;
-
-    auto* container = supplies->getContainer();
-    if (!container) return nullptr;
-
-    auto* held = container->getItem(slot);
-
-    auto* pos = player->getPos();
-    if (!pos) return nullptr;
-
+    if (slot == -1) slot = player->getSupplies()->mSelectedSlot;
     auto pkt = MinecraftPackets::createPacket<InventoryTransactionPacket>();
 
     auto cit = std::make_unique<ItemUseOnActorInventoryTransaction>();
     cit->mSlot = slot;
-    // Attacking with an empty hand is legal; build the descriptor from an empty
-    // stack rather than dereferencing a null slot.
-    ItemStack emptyHand{};
-    cit->mItemInHand = NetworkItemStackDescriptor(held ? *held : emptyHand);
+    cit->mItemInHand = NetworkItemStackDescriptor(*player->getSupplies()->getContainer()->getItem(slot));
     auto unique = actor->getActorUniqueIDComponent();
-
-    // ItemUseOnEntityTransaction carries an ActorRuntimeID on the wire, not the
-    // persistent unique id. The two are different numbers on a live actor; sending
-    // the unique id makes the server unable to resolve the target, which looks
-    // exactly like "attacked but nothing happened". Fall back to the unique id only
-    // when the runtime component is missing.
-    const int64_t runtimeId = actor->getRuntimeID();
-    const int64_t uniqueId = unique ? unique->mUniqueID : -1;
-    cit->mActorId = runtimeId > 0 ? runtimeId : uniqueId;
+    cit->mActorId = unique ? unique->mUniqueID : -1;
     cit->mActionType = ItemUseOnActorInventoryTransaction::ActionType::Attack;
-    cit->mClickPos = actor->getAABB().getClosestPoint(*pos);
-    cit->mPlayerPos = *pos;
-
-    // One line, once. The values are what the server will see; if the hit still
-    // does not land, this says whether the id, the type or the slot was wrong.
-    static bool reported = false;
-    if (!reported)
-    {
-        reported = true;
-        spdlog::info("[aura] transaction actorId={} (runtime={} unique={}) action={} slot={} type={}",
-                     cit->mActorId, runtimeId, uniqueId,
-                     static_cast<int>(cit->mActionType), slot,
-                     static_cast<int>(cit->type));
-    }
+    cit->mClickPos = actor->getAABB().getClosestPoint(*player->getPos());
+    cit->mPlayerPos = *player->getPos();
 
     pkt->mTransaction = std::move(cit);
 

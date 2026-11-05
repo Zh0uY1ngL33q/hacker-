@@ -55,16 +55,6 @@ void Detour::enable(bool silent) const
         if (!silent) spdlog::error("Cannot enable uncreated detour {}", mName);
         return;
     }
-    // Printed BEFORE the freeze: MH_EnableHook suspends every other thread, and
-    // a hang inside it leaves no "Enabled detour" line. This makes the last log
-    // line identify the exact hook that blocked instead of just the previous one.
-    if (!silent) {
-        spdlog::info("[hook] enabling {}", mName);
-        // spdlog flushes only at level::err. MH_EnableHook freezes every thread;
-        // if it hangs, an unflushed info line is lost and the log points at the
-        // previous hook instead. Flush here so the last line names the blocker.
-        spdlog::default_logger()->flush();
-    }
     const MH_STATUS status = MH_EnableHook(mFunc);
 
     if (silent) return;

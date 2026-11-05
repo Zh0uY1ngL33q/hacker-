@@ -30,7 +30,6 @@
 #include <Utils/Keyboard.hpp>
 #include <Utils/MiscUtils/MathUtils.hpp>
 #include <Utils/ProcUtils.hpp>
-#include <Utils/MemUtils.hpp>   // TryCallWrapper: /EHsc catch(...) cannot catch 0xC0000005
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
 
@@ -491,37 +490,6 @@ void OpenGLGui::render(HDC dc) try
                         MathUtils::fov = RenderUtils::transform.mFov;
                         MathUtils::origin = RenderUtils::transform.mOrigin;
 
-                        // One-shot self-check: a point ten blocks straight ahead
-                        // must land at the centre of the screen. The matrix, the fov
-                        // factors and the display size all enter that one number, so
-                        // a wrong one is a number in the log instead of boxes in the
-                        // wrong place -- and it is the only test that does not depend
-                        // on judging a picture by eye.
-                        static bool sProjectionChecked = false;
-                        if (!sProjectionChecked)
-                        {
-                            sProjectionChecked = true;
-                            constexpr float kDegToRad = 3.14159265358979323846f / 180.f;
-                            const float yawRad = yawDeg * kDegToRad;
-                            const float pitchRad = pitchDeg * kDegToRad;
-                            const glm::vec3 forward{
-                                -std::sin(yawRad) * std::cos(pitchRad),
-                                -std::sin(pitchRad),
-                                 std::cos(yawRad) * std::cos(pitchRad) };
-                            glm::vec2 screen{};
-                            if (view.OWorldToScreen(*cam, *cam + forward * 10.f, screen,
-                                                    MathUtils::fov, MathUtils::displaySize))
-                                spdlog::info("[proj] ahead -> ({:.1f}, {:.1f}) centre ({:.1f}, {:.1f}) fov ({:.3f}, {:.3f})",
-                                             screen.x, screen.y,
-                                             MathUtils::displaySize.x * 0.5f,
-                                             MathUtils::displaySize.y * 0.5f,
-                                             MathUtils::fov.x, MathUtils::fov.y);
-                            else
-                                spdlog::info("[proj] ahead rejected: fov ({:.3f}, {:.3f}) size ({:.0f}, {:.0f})",
-                                             MathUtils::fov.x, MathUtils::fov.y,
-                                             MathUtils::displaySize.x, MathUtils::displaySize.y);
-                        }
-
                     }
                     }
                 }
@@ -538,18 +506,6 @@ void OpenGLGui::render(HDC dc) try
     // happens further down, inside the fullscreen click-through window, because
     // ImGui::NewFrame leaves no current window and this ImGui fork's PushFont
     // writes to it.
-    // One-shot stage markers. An access violation in this path is NOT caught by
-    // the /EHsc catch(...) at the bottom of the function, and this build produced
-    // no crash dump. spdlog is configured with flush_on(level::err), so info-level
-    // lines sit in the stdio buffer and are lost when the process dies -- the
-    // "last log line" is not the crash point unless every marker is flushed.
-    auto logStage = [](const char* msg) {
-        spdlog::info("{}", msg);
-        spdlog::default_logger()->flush();
-    };
-    static bool sStage1 = false, sStage2 = false, sStage3 = false;
-    static bool sStageNoDraw = false, sReportedDispatchFault = false;
-
     if (gFeatureManager && gFeatureManager->mModuleManager) {
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize(io.DisplaySize);
@@ -561,42 +517,20 @@ void OpenGLGui::render(HDC dc) try
         static bool loggedHudDispatch = false;
         if (!loggedHudDispatch) {
             loggedHudDispatch = true;
-            logStage("[GUI probe] GL HUD dispatch active (RenderEvent -> all subscribers)");
+            spdlog::info("[GUI probe] GL HUD dispatch active (RenderEvent -> all subscribers)");
         }
-        // The dispatcher walks ~39 RenderEvent subscribers. A single one of them
-        // dereferencing a stale Actor used to take the whole game down on the very
-        // first frame. Keep that fault local: skip this frame's HUD dispatch
-        // instead of killing the process, and make it observable once.
-        // DISABLED. This fan-out runs every GL frame and reaches ~39 RenderEvent
-        // subscribers, several enabled by default. With it active the game
-        // freezes right after startup: no exception, no crash dump, no further
-        // log output -- the stage markers above only prove the FIRST frame got
-        // through. Park the fan-out until the per-subscriber path is rewritten.
-        // Aura2 does not subscribe to RenderEvent, so combat verification is
-        // unaffected. Flip this constant to restore the HUD.
-        static constexpr bool kDispatchRenderEvents = false;
-        if (kDispatchRenderEvents && ClientInstance::get()) {
-            const bool dispatched = TryCallWrapper([&]() {
-                auto holder = nes::make_holder<RenderEvent>();
-                gFeatureManager->mDispatcher->trigger(holder);
-            });
-            if (!dispatched && !sReportedDispatchFault) {
-                sReportedDispatchFault = true;
-                spdlog::error("[GUI] RenderEvent subscriber raised an access violation; HUD dispatch skipped for this frame");
-            }
+        // Interface::onRenderEvent dereferences ClientInstance::get() without a
+        // null check, and this path can run before the client is fully up.
+        // TargetHUD subscribes too (TargetHUD.cpp), so nothing is called by hand
+        // here any more -- doing that would draw it twice.
+        if (ClientInstance::get()) {
+            auto holder = nes::make_holder<RenderEvent>();
+            gFeatureManager->mDispatcher->trigger(holder);
         }
         ImGui::End();
         ImGui::PopStyleVar();
-        if (!sStage1) {
-            sStage1 = true;
-            logStage("[GUI] frame stage 1/3 ok (HUD window + RenderEvent dispatch)");
-        }
     }
     ImGui::Render();
-    if (!sStage2) {
-        sStage2 = true;
-        logStage("[GUI] frame stage 2/3 ok (ImGui::Render)");
-    }
     // SwapBuffers may arrive with an offscreen draw FBO still bound. Draw on
     // the window's default framebuffer, then restore the game's FBO selection.
     GLint previousFramebuffer = 0;
@@ -609,16 +543,7 @@ void OpenGLGui::render(HDC dc) try
     glDrawBuffer(glGuiDrawBuffer);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     ImDrawData* drawData = ImGui::GetDrawData();
-    if (drawData) {
-        ImGui_ImplOpenGL3_RenderDrawData(drawData);
-    } else if (!sStageNoDraw) {
-        sStageNoDraw = true;
-        spdlog::warn("[GUI] ImGui::GetDrawData() returned null; skipping GL submit this frame");
-    }
-    if (!sStage3) {
-        sStage3 = true;
-        logStage("[GUI] frame stage 3/3 ok (GL submit)");
-    }
+    ImGui_ImplOpenGL3_RenderDrawData(drawData);
     if (capturing && drawData && drawData->TotalVtxCount > 0) {
         glGuiLastDrawMs.store(glNowMs());
         glGuiCapture.store(true);

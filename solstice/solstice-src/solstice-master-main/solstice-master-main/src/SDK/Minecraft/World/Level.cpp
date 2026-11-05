@@ -5,7 +5,6 @@
 #include "Level.hpp"
 
 #include <libhat.hpp>
-#include <libhat/Access.hpp>
 #include <cstring>
 #include <atomic>
 #include <algorithm>
@@ -21,41 +20,13 @@
 
 std::unordered_map<mce::UUID, PlayerListEntry>* Level::getPlayerList()
 {
-    // Slot 427 of Level's vtable (measured from the RTTI vtable at 0x921FA60) is
-    // `mov rcx,[rcx+0x918]; jmp <mov rax,rcx; ret>` -- an accessor that returns the
-    // member unchanged. So the container is reachable without the virtual call, and
-    // the Index signature that never resolved was only ever trying to find it.
-    // Level's copy constructor allocates 0x928 bytes, which puts 0x918 on the last
-    // pointer-sized member, consistent with a container pointer.
-    constexpr int kPlayerListOffset = 0x918;
-
-    auto* map = hat::member_at<std::unordered_map<mce::UUID, PlayerListEntry>*>(this, kPlayerListOffset);
-    if (!InstanceLocator::isReadableMemory(map, 0x40))
+    static auto vIndex = OffsetProvider::Level_getPlayerList;
+    // MISSING in 1.21.120; a virtual call through slot 0 (dtor) or a huge
+    // index is a wild jump. Callers must tolerate null.
+    if (vIndex < 2 || vIndex >= 4096)
         return nullptr;
-
-    // It is only "the player list" by inference, so the container is validated
-    // before it is handed out. MSVC's unordered_map opens with the node-list head
-    // and its size: either a non-readable head or an absurd size means this member
-    // is something else, and answering null keeps the social modules idle instead
-    // of walking random memory.
-    const auto* words = reinterpret_cast<const uintptr_t*>(map);
-    const size_t size = static_cast<size_t>(words[1]);
-    if (size > 100000)
-        return nullptr;
-    if (words[0] != 0 &&
-        !InstanceLocator::isReadableMemory(reinterpret_cast<const void*>(words[0]), 0x10))
-        return nullptr;
-
-    // One line, once: if the guess is wrong the first words say what the member
-    // actually holds, which is cheaper than another round of blind searching.
-    static bool logged = false;
-    if (!logged)
-    {
-        logged = true;
-        spdlog::info("[level] playerList +0x{:X}: head={:X} size={} [{:X} {:X}]",
-                     kPlayerListOffset, words[0], size, words[2], words[3]);
-    }
-    return map;
+    const auto map = MemUtils::callVirtualFunc<std::unordered_map<mce::UUID, PlayerListEntry>*>(vIndex, this);
+    return InstanceLocator::isReadableMemory(map, 0x8) ? map : nullptr;
 }
 
 namespace {

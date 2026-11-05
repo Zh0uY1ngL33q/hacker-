@@ -38,12 +38,7 @@ void ChinaHat::onRenderEvent(RenderEvent& event) {
 
     auto color = ColorUtils::getThemedColor(0);
     color.Value.w = mOpacity.mValue;
-    // The shape component is an entt lookup and answers null for an actor that is
-    // between ticks or being removed; RenderEvent now runs every frame, so this
-    // path is reached far more often than it used to be.
-    auto* shape = player->getAABBShapeComponent();
-    if (!shape) return;
-    float height = shape->mHeight;
+    float height = player->getAABBShapeComponent()->mHeight;
     glm::vec2 screenPos1 = {0, 0};
     glm::vec3 hatTip = {pos.x, pos.y + height + (0.5f * mSize.mValue), pos.z};
 

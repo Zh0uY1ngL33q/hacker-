@@ -4,14 +4,9 @@
 
 #include "ClientInstance.hpp"
 
-#include <windows.h>
 #include <libhat/Access.hpp>
 #include <SDK/OffsetProvider.hpp>
 #include <SDK/SigManager.hpp>
-// getPacketSender() inspects sender->vtable and constructs a fallback object of
-// this type. ClientInstance.hpp only forward-declares it, and a unity group that
-// does not happen to include the definition elsewhere fails with C2027.
-#include <SDK/Minecraft/Network/LoopbackPacketSender.hpp>
 
 #include "MinecraftGame.hpp"
 #include "InstanceLocator.hpp"
@@ -19,8 +14,6 @@
 #include <Utils/Structs.hpp>
 #include <SDK/Minecraft/Rendering/GuiData.hpp>
 #include <cmath>
-#include <spdlog/spdlog.h>
-#include <atomic>
 
 #include "KeyboardMouseSettings.hpp"
 #include <Windows.h>
@@ -116,24 +109,7 @@ LoopbackPacketSender* ClientInstance::getPacketSender()
     // 0x228, which is the *pointer* of vtable slot 69. Reading a member there gave
     // null every time, so every module that sends a packet -- Aura's attacks,
     // Scaffold's placements, all of chat -- was writing into nothing.
-    auto* sender = readPacketSenderMember(this, OffsetProvider::ClientInstance_mPacketSender);
-    if (sender && sender->vtable)
-        return sender;
-
-    // 37 call sites dereference the result immediately, so a null pointer here is a
-    // crash rather than a dropped packet. Answer with an object whose vtable is
-    // empty instead: LoopbackPacketSender::send refuses it, nothing is sent, and
-    // the reason is logged once.
-    static LoopbackPacketSender sUnavailable{};
-    static bool warned = false;
-    if (!warned)
-    {
-        warned = true;
-        spdlog::warn("[net] packet sender unavailable (member 0x{:X} reads 0x{:X}); outgoing packets are dropped",
-                     OffsetProvider::ClientInstance_mPacketSender,
-                     reinterpret_cast<uintptr_t>(sender));
-    }
-    return &sUnavailable;
+    return readPacketSenderMember(this, OffsetProvider::ClientInstance_mPacketSender);
 }
 
 GuiData* ClientInstance::getGuiData()
@@ -193,31 +169,8 @@ Options* ClientInstance::getOptions()
 
 std::string ClientInstance::getScreenName()
 {
-    const int slot = static_cast<int>(OffsetProvider::ClientInstance_getScreenName);
-    if (slot < 2 || slot >= 4096)
-        return "no_screen";
-
-    // The wrapper behind this slot (0x1A19600 on this build) does
-    // `mov rcx,[rcx+0xD8]; mov rax,[rcx]; ... call [rax+0x658]` -- it hands the
-    // call to a sub-object and then builds the string out of what comes back.
-    // 0xD8 has not been confirmed to be an object pointer on 1.21.120, and a
-    // wrong pointer there is a jump into arbitrary memory rather than a null
-    // read, so refuse the call unless the member looks like an object.
-    void* sub = hat::member_at<void*>(this, 0xD8);
-    if (!InstanceLocator::isPlausibleObject(sub))
-    {
-        static bool warned = false;
-        if (!warned)
-        {
-            warned = true;
-            spdlog::warn("[ui] getScreenName: ClientInstance+0xD8 (0x{:X}) is not a plausible object; reporting no_screen",
-                         reinterpret_cast<uintptr_t>(sub));
-        }
-        return "no_screen";
-    }
-
     std::string name = "no_screen";
-    name = MemUtils::callVirtualFunc<std::string&, std::string&>(slot, this, name);
+    name = MemUtils::callVirtualFunc<std::string&, std::string&>(OffsetProvider::ClientInstance_getScreenName, this, name);
     return name;
 }
 
@@ -243,36 +196,13 @@ bool ClientInstance::getMouseGrabbed()
     // doing anything, and BlockESP never drew.
     //
     // The screen name is the state the callers actually care about: hud_screen is
-    // the only screen that holds the mouse, every other one releases it. The name
-    // comes from virtual slot 266, which forwards into a sub-object; if that chain
-    // is not usable the answer falls back to cursor visibility rather than to a
-    // constant, because a constant true here stops every module hotkey.
+    // the only screen that holds the mouse, every other one releases it. When the
+    // name is unavailable this falls back to "screen open", which is the same
+    // answer as before, so a failure here cannot make a module run wild.
     const std::string screen = getScreenName();
-
-    // One line every five seconds while the answer is being established: a slot
-    // that never worked and a slot that works both look identical from inside the
-    // modules that consume this, and "hotkeys do nothing" is the only symptom.
-    // The name itself is the verdict -- hud_screen means the chain is live.
-    static std::atomic<long long> sLastLog{ 0 };
-    const long long now = static_cast<long long>(GetTickCount64());
-    long long expected = sLastLog.load(std::memory_order_relaxed);
-    if (now - expected >= 5000 && sLastLog.compare_exchange_strong(expected, now))
-        spdlog::info("[ui] screen=\"{}\"", screen);
-
-    if (!screen.empty() && screen != "no_screen")
-        return screen != "hud_screen";
-
-    // The name is unavailable, so fall back to what the OS knows: the game hides
-    // the cursor while it owns the mouse for gameplay and shows it whenever a
-    // screen needs pointing at. Reporting "screen open" here is what killed every
-    // hotkey -- KeyHook gates all module binds on this single answer -- so the
-    // fallback leans the other way and assumes gameplay unless the cursor says
-    // otherwise.
-    CURSORINFO cursor{};
-    cursor.cbSize = sizeof(cursor);
-    if (GetCursorInfo(&cursor))
-        return (cursor.flags & CURSOR_SHOWING) != 0;
-    return false;
+    if (screen.empty() || screen == "no_screen")
+        return true;
+    return screen != "hud_screen";
 }
 
 void ClientInstance::grabMouse()

@@ -21,11 +21,6 @@
 
 LONG WINAPI TopLevelExceptionHandler(const PEXCEPTION_POINTERS pExceptionInfo)
 {
-    // spdlog only flushes at level::err; anything still sitting in the stdio
-    // buffer would be lost with the process. Flush before walking the stack so
-    // the log ends at the line that actually preceded the fault.
-    spdlog::default_logger()->flush();
-
     // Get the exception code
     auto exceptionCode = pExceptionInfo->ExceptionRecord->ExceptionCode;
 

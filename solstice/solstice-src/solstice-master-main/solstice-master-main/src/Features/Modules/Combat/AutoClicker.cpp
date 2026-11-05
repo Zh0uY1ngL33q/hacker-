@@ -30,24 +30,15 @@ void AutoClicker::onRenderEvent(RenderEvent& event)
     auto ci = ClientInstance::get();
     auto player = ci->getLocalPlayer();
 
-    // "Only in gameplay" is expressed through getMouseGrabbed, which falls back to
-    // cursor visibility when the screen name is unavailable -- the name comparison
-    // made this module dead the moment the name stopped resolving.
-    if (!player || ci->getMouseGrabbed()) return;
+    if (!ci->getLocalPlayer() || ci->getScreenName() != "hud_screen") return;
 
-    auto* level = player->getLevel();
-    if (!level) return;
-    auto hitres = level->getHitResult();
+    auto hitres = ci->getLocalPlayer()->getLevel()->getHitResult();
 
     if (mWeaponsOnly.mValue)
     {
-        auto* supplies = player->getSupplies();
-        if (!supplies) return;
-        int slot = supplies->mSelectedSlot;
-        auto* container = supplies->getContainer();
-        if (!container) return;
-        auto item = container->getItem(slot);
-        if (!item || !item->mItem) return;
+        int slot = player->getSupplies()->mSelectedSlot;
+        auto item = player->getSupplies()->getContainer()->getItem(slot);
+        if (!item->mItem) return;
         auto type = item->getItem()->getItemType();
         // if type isnt Sword
         if (type != SItemType::Sword) return;

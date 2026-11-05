@@ -36,8 +36,6 @@
 #define PLAYER_HEIGHT 1.62f
 #define PLAYER_HEIGHT_VEC glm::vec3(0.f, PLAYER_HEIGHT, 0.f)
 
-class NameableComponent;
-
 class Actor {
 public:
     unsigned char filler[0x408]; // ItemActor::ItemActor on bds line 35 ItemStack::ItemStack((ItemActor *)((char *)this + 1024));
@@ -47,19 +45,12 @@ public:
     CLASS_FIELD(std::string, mEntityIdentifier, OffsetProvider::Actor_mEntityIdentifier);
 
     bool getStatusFlag(ActorFlags flag) {
-        // The flag component is an entt lookup and answers null whenever the type
-        // name does not register on this build -- exactly the case for several
-        // components here. Six modules read this (Speed, Anticheat, AntiBot,
-        // AntiImmobile, ServerSneak, AutoReport), so a null dereference was one
-        // component-name mismatch away from crashing all of them.
-        auto* data = getActorDataFlagComponent();
-        if (!data) return false;
+        auto data = getActorDataFlagComponent();
         return data->getStatusFlag(flag);
     }
 
     void setStatusFlag(ActorFlags flag, bool value) {
-        auto* data = getActorDataFlagComponent();
-        if (!data) return;
+        auto data = getActorDataFlagComponent();
         data->setStatusFlag(flag, value);
     }
 
@@ -163,7 +154,6 @@ public:
     RawMoveInputComponent* getRawMoveInputComponent();
     ActorRotationComponent* getActorRotationComponent();
     AABBShapeComponent* getAABBShapeComponent();
-    NameableComponent* getNameableComponent();
     BlockMovementSlowdownMultiplierComponent* getBlockMovementSlowdownMultiplierComponent();
     ActorUniqueIDComponent* getActorUniqueIDComponent();
     ContainerManagerModel* getContainerManagerModel();

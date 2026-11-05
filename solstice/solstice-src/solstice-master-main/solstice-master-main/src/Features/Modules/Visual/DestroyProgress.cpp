@@ -34,9 +34,7 @@ void DestroyProgress::onRenderEvent(RenderEvent& event)
     lastProgress = cAnimProgress;
     cAnimProgress = MathUtils::clamp(cAnimProgress, 0.f, 1.f);
 
-    auto* level = player->getLevel();
-    if (!level) return;
-    auto* hit = level->getHitResult();
+    auto* hit = player->getLevel()->getHitResult();
     if (0 >= cProgress || !hit || hit->mType != HitType::BLOCK) return;
 
     glm::ivec3 cMiningPos = hit->mBlockPos;

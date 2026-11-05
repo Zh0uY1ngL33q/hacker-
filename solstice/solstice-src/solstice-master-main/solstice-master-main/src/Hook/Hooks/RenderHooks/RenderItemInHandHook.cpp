@@ -25,9 +25,5 @@ void RenderItemInHandHook::init()
 {
     mDetour = std::make_unique<Detour>("mce::framebuilder::RenderItemInHandDescription::RenderItemInHandDescription",
         reinterpret_cast<void*>(SigManager::mce_framebuilder_RenderItemInHandDescription_ctor), &RenderItemInHandDescriptionCtor);
-    // Deliberately NOT enabled here. This constructor is a per-frame hot path;
-    // a single-hook MH_EnableHook freezes every game thread and hung startup.
-    // HookManager::init() enables all created hooks together at the end. This
-    // hook is currently not registered at all -- see the note there -- but
-    // keeping this invariant prevents the same hang if it is ever added back.
+    mDetour->enable();
 }
