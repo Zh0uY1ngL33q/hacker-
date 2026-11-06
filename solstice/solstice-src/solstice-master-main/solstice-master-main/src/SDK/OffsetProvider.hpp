@@ -198,11 +198,36 @@ public:
     // source at 0x118 (slot 318), so the surrounding layout is unchanged.
     DEFINE_FIELD(ClientInstance_mPacketSender, 0x108);
     //DEFINE_INDEX_FIELD(ClientInstance_mGuiData, "48 8B ? ? ? ? ? 48 8B ? 48 85 ? 74 ? 33 C9 48 89 ? 48 89 ? ? 48 8B ? ? 48 85 ? 74 ? F0 FF ? ? 48 8B ? ? 48 8B ? ? 48 8B ? ? 48 89 ? 48 89 ? ? 48 85 ? 74 ? E8 ? ? ? ? 48 8B ? 48 85 ? 74 ? 48 83 38 ? 74 ? 48 8B ? 48 83 C4 ? 5B C3 E8 ? ? ? ? CC CC CC CC CC CC CC CC CC CC CC CC 48 8B ? ? ? ? ? C3 CC CC CC CC CC CC CC CC 48 89 ? ? ? 57", 3, OffsetType::FieldOffset);
-    DEFINE_INDEX_FIELD(MinecraftGame_playUi, "48 8B 49 08 48 8B 01 48 8B 80 ? ? ? ? FF 15 ? ? ? ? 48 83 C4 38", 3, OffsetType::Index);
+    // Batch-1 FIX (was IMPLAUSIBLE, value 3238145). Root cause: OPERAND
+    // POSITION. The pattern starts at "48 8B 49 08 / 48 8B 01 / 48 8B 80", so
+    // the disp32 of "mov rax,[rax+disp32]" is at match+10; the old 3 read
+    // "08 48 8B 01" (previous disp8 + next opcodes) in BOTH builds.
+    //   1.21.120 hit 0x1CBC3E4 -> disp32 0x520 -> slot 164
+    //   1.21.44  hit 0x003DF624 -> disp32 0x4C0 -> slot 152
+    // Same instruction shape, slot drift only. Unique, 8-byte aligned, in range.
+    // Extraction rule CONFIRMED; call-site identity + behaviour NEED_RUNTIME_TEST.
+    DEFINE_INDEX_FIELD(MinecraftGame_playUi, "48 8B 49 08 48 8B 01 48 8B 80 ? ? ? ? FF 15 ? ? ? ? 48 83 C4 38", 10, OffsetType::Index);
     // Confirm the node+0x28 ClientInstance and getLocalPlayer vslot 35. The
     // shorter tree-only pattern also matched an unrelated map at offset 0x300.
     DEFINE_INDEX_FIELD(MinecraftGame_mClientInstances, "48 8B 99 ? ? ? ? 48 8B FA 48 8B 1B 80 7B 19 00 0F 85 ? ? ? ? 48 8B 4B 28 48 8B 01 48 8B 80 18 01 00 00 FF 15", 3, OffsetType::FieldOffset);
-    DEFINE_INDEX_FIELD(MinecraftGame_mProfanityContext, "49 8B ? ? ? ? ? ? 49 8B ? 48 8B ? ? ? ? ? FF 15 ? ? ? ? 48 8D ? ? E8", 4, OffsetType::FieldOffset);
+    // Batch-1 UNVERIFIED (was IMPLAUSIBLE, value 1). Root cause: INSTRUCTION
+    // VERSION CHANGE + WRONG OPERAND. 1.21.44 hit 0x1D68EF "mov rdx,[r12+0x190]"
+    // and match+4 correctly read 400. 1.21.120's only hit 0x16CD84D is
+    // "49 8B 00 / BA 01 00 00 00" (mov edx,1), so match+4 is an immediate.
+    // Anchoring to the 1.21.44 instruction shape gives ZERO hits here: the
+    // real access site is unknown. Do NOT hardcode 400 or 1. Consumers gate on
+    // usableOffset(). New status MISSING; runtime verification PENDING.
+    DEFINE_INDEX_FIELD(MinecraftGame_mProfanityContext, "49 8B 94 24 ? ? ? ? 49 8B ? 48 8B ? ? ? ? ? FF 15 ? ? ? ? 48 8D ? ? E8", 4, OffsetType::FieldOffset);
+    // Batch-1 UNVERIFIED, deliberately still IMPLAUSIBLE (-964358145). Root
+    // cause: SIGNATURE MATCH ERROR + WRONG OPERAND. 7 wildcards; the only hit
+    // 0x37E3BF6 is "45 85 FF" (test r15d,r15d), and match+2 is its ModRM plus
+    // the following jne opcode. The real byte write is at match+18:
+    // "41 C6 85 18 01 00 00 01" = mov byte ptr [r13+0x118], 1. That is the
+    // only such write in the image, but r13's type and the bool's identity are
+    // NOT proven (same function also touches [r13+0x148]). 1.21.44 has ZERO
+    // hits, so there is no cross-version anchor either. Per the stop rule we
+    // do NOT promote 0x118: a unique match is not semantic verification.
+    // Consumers gate on usableOffset(); the cursor fallback stays authoritative.
     DEFINE_INDEX_FIELD(MinecraftGame_mMouseGrabbed, "45 ? ? 0F 85 ? ? ? ? 41 C6 ? ? ? ? ?", 2, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(MainView_bedrockPlatform, "48 8B ? ? ? ? ? 48 8B ? B2 ? 48 8B ? ? ? ? ? FF 15 ? ? ? ? 84 C0", 3, OffsetType::FieldOffset);
     // The old pattern started inside the function body (0x593C6B2), so byte 3
@@ -238,7 +263,17 @@ public:
     DEFINE_INDEX_FIELD(LevelRendererPlayer_mFovX, "0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 80 B9 58 0F 00 00", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(LevelRendererPlayer_mFovY, "89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? F3 0F", 2, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(Actor_mSwinging, "80 ? ? ? ? ? 00 74 1C 8B ? ? ? ? ? FF C1 89 ? ? ? ?", 2, OffsetType::FieldOffset);
-    DEFINE_INDEX_FIELD(Actor_swing, "48 8B ? ? ? ? ? FF 15 ? ? ? ? 83 7C 24 ? ? 74", 3, OffsetType::Index);
+    // Batch-1 UNVERIFIED (was IMPLAUSIBLE, value 17305961). Root cause:
+    // SIGNATURE MIS-MATCH + INSTRUCTION VERSION CHANGE. The wildcard run spans
+    // an instruction boundary: at 0x38161B9 it starts on "48 8B CB"
+    // (mov rcx,rbx), so match+3 is the NEXT instruction "48 8B 40 08" and
+    // reads its opcode bytes as a disp32 (138447688 / 8 = 17305961).
+    // 1.21.44 had TWO hits: the correct "mov rax,[rax+0x390]" (slot 114) and
+    // this same garbage hit; in 1.21.120 only the garbage hit survives.
+    // Anchoring ModRM to 0x80 gives ZERO hits here -> honest MISSING instead
+    // of a plausible-looking wrong slot. Actor::swing() is inert via the
+    // callVirtualFunc index guard. Runtime verification PENDING.
+    DEFINE_INDEX_FIELD(Actor_swing, "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 83 7C 24 ? ? 74", 3, OffsetType::Index);
     DEFINE_INDEX_FIELD(Actor_mLevel, "48 8B ? ? ? ? ? 48 89 ? ? ? F3 0F ? ? ? 50 48", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(Level_getHitResult, "E8 ? ? ? ? E8 ? ? ? ? 48 ? ? E8 ? ? ? ? E8 ? ? ?", 3, OffsetType::Index);
     DEFINE_INDEX_FIELD(Level_getPlayerList, "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 8B 48 ? 39 8E ? ? ? ? 0F 84", 3, OffsetType::Index);
@@ -250,7 +285,15 @@ public:
     DEFINE_INDEX_FIELD_TYPED(uint8_t, UIProfanityContext_mEnabled, "80 79 ? ? 74 ? 80 79 ? ? 74 ? 45 ? ? 75 ? 4C 8D", 2, OffsetType::FieldOffset);
     //DEFINE_INDEX_FIELD(Bone_mPartModel, "8B 81 ? ? ? ? 89 82 ? ? ? ? F3 0F ? ? ? ? ? ? 0F 57", 2, OffsetType::FieldOffset); // this isn't even correct lmao
     DEFINE_INDEX_FIELD(Actor_mHurtTimeComponent, "48 8B ? ? ? ? ? 48 85 ? 74 ? 66 0F ? ? ? ? ? ? 0F 5B ? 0F 2F", 3, OffsetType::FieldOffset);
-    DEFINE_INDEX_FIELD(BlockSource_getChunk, "48 8B ? ? ? ? ? 44 89 ? ? ? FF 15 ? ? ? ? 48 83 C4", 3, OffsetType::Index);
+    // Batch-1 UNVERIFIED (was IMPLAUSIBLE, unaligned raw 64123367). Root
+    // cause: INSTRUCTION TYPE CHANGE + SIGNATURE MIS-MATCH. 1.21.44 hit
+    // 0x338488D "mov rax,[rax+0x138]" -> slot 39. 1.21.120's only hit
+    // 0x7C84DCA is "48 8B 05 E7 71 D2 03" = mov rax,[rip+0x3D271E7], a
+    // RIP-relative GLOBAL load, not a vtable slot; match+3 is that
+    // relocation displacement (not even 8-byte aligned). Anchoring ModRM to
+    // 0x80 gives ZERO hits, so the real call site is not identified here.
+    // BlockSource::getChunk() is inert via callVirtualFunc's index guard.
+    DEFINE_INDEX_FIELD(BlockSource_getChunk, "48 8B 80 ? ? ? ? 44 89 ? ? ? FF 15 ? ? ? ? 48 83 C4", 3, OffsetType::Index);
     DEFINE_INDEX_FIELD(BlockSource_setBlock, "48 8B ? ? ? ? ? FF 15 ? ? ? ? EB ? 41 83 FF", 3, OffsetType::Index);
     DEFINE_INDEX_FIELD(LevelChunk_mSubChunks, "48 2B ? ? ? ? ? 48 8B ? 48 C1 FF ? 48 0F", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD_TYPED(uint8_t, BlockSource_mBuildHeight, "0F BF ? ? 3B C8 0F 8D ? ? ? ? 8B 0F", 3, OffsetType::FieldOffset);
@@ -261,7 +304,14 @@ public:
     DEFINE_INDEX_FIELD(BlockSource_clip, "48 8B ? ? ? ? ? FF 15 ? ? ? ? 90 48 8D ? ? ? ? ? 48 8D ? ? ? ? ? E8 ? ? ? ? 48 8B", 3, OffsetType::Index);
 
     DEFINE_INDEX_FIELD(ClientInstance_getInputHandler, "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 48 8B C8 E8 ? ? ? ? 83 F8 ? 0F 85 ? ? ? ? 48 8B 8D ? ? ? ? 48 8B 01 48 8B 80 ? ? ? ?", 3, OffsetType::Index);
-    DEFINE_INDEX_FIELD(ClientInputMappingFactory_mKeyboardMouseSettings, "48 8B ? ? ? ? ? FF 15 ? ? ? ? 48 8B C8 E8 ? ? ? ? 48 3B", 3, OffsetType::FieldOffset); // TODO: replace with betta siggy
+    // Batch-1 UNVERIFIED (was IMPLAUSIBLE, value 138447688). Root cause:
+    // SIGNATURE MATCH ERROR + WRONG OPERAND. This pattern does NOT match the
+    // 1.21.44 reference image at all, so there is no cross-version anchor.
+    // 1.21.120's only hit 0x67A5C13 is "48 8B FA" (mov rdi,rdx); match+3
+    // lands on the next instruction "48 8B 40 08" and reads its opcode bytes.
+    // Anchoring ModRM to 0x80 gives ZERO hits -> MISSING, not a fake offset.
+    // getKeyboardMouseSettings() already returns nullptr for offset <= 0.
+    DEFINE_INDEX_FIELD(ClientInputMappingFactory_mKeyboardMouseSettings, "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 48 8B C8 E8 ? ? ? ? 48 3B", 3, OffsetType::FieldOffset);
 
     //DEFINE_INDEX_FIELD_TYPED(uint8_t, ClientInputHandler_mMappingFactory, "48 8B ? ? EB ? 48 8D ? ? 48 85 ? 74 ? 48 8B ? E8 ? ? ? ? 48 8B ? 48 8B ? ? ? 48 33 ? E8 ? ? ? ? 48 8B ? ? ? 48 8B ? ? ? 48 83 C4 ? 5F C3 E8 ? ? ? ? CC CC CC CC CC CC 48 89", 3, OffsetType::FieldOffset);
     DEFINE_FIELD(ClientInputHandler_mMappingFactory, 0x28);
