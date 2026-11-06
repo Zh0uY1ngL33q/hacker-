@@ -171,11 +171,23 @@ public:
     static inline std::unordered_map<std::string, long long> mSigImplausible;
 
     DEFINE_INDEX_FIELD(ClientInstance_getLocalPlayer, "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 48 85 C0 74 10 48 8B C8 E8 ? ? ? ? 48 8B 0F 48 39 08 74", 3, OffsetType::Index);
-    DEFINE_INDEX_FIELD(ClientInstance_getBlockSource, "48 8B ? ? ? ? ? FF 15 ? ? ? ? 48 85 ? 75 ? 48 83 C4 ? 5B C3 48 8B", 3, OffsetType::Index);
+    // Batch-2 STATIC VERIFIED. The former short call-site pattern had four
+    // matches (slots 318, 35, 35 and 69).  Only the slot-318 site is the
+    // ClientInstance wrapper: it loads the ClientInstance from [this+0x1A8],
+    // invokes slot 0x9F0/8 and then consumes the returned pointer.  Independent
+    // vtable analysis identifies slot 318 as the one-line [this+0x118] getter;
+    // that member is the BlockSource.  The full wrapper is unique in 1.21.120.
+    DEFINE_INDEX_FIELD(ClientInstance_getBlockSource, "40 53 48 83 EC 20 48 8B D9 48 8B 89 A8 01 00 00 48 8B 01 48 8B 80 ? ? ? ? FF 15 ? ? ? ? 48 85 C0 75 ?", 22, OffsetType::Index);
     DEFINE_INDEX_FIELD(ClientInstance_getOptions, "48 8B ? ? ? ? ? FF 15 ? ? ? ? 48 8B ? 48 8B ? 48 8B ? ? ? ? ? 48 8B ? FF 15 ? ? ? ? 3C ? 75 ? 48 8B ? 48 8B ? 48 8B ? ? ? ? ? FF 15 ? ? ? ? 3C", 3, OffsetType::Index);
     //DEFINE_INDEX_FIELD(ClientInstance_getScreenName, "48 8B ? ? ? ? ? FF 15 ? ? ? ? 90 48 85 ? 74 ? 48 8B ? E8 ? ? ? ? 90 48 89 ? ? ? 48 8B ? ? ? 48 89 ? ? ? 48 85 ? 74 ? E8 ? ? ? ? 48 8B ? ? ? 48 85 ? 74 ? 48 8B ? E8 ? ? ? ? 48 8B ? 48 8B ? ? ? 48 8B ? ? ? 48 83 C4 ? 5F C3 E8 ? ? ? ? 90 CC CC CC CC CC 48 89 ? ? ? 48 89 ? ? ? 57 48 83 EC ? 48 8B ? ? 48 83 C1", 3, OffsetType::Index);
     DEFINE_INDEX_FIELD(ClientInstance_getMouseGrabbed, "48 8B ? ? ? ? ? FF 15 ? ? ? ? 84 C0 75 ? 48 8B ? ? ? ? ? 48 85 ? 0F 84 ? ? ? ? 80 38 ? 0F 84 ? ? ? ? 48 8B ? ? ? ? ? 48 85 ? 74 ? F0 FF ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? ? ? ? F2 0F", 3, OffsetType::Index); // PLEASE CHECK AFTER IDK IF THIS IS CORRECT!!!
+    // Batch-2 UNVERIFIED. setDisableInput and releaseMouse deliberately retain
+    // their ambiguous declaration: the patterns are byte-identical and have
+    // the same 122 candidates.  The sole plausible extracted slot (436) is in
+    // an unrelated wrapper and cannot be assigned to either semantic method.
     DEFINE_INDEX_FIELD(ClientInstance_setDisableInput, "48 8B ? ? ? ? ? 48 8B ? FF 15 ? ? ? ? 48 85 ? 74 ? 48 8B ? 48 8B ? 48 8B", 3, OffsetType::Index);
+    // Batch-2 UNVERIFIED. Offset 3 points at the next instruction, not at a
+    // vtable displacement, in all eight matches.  No candidate is promoted.
     DEFINE_INDEX_FIELD(ClientInstance_grabMouse, "48 8B 01 48 8B ? ? ? ? ? EB ? 48 8B", 3, OffsetType::Index);
     DEFINE_INDEX_FIELD(ClientInstance_releaseMouse, "48 8B ? ? ? ? ? 48 8B ? FF 15 ? ? ? ? 48 85 ? 74 ? 48 8B ? 48 8B ? 48 8B", 3, OffsetType::Index);
     DEFINE_INDEX_FIELD(ClientInstance_mMinecraftSim, "48 8B 89 ? ? ? ? 48 85 C9 74 0C 48 8B 89 ? ? ? ? E9 ? ? ? ? 0F 57 C0", 3, OffsetType::FieldOffset);
@@ -238,7 +250,12 @@ public:
     DEFINE_INDEX_FIELD(MinecraftSim_mGameSim, "49 8B 85 ? ? ? ? 8B 40", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(MinecraftSim_mRenderSim, "48 8B ? ? ? ? ? F3 0F ? ? ? F3 41 ? ? ? ? 48 8D", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(MinecraftSim_mGameSession, "48 8B 99 ? ? ? ? 48 85 DB 74 ? 48 8D ? ? E8 ? ? ? ? 84 C0 74", 3, OffsetType::FieldOffset);
-    DEFINE_INDEX_FIELD_TYPED(uint8_t, GameSession_mEventCallback, "48 8B 4B ? 48 85 C9 74 0D 48 8B 01 48 8B 40 20 FF 15 ? ? ? ? 48 ? ? ?", 3, OffsetType::FieldOffset);
+    // Batch-2 STATIC VERIFIED. Six old matches produced 0x08 (x4), 0x20 and
+    // 0x50.  The 0x50 access is the only one bracketed by the GameSession
+    // cleanup sequence for adjacent members 0x48/0x50/0x58; 1.21.44 has the
+    // same three-member structure.  Anchoring the following 0x58 access makes
+    // the 0x50 operand unique without hard-coding the extracted value.
+    DEFINE_INDEX_FIELD_TYPED(uint8_t, GameSession_mEventCallback, "48 8B 4B ? 48 85 C9 74 ? 48 8B 01 48 8B 40 20 FF 15 ? ? ? ? 48 8B 4B 58 48 85 C9 74 ?", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD_TYPED(uint8_t, BedrockPlatformUWP_mcGame, "48 8B ? ? 48 8B ? 48 8B ? ? FF 15 ? ? ? ? 84 C0 74 ? 48 8B ? ? 48 8B ? 48 8B ? ? FF 15 ? ? ? ? 84 C0", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(bgfx_d3d12_RendererContextD3D12_m_commandQueue, "48 8B ? ? ? ? ? 4C 8B ? ? 48 8B ? 48 8B ? ? 48 8B ? ? FF 15 ? ? ? ? 48 FF ? ? 48 8B ? ? 48 8B ? 48 3B ? 74 ? 48 8B", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(bgfx_context_m_renderCtx, "48 8B ? ? ? ? ? 48 8B ? 48 8B ? ? FF 15 ? ? ? ? 48 89 ? ? ? ? ? 48 63", 3, OffsetType::FieldOffset);
@@ -275,13 +292,24 @@ public:
     // callVirtualFunc index guard. Runtime verification PENDING.
     DEFINE_INDEX_FIELD(Actor_swing, "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 83 7C 24 ? ? 74", 3, OffsetType::Index);
     DEFINE_INDEX_FIELD(Actor_mLevel, "48 8B ? ? ? ? ? 48 89 ? ? ? F3 0F ? ? ? 50 48", 3, OffsetType::FieldOffset);
+    // Batch-2 UNVERIFIED. All 182 matches begin at a direct CALL and offset 3
+    // is part of its rel32 operand, not a vtable displacement.  The declaration
+    // stays rejected; no call target has enough evidence to name getHitResult.
     DEFINE_INDEX_FIELD(Level_getHitResult, "E8 ? ? ? ? E8 ? ? ? ? 48 ? ? E8 ? ? ? ? E8 ? ? ?", 3, OffsetType::Index);
     DEFINE_INDEX_FIELD(Level_getPlayerList, "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 8B 48 ? 39 8E ? ? ? ? 0F 84", 3, OffsetType::Index);
     DEFINE_INDEX_FIELD(Level_getPlayerMovementSettings, "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 49 8B 7E ? 33 ED", 3, OffsetType::Index);
     DEFINE_INDEX_FIELD(Level_getLevelData, "48 8B ? ? ? ? ? FF 15 ? ? ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 8B 88", 3, OffsetType::Index); // Also works on .40
     DEFINE_INDEX_FIELD(Level_getBlockPalette, "48 8B ? ? ? ? ? 48 8B ? FF 15 ? ? ? ? 4C 8B ? 48 8B ? 48 8B ? ? 48 8D ? ? 49 8B ? FF 15 ? ? ? ? 48 8B ? 30 E8", 3, OffsetType::Index);
+    // Batch-2 UNVERIFIED. Of the two matches, one extracts instruction bytes
+    // and the other reads [rbp+0x138], a stack-frame object rather than the
+    // LevelData returned by Level::getLevelData.  Neither is promoted.
     DEFINE_INDEX_FIELD(LevelData_mTick, "48 8B ? ? ? ? ? 4C 8B ? ? ? ? ? E8 ? ? ? ? 44 8B", 3, OffsetType::FieldOffset);
-    DEFINE_INDEX_FIELD(Actor_mDestroying, "0F B6 ? ? ? ? ? 80 7B ? 00 0F ? ? ? ?", 3, OffsetType::FieldOffset);
+    // Batch-2 STATIC VERIFIED. Seven of the eight old matches are either
+    // mid-instruction RIP displacements or a stack-frame byte.  The remaining
+    // function is structurally homologous to 1.21.44: it loads the Actor object
+    // from [this], reads one byte at 0x166A and immediately gates the destroy
+    // path on that byte and [this+0x10].
+    DEFINE_INDEX_FIELD(Actor_mDestroying, "48 8B D9 48 8B 09 48 8B 7B 18 0F B6 81 ? ? ? ? 80 7B 10 00", 13, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD_TYPED(uint8_t, UIProfanityContext_mEnabled, "80 79 ? ? 74 ? 80 79 ? ? 74 ? 45 ? ? 75 ? 4C 8D", 2, OffsetType::FieldOffset);
     //DEFINE_INDEX_FIELD(Bone_mPartModel, "8B 81 ? ? ? ? 89 82 ? ? ? ? F3 0F ? ? ? ? ? ? 0F 57", 2, OffsetType::FieldOffset); // this isn't even correct lmao
     DEFINE_INDEX_FIELD(Actor_mHurtTimeComponent, "48 8B ? ? ? ? ? 48 85 ? 74 ? 66 0F ? ? ? ? ? ? 0F 5B ? 0F 2F", 3, OffsetType::FieldOffset);
@@ -294,7 +322,12 @@ public:
     // 0x80 gives ZERO hits, so the real call site is not identified here.
     // BlockSource::getChunk() is inert via callVirtualFunc's index guard.
     DEFINE_INDEX_FIELD(BlockSource_getChunk, "48 8B 80 ? ? ? ? 44 89 ? ? ? FF 15 ? ? ? ? 48 83 C4", 3, OffsetType::Index);
-    DEFINE_INDEX_FIELD(BlockSource_setBlock, "48 8B ? ? ? ? ? FF 15 ? ? ? ? EB ? 41 83 FF", 3, OffsetType::Index);
+    // Batch-2 STATIC VERIFIED. The correct candidate prepares the complete
+    // setBlock argument shape (rcx=BlockSource, rdx=BlockPos, r8=Block,
+    // r9d=flags plus two stack arguments) before calling slot 0x110/8 = 34.
+    // The second old match was a ref-count cleanup sequence.  1.21.44 uses the
+    // same argument flow at slot 32, providing independent structural evidence.
+    DEFINE_INDEX_FIELD(BlockSource_setBlock, "48 89 4C 24 28 4C 8B 7D ? 4C 89 7C 24 20 44 8B CF 4D 8B C6 48 8B D6 49 8B CC 48 8B 80 ? ? ? ? FF 15 ? ? ? ? EB ? 41 83 FF 01", 29, OffsetType::Index);
     DEFINE_INDEX_FIELD(LevelChunk_mSubChunks, "48 2B ? ? ? ? ? 48 8B ? 48 C1 FF ? 48 0F", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD_TYPED(uint8_t, BlockSource_mBuildHeight, "0F BF ? ? 3B C8 0F 8D ? ? ? ? 8B 0F", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD_TYPED(uint8_t, ContainerManagerModel_getContainerType, "48 8B ? ? FF 15 ? ? ? ? 84 C0 75 ? 48 8B ? 48 8B ? 48 8B ? ? FF 15 ? ? ? ? 84 C0 74 ? B0", 3, OffsetType::Index);
@@ -355,8 +388,16 @@ public:
 
 
     DEFINE_INDEX_FIELD(Actor_mContainerModel, "48 8B ? ? ? ? ? 0F ? ? 48 85 ? 74 ? 48 8B 01 48 8B ? ? FF 15 ? ? ?", 3, OffsetType::FieldOffset);
-    DEFINE_INDEX_FIELD(ClientInstance_mStackScene, "48 8B ? ? ? ? ? E8 ? ? ? ? 90 48 8B ? ? 48 8B ? ? 48 ? ? 74", 3, OffsetType::FieldOffset);
+    // Batch-2 STATIC VERIFIED. Two independent ClientInstance UI functions
+    // access 0x640 with the same stack-scene consumer; the selected unique site
+    // is additionally tied to the hud_screen transition.  The 0x1788, 0xD8 and
+    // RIP-relative candidates operate on different base objects.
+    DEFINE_INDEX_FIELD(ClientInstance_mStackScene, "48 8B 06 C7 80 B8 0A 00 00 01 00 00 00 0F 57 C0 33 C0 0F 11 45 ? 48 89 45 ? 48 8B 06 48 8D 55 ? 48 8B 88 ? ? ? ? E8", 36, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD(Minecraft_mRealTimer, "48 8B 81 ? ? 00 00 F3 0F 10 ? ? 0F 5A ?", 3, OffsetType::FieldOffset);
+    // Batch-2 UNVERIFIED. All 31 candidates are RIP-relative global loads;
+    // treating their rel32 operands as object field offsets is invalid.  The
+    // actual global and its initialization chain are not yet identified, so
+    // this remains rejected rather than selecting a convenient relocation.
     DEFINE_INDEX_FIELD(gDataUtil_MiscData_Instance, "48 8B ? ? ? ? ? 48 8B 0D ? ? ? ? 48 8D 35 ? ? ?", 3, OffsetType::FieldOffset);
     /// Returns true only when every mapping is ResolveStatus::Ok. The caller
     /// MUST act on this: a false return means the SDK must not be used, and
