@@ -30,8 +30,10 @@ static void name##_initializer() { \
             SigFuzz::onFailed(xorstr_(#name), hat::compile_signature<str>()); \
         return; \
     } \
-    const long long rawValue = static_cast<long long>( \
-        *reinterpret_cast<type*>(reinterpret_cast<uintptr_t>(result.get()) + index_offset)); \
+    type encodedValue{}; \
+    if (!readOffsetOperand(xorstr_(#name), reinterpret_cast<uintptr_t>(result.get()), \
+                           index_offset, &encodedValue, sizeof(encodedValue))) return; \
+    const long long rawValue = static_cast<long long>(encodedValue); \
     const bool isIndex = ((offset_type) == OffsetType::Index); \
     /* A vtable slot displacement is always a multiple of sizeof(void*).       \
        Dividing a non-multiple by 8 silently turns a wrong byte into a         \
@@ -63,7 +65,10 @@ static void name##_initializer() { \
             SigFuzz::onFailed(xorstr_(#name), hat::compile_signature<str>()); \
         return; \
     } \
-    const long long rawValue = *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(result.get()) + (index_offset)); \
+    int encodedValue{}; \
+    if (!readOffsetOperand(xorstr_(#name), reinterpret_cast<uintptr_t>(result.get()), \
+                           index_offset, &encodedValue, sizeof(encodedValue))) return; \
+    const long long rawValue = encodedValue; \
     const bool isIndex = ((offset_type) == OffsetType::Index); \
     /* A vtable slot displacement is always a multiple of sizeof(void*).       \
        Dividing a non-multiple by 8 silently turns a wrong byte into a         \
@@ -104,6 +109,8 @@ public:
 
 class OffsetProvider {
     static hat::scan_result scanSig(hat::signature_view sig, const std::string& name, int offset = 0);
+    static bool readOffsetOperand(const std::string& name, uintptr_t match,
+                                  int operandOffset, void* output, size_t width);
     static void registerHardcoded(const std::string& name, int value);
 
     /// Records a value that was refused by a structural check (e.g. a vtable

@@ -24,7 +24,7 @@ public: \
 static inline uintptr_t name = 0; \
 private: \
 static void name##_initializer() { \
-    auto result = scanSig(hat::compile_signature<str>(), xorstr_(#name), offset); \
+    auto result = scanSig(hat::compile_signature<str>(), xorstr_(#name), sig_type, offset); \
     if (!result.has_result()) { \
         name = 0; \
         /* An ambiguous match is a REFUSAL, not a failed-to-find pattern. \
@@ -33,8 +33,9 @@ static void name##_initializer() { \
             SigFuzz::onFailed(xorstr_(#name), hat::compile_signature<str>()); \
         return; \
     } \
-    if (sig_type == SigType::Sig) name = reinterpret_cast<uintptr_t>(result.get()); \
-    else name = reinterpret_cast<uintptr_t>(result.rel(offset)); \
+    /* scanSig() has already performed any rel32 read and published the checked \
+       address in the authoritative status entry. Never decode it a second time. */ \
+    name = entryStatus(xorstr_(#name)).address; \
 } \
 static inline std::function<void()> name##_function = (mSigInitializers.emplace_back(name##_initializer), std::function<void()>()); \
 public:
@@ -42,7 +43,8 @@ public:
 
 
 class SigManager {
-    static hat::scan_result scanSig(hat::signature_view sig, const std::string& name, int offset = 0);
+    static hat::scan_result scanSig(hat::signature_view sig, const std::string& name,
+                                    SigType type, int offset = 0);
 
     static inline std::vector<std::function<void()>> mSigInitializers;
     static inline int mSigScanCount;

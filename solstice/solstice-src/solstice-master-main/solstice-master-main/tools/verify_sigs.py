@@ -34,6 +34,8 @@ import struct
 import sys
 from collections import Counter
 
+MATCH_LIMIT = 64
+
 
 # --------------------------------------------------------------------------
 # PE header parsing (virtual-image aware)
@@ -46,13 +48,21 @@ class Image:
         self.path = path
         self.size_of_image = 0
         self.sections = []
-        self._parse()
+        try:
+            self._parse()
+        except Exception:
+            self.data.close()
+            raise
 
     def _parse(self):
         d = self.data
+        if len(d) < 0x40:
+            raise ValueError("truncated DOS header")
         if d[:2] != b"MZ":
             raise ValueError("not an MZ image (headers missing from dump?)")
         e_lfanew = struct.unpack_from("<I", d, 0x3C)[0]
+        if e_lfanew > len(d) - 24:
+            raise ValueError("PE header lies outside the image")
         if d[e_lfanew:e_lfanew + 4] != b"PE\x00\x00":
             raise ValueError("bad PE signature -- dump looks truncated")
 
@@ -60,13 +70,19 @@ class Image:
         num_sections = struct.unpack_from("<H", d, coff + 2)[0]
         opt_size = struct.unpack_from("<H", d, coff + 16)[0]
         opt = coff + 20
+        if opt_size < 64 or opt > len(d) - opt_size:
+            raise ValueError("truncated PE optional header")
         magic = struct.unpack_from("<H", d, opt)[0]
         if magic != 0x20B:
             raise ValueError("expected PE32+ (0x20B), got 0x%X" % magic)
 
         self.size_of_image = struct.unpack_from("<I", d, opt + 56)[0]
+        if self.size_of_image == 0:
+            raise ValueError("PE SizeOfImage is zero")
 
         sec_off = opt + opt_size
+        if num_sections > (len(d) - sec_off) // 40:
+            raise ValueError("truncated PE section table")
         for i in range(num_sections):
             off = sec_off + i * 40
             raw_name = d[off:off + 8]
@@ -91,7 +107,7 @@ class Image:
         An image with no executable range yields [] -- the runtime scans
         nothing in that case; it does NOT fall back to the whole file.
         """
-        image_end = min(len(self.data), self.size_of_image)
+        file_end = len(self.data)
         spans = []
         for s in self.sections:
             rva = s["rva"]
@@ -99,11 +115,16 @@ class Image:
                 continue
             if not (s["characteristics"] & 0x20000000):  # IMAGE_SCN_MEM_EXECUTE
                 continue
-            if rva >= image_end:
+            if rva >= self.size_of_image:
                 continue
-            size = min(s["vsize"], image_end - rva)
-            if size > 0:
-                spans.append((rva, rva + size, size))
+            # Sort by the range the runtime derives from SizeOfImage, not by the
+            # bytes that happen to remain in a truncated dump. Otherwise an
+            # incomplete file can reorder equal/near-equal PE sections and make
+            # "first match wins" disagree with CodeSection::ranges().
+            runtime_size = min(s["vsize"], self.size_of_image - rva)
+            scan_end = min(rva + runtime_size, file_end)
+            if runtime_size > 0 and scan_end > rva:
+                spans.append((rva, scan_end, runtime_size))
         # Python's sort is stable, so equal clipped sizes keep PE order just
         # like std::stable_sort in the C++ implementation.
         spans.sort(key=lambda item: -item[2])
@@ -133,12 +154,10 @@ class Image:
 def parse_pattern(text):
     out = []
     for tok in text.split():
-        if tok == "?":
+        if tok in ("?", "??"):
             out.append(None)
         elif "?" in tok:
-            hi = int(tok[0], 16) & 0xF
-            lo = int(tok[1], 16) & 0xF
-            out.append((hi << 4) | lo)
+            raise ValueError("nibble wildcard unsupported: %s" % tok)
         else:
             out.append(int(tok, 16))
     return out
@@ -198,10 +217,19 @@ def scan(buf, start, end, pat, limit=64):
     # 139 MB regex search here does not matter.
     parts = [b"." if v is None else re.escape(struct.pack("B", v)) for v in pat]
     rx = re.compile(b"".join(parts), re.DOTALL)
-    for m in rx.finditer(buf, start, end):
+    # re.finditer() resumes after the previous *whole* match and therefore
+    # misses overlaps. libhat X1 resumes at match+1. Repeated search() preserves
+    # the regex engine's fast literal scan while reproducing X1 exactly.
+    pos = start
+    last = end - n
+    while pos <= last:
+        m = rx.search(buf, pos, end)
+        if m is None:
+            break
         hits.append(m.start())
         if len(hits) >= limit:
             break
+        pos = m.start() + 1
     return hits
 
 
@@ -241,14 +269,19 @@ def active_cpp(text):
     return tokens.sub(lambda m: m.group() if m.group()[0] in "\"'" else
                       re.sub(r'[^\n]', ' ', m.group()), text)
 
-def read_offset(buf, position, definition):
+def read_offset(buf, position, definition, limit=None):
     ctype = definition.get("read_type", "int").strip()
     types = {"int": (4, True), "uint8_t": (1, False), "int8_t": (1, True),
              "uint16_t": (2, False), "int16_t": (2, True),
              "uint32_t": (4, False), "int32_t": (4, True),
-             "uint64_t": (8, False), "int64_t": (8, True)}
+             "uint64_t": (8, False), "int64_t": (8, True),
+             "uintptr_t": (8, False), "intptr_t": (8, True),
+             "unsigned": (4, False)}
+    if ctype not in types:
+        raise ValueError("unsupported typed offset %r" % ctype)
     size, signed = types[ctype]
-    if position < 0 or position + size > len(buf):
+    end = len(buf) if limit is None else min(len(buf), limit)
+    if position < 0 or position + size > end:
         raise ValueError("offset read outside image")
     raw = int.from_bytes(buf[position:position + size], "little", signed=signed)
     if definition["offset_type"] == "Index":
@@ -260,6 +293,89 @@ def read_offset(buf, position, definition):
         # C++ signed integer division truncates towards zero, not -infinity.
         return (-1 if raw < 0 else 1) * (abs(raw) // 8)
     return raw
+
+
+def evaluate_definition(img, definition, match_limit=MATCH_LIMIT):
+    """Evaluate one scanned mapping without ever decoding an ambiguous hit.
+
+    The returned `status` is the same vocabulary as ResolveStatus.  `matches`
+    is exact until `match_limit`; `matchCountCapped` says when the real count may
+    be larger.  This function is intentionally usable by the synthetic tests so
+    they assert the final verdict and rejection reason, not just helper behavior.
+    """
+    pat = parse_pattern(definition["pattern"])
+    hits = scan_spans(img.data, img.exec_spans(), pat, limit=match_limit)
+    n = len(hits)
+    entry = dict(definition)
+    entry["matches"] = n
+    entry["matchCountCapped"] = n == match_limit
+    entry["match_rvas"] = ["0x%X" % h for h in hits[:8]]
+    entry["staticallyUsable"] = False
+    entry["usable"] = False
+
+    if n == 0:
+        entry["status"] = "MISSING"
+        entry["rejectionReason"] = "pattern did not match any executable range"
+        return entry
+    if n != 1:
+        entry["status"] = "AMBIGUOUS"
+        entry["rejectionReason"] = (
+            "pattern matched at least %d executable locations" % n
+            if entry["matchCountCapped"] else
+            "pattern matched %d executable locations" % n)
+        # Crucial: do not read an operand from an arbitrary first hit.  Runtime
+        # scanSig() returns an empty result at this point as well.
+        return entry
+
+    hit = hits[0]
+    entry["rva"] = "0x%X" % hit
+    image_end = min(len(img.data), img.size_of_image)
+
+    if definition["kind"] == "offset":
+        operand = hit + definition["disp_off"]
+        try:
+            value = read_offset(img.data, operand, definition, image_end)
+        except (KeyError, ValueError) as exc:
+            message = str(exc)
+            if "outside image" in message:
+                entry["status"] = "OUT_OF_RANGE"
+            elif "not 8-byte aligned" in message:
+                entry["status"] = "IMPLAUSIBLE"
+            else:
+                entry["status"] = "INCONSISTENT"
+            entry["rejectionReason"] = message
+            return entry
+
+        entry["field_offset"] = value
+        is_index = definition["offset_type"] == "Index"
+        plausible, reason = cpp_plausible_offset(value, is_index)
+        if not plausible:
+            entry["status"] = "IMPLAUSIBLE"
+            entry["rejectionReason"] = reason
+            return entry
+    else:
+        disp_off = definition["disp_off"]
+        if definition["sig_type"] == "RefSig":
+            operand = hit + disp_off
+            if operand < 0 or operand + 4 > image_end:
+                entry["status"] = "OUT_OF_RANGE"
+                entry["rejectionReason"] = "rel32 operand read outside image"
+                return entry
+            rel = int.from_bytes(img.data[operand:operand + 4], "little", signed=True)
+            target = operand + 4 + rel
+        else:
+            target = hit + disp_off
+        entry["resolved_rva"] = "0x%X" % target
+        if target < 0 or target >= image_end:
+            entry["status"] = "OUT_OF_RANGE"
+            entry["rejectionReason"] = "resolved address lies outside image"
+            return entry
+
+    entry["status"] = "OK"
+    entry["staticallyUsable"] = True
+    entry["usable"] = True
+    entry["rejectionReason"] = ""
+    return entry
 
 
 def cpp_plausible_offset(value, is_index):
@@ -366,52 +482,7 @@ def main():
     counts = Counter()
 
     for d in defs:
-        pat = parse_pattern(d["pattern"])
-        hits = scan_spans(img.data, spans, pat)
-        n = len(hits)
-        if n == 0:
-            status = "MISSING"
-        elif n == 1:
-            status = "OK"
-        else:
-            status = "AMBIGUOUS"
-
-        entry = dict(d)
-        entry["matches"] = n
-        entry["status"] = status
-        entry["match_rvas"] = ["0x%X" % h for h in hits[:8]]
-
-        # Reproduce what the runtime does with the match, so we can see the
-        # offset value the game would actually get.
-        if d["kind"] == "offset" and n >= 1:
-            rva = hits[0] + d["disp_off"]
-            entry["rva"] = "0x%X" % hits[0]
-            if rva + 8 <= len(img.data):
-                try:
-                    val = read_offset(img.data, rva, d)
-                except ValueError as exc:
-                    entry["status"] = "SUSPECT"
-                    entry["note"] = str(exc)
-                else:
-                    entry["field_offset"] = val
-                    # Mirror OffsetProvider::plausibleOffset() EXACTLY. The old
-                    # abs(val) > 0x20000 rule accepted 0x8000..0x20000 and
-                    # negative values, while the runtime marks them Implausible.
-                    is_index = d["offset_type"] == "Index"
-                    plausible, reason = cpp_plausible_offset(val, is_index)
-                    if not plausible:
-                        entry["status"] = "SUSPECT"
-                        entry["note"] = reason
-
-        # STATIC PRE-CHECK ONLY, never a runtime verification result.
-        # staticallyUsable means: unique match + typed read OK + derived value
-        # passes OffsetProvider::plausibleOffset(). The live process can still
-        # refuse a mapping for reasons an offline dump cannot observe
-        # (uncommitted/non-readable pages, host-module bounds, decryption
-        # timeout). `usable` is kept as an alias for existing consumers.
-        static_ok = entry["status"] == "OK"
-        entry["staticallyUsable"] = static_ok
-        entry["usable"] = static_ok
+        entry = evaluate_definition(img, d)
         results.append(entry)
         counts[entry["status"]] += 1
 
@@ -419,7 +490,7 @@ def main():
     print("%-14s %-10s %-6s %s" % ("KIND", "STATUS", "HITS", "NAME / NOTES"))
     print("=" * 78)
     for e in results:
-        note = e.get("note", "")
+        note = e.get("rejectionReason", "")
         extra = ""
         if "field_offset" in e:
             extra = "  off=%s" % e["field_offset"]

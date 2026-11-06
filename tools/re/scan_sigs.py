@@ -2,11 +2,11 @@
 """Offline re-implementation of Solstice's signature resolution.
 
 Reads the ModuleDump memory image (byte at file offset X == process byte at RVA X)
-and evaluates every DEFINE_SIG / DEFINE_INDEX_FIELD declared in the headers, using
-exactly the same semantics as SigManager::scanSig / OffsetProvider::scanSig:
+and evaluates every DEFINE_SIG / DEFINE_INDEX_FIELD declared in the headers,
+using the same structural verdict rules as SigManager / OffsetProvider:
 
   * search only sections whose Characteristics include MEM_EXECUTE
-  * first match wins
+  * exactly one match is required; ambiguity is rejected before operand reads
   * DEFINE_SIG(..., SigType::RefSig, off) -> rel32 at match+off, target = match+off+4+rel
   * DEFINE_SIG(..., SigType::Sig, off)     -> match (+off, normally 0)
   * DEFINE_INDEX_FIELD(..., idx_off, Index)     -> int32 at match+idx_off, /8
@@ -27,18 +27,28 @@ import struct
 import sys
 
 MEM_EXECUTE = 0x20000000
+MATCH_LIMIT = 64
 
 
 class Image:
     def __init__(self, path: str):
         with open(path, "rb") as f:
             self.buf = f.read()
+        if len(self.buf) < 0x40 or self.buf[:2] != b"MZ":
+            raise ValueError("truncated or invalid DOS header")
+        e_lfanew = struct.unpack_from("<I", self.buf, 0x3C)[0]
+        if e_lfanew > len(self.buf) - 24 or self.buf[e_lfanew:e_lfanew + 4] != b"PE\x00\x00":
+            raise ValueError("PE header lies outside the image or is invalid")
+        opt_size = struct.unpack_from("<H", self.buf, e_lfanew + 20)[0]
+        if opt_size < 64 or e_lfanew + 24 > len(self.buf) - opt_size:
+            raise ValueError("truncated PE optional header")
         self.base = self._image_base()
         # PE32+ OptionalHeader.SizeOfImage is at opt + 56, opt = e_lfanew + 24.
         # CodeSection::ranges() clips every executable section to it, so the
         # offline scan must clip identically.
-        e_lfanew = struct.unpack_from("<I", self.buf, 0x3C)[0]
         self.size_of_image = struct.unpack_from("<I", self.buf, e_lfanew + 24 + 56)[0]
+        if self.size_of_image == 0:
+            raise ValueError("PE SizeOfImage is zero")
         self.sections = self._sections()
 
     def _image_base(self) -> int:
@@ -50,6 +60,8 @@ class Image:
         nsec = struct.unpack_from("<H", self.buf, e_lfanew + 6)[0]
         opt_size = struct.unpack_from("<H", self.buf, e_lfanew + 20)[0]
         off = e_lfanew + 24 + opt_size
+        if nsec > (len(self.buf) - off) // 40:
+            raise ValueError("truncated PE section table")
         out = []
         for i in range(nsec):
             raw = self.buf[off + i * 40: off + i * 40 + 40]
@@ -74,17 +86,18 @@ class Image:
         # CLIPPED size (largest first). Using max(vsize, rawsize) or sorting by
         # the unclipped vsize makes "first match wins" pick a different byte
         # than the in-client resolver. No executable range -> scan nothing.
-        image_end = min(len(self.buf), self.size_of_image)
+        file_end = len(self.buf)
         ranges = []
         for s in self.sections:
             if not s["exec"]:
                 continue
             start = s["rva"]
-            if start == 0 or s["vsize"] == 0 or start >= image_end:
+            if start == 0 or s["vsize"] == 0 or start >= self.size_of_image:
                 continue
-            size = min(s["vsize"], image_end - start)
-            if size > 0:
-                ranges.append((start, start + size, size))
+            runtime_size = min(s["vsize"], self.size_of_image - start)
+            scan_end = min(start + runtime_size, file_end)
+            if runtime_size > 0 and scan_end > start:
+                ranges.append((start, scan_end, runtime_size))
         ranges.sort(key=lambda r: -r[2])
         for start, end, _ in ranges:
             yield start, end
@@ -102,7 +115,7 @@ def compile_pattern(text: str):
         if t in ("?", "??"):
             vals.append(0)
             mask.append(0)
-        elif t.startswith("?"):          # nibble wildcards not used in this tree
+        elif "?" in t:                 # nibble wildcards are not supported
             raise ValueError(f"nibble wildcard unsupported: {t}")
         else:
             vals.append(int(t, 16))
@@ -146,10 +159,17 @@ def find_all(img: Image, pat, mask, limit: int):
     hits = []
     for start, end in img.exec_ranges():
         blob = img.buf[start:end]
-        for m in rx.finditer(blob):
+        pos = 0
+        last = len(blob) - n
+        while pos <= last:
+            m = rx.search(blob, pos)
+            if m is None:
+                break
             hits.append(start + m.start())
             if len(hits) >= limit:
                 return hits
+            # libhat scan_alignment::X1 resumes at match+1, so overlaps count.
+            pos = m.start() + 1
     return hits
 
 
@@ -250,46 +270,88 @@ def parse_headers(paths):
 
 def eval_sig(img: Image, entry):
     pat, mask = compile_pattern(entry["pattern"])
-    hits = find_all(img, pat, mask, 4)
+    hits = find_all(img, pat, mask, MATCH_LIMIT)
     if not hits:
-        return {"name": entry["name"], "status": "failed", "matches": 0, "rva": None}
+        return {"name": entry["name"], "status": "failed", "resolveStatus": "MISSING",
+                "matches": 0, "matchCountCapped": False, "rva": None,
+                "staticallyUsable": False, "usable": False,
+                "rejectionReason": "pattern did not match any executable range"}
+    if len(hits) != 1:
+        capped = len(hits) == MATCH_LIMIT
+        return {"name": entry["name"], "status": "ambiguous",
+                "resolveStatus": "AMBIGUOUS", "matches": len(hits),
+                "matchCountCapped": capped,
+                "match_rvas": [hex(h) for h in hits[:8]],
+                "staticallyUsable": False, "usable": False, "rva": None,
+                "rejectionReason": (("pattern matched at least %d executable locations" if capped
+                                     else "pattern matched %d executable locations") % len(hits))}
     off = int(entry["offset"], 0)
     hit = hits[0]
+    image_end = min(len(img.buf), img.size_of_image)
     if entry["type"] == "RefSig":
         site = hit + off
+        if site < 0 or site + 4 > image_end:
+            return {"name": entry["name"], "status": "suspect",
+                    "resolveStatus": "OUT_OF_RANGE", "matches": 1,
+                    "matchCountCapped": False, "hit": hex(hit), "rva": None,
+                    "staticallyUsable": False, "usable": False,
+                    "rejectionReason": "rel32 operand read outside image"}
         rel = struct.unpack_from("<i", img.buf, site)[0]
         target = site + 4 + rel
     else:
         target = hit + off
-    # Runtime now REFUSES ambiguous mappings (value stays 0), so an offline
-    # "ambiguous" entry is not a usable resolution either. STATIC PRE-CHECK ONLY.
-    static_ok = len(hits) == 1
+    if target < 0 or target >= image_end:
+        return {"name": entry["name"], "status": "suspect",
+                "resolveStatus": "OUT_OF_RANGE", "matches": 1,
+                "matchCountCapped": False, "hit": hex(hit), "rva": hex(target),
+                "rvaInt": target, "staticallyUsable": False, "usable": False,
+                "rejectionReason": "resolved address lies outside image"}
     return {"name": entry["name"],
-            "status": "ambiguous" if len(hits) > 1 else "ok",
-            "staticallyUsable": static_ok,
-            "usable": static_ok,
-            "matches": len(hits),
+            "status": "ok", "resolveStatus": "OK",
+            "staticallyUsable": True, "usable": True,
+            "matches": 1, "matchCountCapped": False,
             "rva": hex(target),
             "rvaInt": target,
-            "hit": hex(hit)}
+            "hit": hex(hit), "rejectionReason": ""}
 
 
 def eval_field(img: Image, entry):
     pat, mask = compile_pattern(entry["pattern"])
-    hits = find_all(img, pat, mask, 4)
+    hits = find_all(img, pat, mask, MATCH_LIMIT)
     if not hits:
-        return {"name": entry["name"], "status": "failed", "matches": 0,
-                "staticallyUsable": False, "usable": False, "value": None}
+        return {"name": entry["name"], "status": "failed", "resolveStatus": "MISSING",
+                "matches": 0, "matchCountCapped": False,
+                "staticallyUsable": False, "usable": False, "value": None,
+                "rejectionReason": "pattern did not match any executable range"}
+    if len(hits) != 1:
+        capped = len(hits) == MATCH_LIMIT
+        return {"name": entry["name"], "status": "ambiguous",
+                "resolveStatus": "AMBIGUOUS", "matches": len(hits),
+                "matchCountCapped": capped,
+                "match_rvas": [hex(h) for h in hits[:8]],
+                "staticallyUsable": False, "usable": False, "value": None,
+                "rejectionReason": (("pattern matched at least %d executable locations" if capped
+                                     else "pattern matched %d executable locations") % len(hits))}
     idx = int(entry["idx"], 0)
     # Read with the width the C++ macro dereferences (a uint8_t disp8 must not
     # be read as four bytes, which invents values the client never computes).
     ctype = entry.get("ctype", "int")
-    fmt = FIELD_WIDTHS.get(ctype, ("i",))[0]
+    if ctype not in FIELD_WIDTHS:
+        return {"name": entry["name"], "status": "suspect",
+                "resolveStatus": "INCONSISTENT", "matches": 1,
+                "matchCountCapped": False, "staticallyUsable": False,
+                "usable": False, "value": None,
+                "rejectionReason": "unsupported typed offset %r" % ctype,
+                "hit": hex(hits[0])}
+    fmt = FIELD_WIDTHS[ctype][0]
     width = struct.calcsize("<" + fmt)
-    if hits[0] + idx + width > len(img.buf):
+    image_end = min(len(img.buf), img.size_of_image)
+    if hits[0] + idx < 0 or hits[0] + idx + width > image_end:
         return {"name": entry["name"], "status": "suspect", "matches": len(hits),
+                "resolveStatus": "OUT_OF_RANGE", "matchCountCapped": False,
                 "staticallyUsable": False, "usable": False, "value": None,
-                "note": "typed offset read outside image"}
+                "note": "typed offset read outside image",
+                "rejectionReason": "typed offset read outside image"}
     raw = struct.unpack_from("<" + fmt, img.buf, hits[0] + idx)[0]
     is_index = entry["kind"] == "Index"
     # A vtable slot displacement is always a multiple of sizeof(void*); the C++
@@ -305,17 +367,20 @@ def eval_field(img: Image, entry):
     else:
         plausible, reason = cpp_plausible_offset(val, is_index)
 
-    status = "ambiguous" if len(hits) > 1 else ("ok" if plausible else "suspect")
-    static_ok = len(hits) == 1 and aligned and plausible
+    status = "ok" if plausible else "suspect"
+    resolve_status = "OK" if plausible else "IMPLAUSIBLE"
+    static_ok = aligned and plausible
     return {"name": entry["name"],
             "status": status,
+            "resolveStatus": resolve_status,
             "staticallyUsable": static_ok,  # STATIC PRE-CHECK ONLY
             "usable": static_ok,            # legacy alias
-            "matches": len(hits),
+            "matches": 1, "matchCountCapped": False,
             "value": val,
             "raw": raw,
             "aligned": aligned,
             "note": reason,
+            "rejectionReason": reason,
             "hit": hex(hits[0])}
 
 

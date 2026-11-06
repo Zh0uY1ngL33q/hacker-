@@ -1,0 +1,14 @@
+py_compile exitCode=0
+.....................................
+----------------------------------------------------------------------
+Ran 37 tests in 0.121s
+
+OK
+unit_tests exitCode=0
+scanner_sha256_root=419BF13F4F0A30DDB4BC135E97C795B0D1763E0C2BAA8F2A58611BE4C949BF70
+scanner_sha256_mirror=419BF13F4F0A30DDB4BC135E97C795B0D1763E0C2BAA8F2A58611BE4C949BF70
+mapping_records=520 unique_mappings=515 scanned=172 consistency_differences=0
+feature_or_hook_changes=0
+warning: in the working copy of 'solstice/solstice-src/solstice-master-main/solstice-master-main/tools/test_verify_sigs.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'solstice/solstice-src/solstice-master-main/solstice-master-main/docs/mapping-audit/unit-tests.timing.txt', LF will be replaced by CRLF the next time Git touches it
+git_diff_check exitCode=0

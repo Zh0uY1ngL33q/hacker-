@@ -8,8 +8,21 @@
 #include <Solstice.hpp>
 #include <Utils/MemUtils.hpp>
 #include <libhat.hpp>
+#include <cstring>
 
 #define NOW std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count()
+
+namespace {
+bool guardedCopy(void* destination, const void* source, size_t size)
+{
+    __try {
+        std::memcpy(destination, source, size);
+        return true;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+}
+}
 
 hat::scan_result OffsetProvider::scanSig(hat::signature_view sig, const std::string& name, int offset)
 {
@@ -65,6 +78,43 @@ hat::scan_result OffsetProvider::scanSig(hat::signature_view sig, const std::str
     return result;
 }
 
+bool OffsetProvider::readOffsetOperand(const std::string& name, uintptr_t match,
+                                       int operandOffset, void* output, size_t width)
+{
+    const auto module = hat::process::get_process_module();
+    const uintptr_t base = module.address();
+    const size_t moduleSize = module.get_module_data().size();
+    uintptr_t operand = 0;
+    bool inModule = output != nullptr && width != 0 && width <= moduleSize &&
+                    match >= base && match - base < moduleSize;
+
+    if (inModule) {
+        const size_t matchOffset = static_cast<size_t>(match - base);
+        if (operandOffset >= 0) {
+            const size_t delta = static_cast<size_t>(operandOffset);
+            inModule = delta <= moduleSize - matchOffset &&
+                       matchOffset + delta <= moduleSize - width;
+            if (inModule) operand = base + matchOffset + delta;
+        } else {
+            // Avoid negating INT_MIN in signed arithmetic.
+            const size_t delta = static_cast<size_t>(-(static_cast<long long>(operandOffset)));
+            inModule = delta <= matchOffset && matchOffset - delta <= moduleSize - width;
+            if (inModule) operand = base + matchOffset - delta;
+        }
+    }
+
+    const bool readable = inModule && MemUtils::isReadableRange(operand, width);
+    const bool copied = readable && guardedCopy(output, reinterpret_cast<const void*>(operand), width);
+    if (copied) return true;
+
+    std::lock_guard lock(mSigMutex);
+    const auto previous = mStatus.get(name);
+    mSigs[name] = 0;
+    mStatus.set(name, inModule ? ResolveStatus::Inconsistent : ResolveStatus::OutOfRange,
+                previous.address, 0, previous.matches);
+    return false;
+}
+
 bool OffsetProvider::plausibleOffset(const std::string& name, long long value, bool isIndex)
 {
     // The limits come from measurement, not taste. In the 1.21.44 reference
@@ -89,17 +139,17 @@ bool OffsetProvider::plausibleOffset(const std::string& name, long long value, b
     // Called from the initializers, which initialize() runs under an OpenMP
     // parallel for, so the record has to be serialised like the other maps.
     std::lock_guard lock(mSigMutex);
+    const auto e = mStatus.get(name);
     if (inRange && !insideVtable && !zeroIndex) {
         // Attach the value that was actually published to the Ok entry, so the
         // report shows the derived offset rather than just the match address.
-        const auto e = mStatus.get(name);
         mStatus.set(name, ResolveStatus::Ok, e.address, value, e.matches);
         return true;
     }
 
     mSigImplausible[name] = value;
     mSigs[name] = 0;   // a rejected entry must never satisfy "mSigs != 0"
-    mStatus.set(name, ResolveStatus::Implausible, 0, value, 0);
+    mStatus.set(name, ResolveStatus::Implausible, e.address, value, e.matches);
     return false;
 }
 
@@ -114,9 +164,10 @@ void OffsetProvider::rejectOffset(const std::string& name, ResolveStatus status,
     // Called from the initializers under the OpenMP parallel for, so the map
     // writes are serialised exactly like scanSig()/plausibleOffset().
     std::lock_guard lock(mSigMutex);
+    const auto e = mStatus.get(name);
     mSigs[name] = 0;
     mSigImplausible[name] = value;
-    mStatus.set(name, status, 0, value, 0);
+    mStatus.set(name, status, e.address, value, e.matches);
 }
 
 bool OffsetProvider::initialize()
@@ -151,8 +202,11 @@ bool OffsetProvider::initialize()
     }
     for (const auto& name : mStatus.namesWith(ResolveStatus::Inconsistent)) {
         const auto e = mStatus.get(name);
-        Solstice::console->critical("[offsets] INCONSISTENT {} -- find() hit but the count saw {} matches; refused",
-                                    name, e.matches);
+        if (e.matches == 1)
+            Solstice::console->critical("[offsets] INCONSISTENT {} -- operand memory was unreadable; refused", name);
+        else
+            Solstice::console->critical("[offsets] INCONSISTENT {} -- find() hit but the count saw {} matches; refused",
+                                        name, e.matches);
     }
     for (const auto& name : mStatus.namesWith(ResolveStatus::Implausible)) {
         const auto e = mStatus.get(name);
@@ -160,6 +214,11 @@ bool OffsetProvider::initialize()
     }
     for (const auto& name : mStatus.namesWith(ResolveStatus::Missing))
         Solstice::console->critical("[offsets] MISSING {}", name);
+    for (const auto& name : mStatus.namesWith(ResolveStatus::OutOfRange)) {
+        const auto e = mStatus.get(name);
+        Solstice::console->critical("[offsets] OUT-OF-RANGE {} -- operand at match {} exceeds the module; refused",
+                                    name, MemUtils::getMbMemoryString(e.address));
+    }
 
     // Bounds check now runs in EVERY build. It used to sit inside
     // #ifndef __DEBUG__, but CMakeLists.txt defines __DEBUG__ unconditionally,

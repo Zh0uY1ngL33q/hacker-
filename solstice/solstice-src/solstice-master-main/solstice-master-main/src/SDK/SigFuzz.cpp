@@ -274,6 +274,7 @@ bool SigFuzz::writeReport() {
 
     Solstice::console->info(
         "[fuzz] wrote {}: {} near miss(es), {} unresolved offset(s), {} unresolved signature(s)",
-        path, nearMisses.size(), offsetsFailed.size(), signaturesFailed.size());
+        path, nearMisses.size(), offsets["total"].get<size_t>() - offsets["ok"].get<size_t>(),
+        signatures["total"].get<size_t>() - signatures["ok"].get<size_t>());
     return true;
 }

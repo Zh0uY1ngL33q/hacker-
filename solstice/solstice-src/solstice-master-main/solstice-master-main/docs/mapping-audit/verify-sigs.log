@@ -1,0 +1,225 @@
+image        : Dump/Minecraft.Windows_1.21.120.0_20261027_005946.image
+sizeOfImage  : 0xD7AB000
+file size    : 0xD7AB000 (215 MB)
+code section :           [0x1000, 0x8B6F8A9)  139 MB
+scan spans   : 3 executable section(s), 162 MB total
+offline report is a STATIC PRE-CHECK; runtime results may differ (see --json usable_semantics / runtime_differences)
+sections     :
+   [            ] RVA=0x00001000 vsize=0x08B6E8A9 raw=0x028B2E00 flags=0x60000020
+   [            ] RVA=0x08B70000 vsize=0x01D1E06E raw=0x009B0000 flags=0x40000040
+   [            ] RVA=0x0A88F000 vsize=0x011ADF20 raw=0x0012AC00 flags=0xC0000040
+   [            ] RVA=0x0BA3D000 vsize=0x004B1CF8 raw=0x00287400 flags=0x40000040
+   [            ] RVA=0x0BEEF000 vsize=0x0000EAE0 raw=0x00008A00 flags=0x40000040
+   [            ] RVA=0x0BEFE000 vsize=0x00042638 raw=0x00007200 flags=0x40000040
+   [            ] RVA=0x0BF41000 vsize=0x00149B74 raw=0x00025C00 flags=0x42000040
+   [.edata      ] RVA=0x0C08B000 vsize=0x00001000 raw=0x00000600 flags=0x40000040
+   [.idata      ] RVA=0x0C08C000 vsize=0x00001A00 raw=0x00001A00 flags=0xC0000040
+   [.tls        ] RVA=0x0C08E000 vsize=0x00004000 raw=0x00003400 flags=0xC0000000
+   [.rsrc       ] RVA=0x0C092000 vsize=0x00042800 raw=0x00042800 flags=0x40000040
+   [.winlice    ] RVA=0x0C0D5000 vsize=0x00EA6000 raw=0x00000000 flags=0xE0000060
+   [.boot       ] RVA=0x0CF7B000 vsize=0x0082F000 raw=0x0082F000 flags=0x60000060
+   [.reloc      ] RVA=0x0D7AA000 vsize=0x00001000 raw=0x00000010 flags=0x40000000
+
+==============================================================================
+KIND           STATUS     HITS   NAME / NOTES
+==============================================================================
+offset         AMBIGUOUS  6      GameSession_mEventCallback  <- pattern matched 6 executable locations
+offset         OK         1      BedrockPlatformUWP_mcGame  off=64
+offset         MISSING    0      UIProfanityContext_mEnabled  <- pattern did not match any executable range
+offset         MISSING    0      BlockSource_mBuildHeight  <- pattern did not match any executable range
+offset         MISSING    0      ContainerManagerModel_getContainerType  <- pattern did not match any executable range
+offset         MISSING    0      ContainerManagerModel_getSlot  <- pattern did not match any executable range
+offset         MISSING    0      BlockLegacy_getCollisionShape  <- pattern did not match any executable range
+offset         OK         1      ClientInstance_getLocalPlayer  off=35
+offset         AMBIGUOUS  4      ClientInstance_getBlockSource  <- pattern matched 4 executable locations
+offset         OK         1      ClientInstance_getOptions  off=186
+offset         MISSING    0      ClientInstance_getMouseGrabbed  <- pattern did not match any executable range
+offset         AMBIGUOUS  64     ClientInstance_setDisableInput  <- pattern matched at least 64 executable locations
+offset         AMBIGUOUS  8      ClientInstance_grabMouse  <- pattern matched 8 executable locations
+offset         AMBIGUOUS  64     ClientInstance_releaseMouse  <- pattern matched at least 64 executable locations
+offset         OK         1      ClientInstance_mMinecraftSim  off=224
+offset         IMPLAUSIBLE 1      MinecraftGame_playUi  off=3238145  <- implausible vtable index 3238145 (runtime accepts 0 <= v < 4096)
+offset         OK         1      MinecraftGame_mClientInstances  off=2912
+offset         IMPLAUSIBLE 1      MinecraftGame_mProfanityContext  off=1  <- field offset 1 lies inside the MSVC vtable pointer
+offset         IMPLAUSIBLE 1      MinecraftGame_mMouseGrabbed  off=-964358145  <- implausible field offset -964358145 (runtime accepts 0 <= v < 32768)
+offset         MISSING    0      MainView_bedrockPlatform  <- pattern did not match any executable range
+offset         MISSING    0      MinecraftSim_mGameSim  <- pattern did not match any executable range
+offset         MISSING    0      MinecraftSim_mRenderSim  <- pattern did not match any executable range
+offset         OK         1      MinecraftSim_mGameSession  off=216
+offset         MISSING    0      bgfx_d3d12_RendererContextD3D12_m_commandQueue  <- pattern did not match any executable range
+offset         MISSING    0      bgfx_context_m_renderCtx  <- pattern did not match any executable range
+offset         MISSING    0      BlockLegacy_mBlockId  <- pattern did not match any executable range
+offset         OK         1      BlockLegacy_mayPlaceOn  off=84
+offset         MISSING    0      Actor_mContainerManagerModel  <- pattern did not match any executable range
+offset         OK         1      Actor_mGameMode  off=2808
+offset         OK         1      Actor_mSupplies  off=3328
+offset         OK         1      PlayerInventory_mContainer  off=288
+offset         OK         1      LevelRenderer_mRendererPlayer  off=1448
+offset         OK         1      LevelRendererPlayer_mCameraPos  off=3780
+offset         MISSING    0      LevelRendererPlayer_mFovX  <- pattern did not match any executable range
+offset         MISSING    0      LevelRendererPlayer_mFovY  <- pattern did not match any executable range
+offset         OK         1      Actor_mSwinging  off=2212
+offset         IMPLAUSIBLE 1      Actor_swing  off=17305961  <- implausible vtable index 17305961 (runtime accepts 0 <= v < 4096)
+offset         OK         1      Actor_mLevel  off=144
+offset         AMBIGUOUS  64     Level_getHitResult  <- pattern matched at least 64 executable locations
+offset         MISSING    0      Level_getPlayerList  <- pattern did not match any executable range
+offset         OK         1      Level_getPlayerMovementSettings  off=72
+offset         MISSING    0      Level_getLevelData  <- pattern did not match any executable range
+offset         OK         1      Level_getBlockPalette  off=436
+offset         AMBIGUOUS  2      LevelData_mTick  <- pattern matched 2 executable locations
+offset         AMBIGUOUS  8      Actor_mDestroying  <- pattern matched 8 executable locations
+offset         MISSING    0      Actor_mHurtTimeComponent  <- pattern did not match any executable range
+offset         IMPLAUSIBLE 1      BlockSource_getChunk  <- vtable displacement 64123367 is not 8-byte aligned
+offset         AMBIGUOUS  2      BlockSource_setBlock  <- pattern matched 2 executable locations
+offset         MISSING    0      LevelChunk_mSubChunks  <- pattern did not match any executable range
+offset         OK         1      Actor_mSerializedSkin  off=5608
+offset         MISSING    0      BlockSource_clip  <- pattern did not match any executable range
+offset         MISSING    0      ClientInstance_getInputHandler  <- pattern did not match any executable range
+offset         IMPLAUSIBLE 1      ClientInputMappingFactory_mKeyboardMouseSettings  off=138447688  <- implausible field offset 138447688 (runtime accepts 0 <= v < 32768)
+offset         OK         1      Actor_mContainerModel  off=3304
+offset         AMBIGUOUS  8      ClientInstance_mStackScene  <- pattern matched 8 executable locations
+offset         OK         1      Minecraft_mRealTimer  off=248
+offset         AMBIGUOUS  31     gDataUtil_MiscData_Instance  <- pattern matched 31 executable locations
+sig            AMBIGUOUS  2      Actor_setPosition  <- pattern matched 2 executable locations
+sig            OUT_OF_RANGE 1      Actor_getNameTag  <- resolved address lies outside image
+sig            OK         1      Actor_setNameTag
+sig            OK         1      ActorRenderDispatcher_render
+sig            OK         1      ClientInstance_mBgfx
+sig            AMBIGUOUS  8      ClientInstance_grabMouse  <- pattern matched 8 executable locations
+sig            AMBIGUOUS  2      ClientInstance_releaseMouse  <- pattern matched 2 executable locations
+sig            OK         1      ContainerScreenController_tick
+sig            OK         1      ContainerScreenController_handleAutoPlace
+sig            OK         1      ComplexInventoryTransaction_vtable
+sig            AMBIGUOUS  2      EnchantUtils_getEnchantLevel  <- pattern matched 2 executable locations
+sig            OK         1      GameMode_getDestroyRate
+sig            MISSING    0      HoverTextRenderer_render  <- pattern did not match any executable range
+sig            OK         1      GameMode_baseUseItem
+sig            MISSING    0      GuiData_displayClientMessage  <- pattern did not match any executable range
+sig            OK         1      InventoryTransaction_addAction
+sig            AMBIGUOUS  64     ItemStack_vTable  <- pattern matched at least 64 executable locations
+sig            OK         1      ItemStack_getCustomName
+sig            AMBIGUOUS  6      ItemStack_fromDescriptor  <- pattern matched 6 executable locations
+sig            OK         1      ItemUseInventoryTransaction_vtable
+sig            OK         1      ItemUseOnActorInventoryTransaction_vtable
+sig            OK         1      ItemReleaseInventoryTransaction_vtable
+sig            OK         1      Keyboard_feed
+sig            OK         1      MainView_instance
+sig            OK         1      MinecraftPackets_createPacket
+sig            OK         1      Mob_getJumpControlComponent
+sig            MISSING    0      Mob_getCurrentSwingDuration  <- pattern did not match any executable range
+sig            OK         1      MouseDevice_feed
+sig            MISSING    0      NetworkStackItemDescriptor_ctor  <- pattern did not match any executable range
+sig            MISSING    0      PlayerMovement_clearInputStateInlined  <- pattern did not match any executable range
+sig            OK         1      PlayerMovement_clearInputStateInlined2
+sig            OK         1      RakNet_RakPeer_runUpdateCycle
+sig            OK         1      RakNet_RakPeer_sendImmediate
+sig            MISSING    0      ScreenView_setupAndRender  <- pattern did not match any executable range
+sig            OK         1      SimulatedPlayer_simulateJump
+sig            OK         1      ItemInHandRenderer_render_bytepatch
+sig            OK         1      SneakMovementSystem_tickSneakMovementSystem
+sig            OK         1      ConnectionRequest_create
+sig            OK         1      CameraDirectLookSystemUtil_handleLookInput
+sig            MISSING    0      ItemRenderer_render  <- pattern did not match any executable range
+sig            OK         1      ItemPositionConst
+sig            AMBIGUOUS  2      BlockSource_fireBlockChanged  <- pattern matched 2 executable locations
+sig            MISSING    0      ActorAnimationControllerPlayer_applyToPose  <- pattern did not match any executable range
+sig            MISSING    0      JSON_parse  <- pattern did not match any executable range
+sig            MISSING    0      Actor_getStatusFlag  <- pattern did not match any executable range
+sig            OK         1      Level_getRuntimeActorList
+sig            OK         1      ConcreteBlockLegacy_getCollisionShapeForCamera
+sig            AMBIGUOUS  5      WaterBlockLegacy_getCollisionShapeForCamera  <- pattern matched 5 executable locations
+sig            OK         1      mce_framebuilder_RenderItemInHandDescription_ctor
+sig            AMBIGUOUS  4      ResourcePackManager_composeFullStackBp  <- pattern matched 4 executable locations
+sig            OK         1      ClientInstance_isPreGame
+sig            AMBIGUOUS  4      tickEntity_ItemUseSlowdownModifierComponent  <- pattern matched 4 executable locations
+sig            OK         1      checkBlocks
+sig            OK         1      Unknown_renderBlockOverlay
+sig            OK         1      FastEat
+sig            OK         1      Unknown_renderNametag
+sig            MISSING    0      Reach  <- pattern did not match any executable range
+sig            OK         1      BlockReach
+sig            OK         1      GetSpeedInAirWithSprint
+sig            MISSING    0      ConnectionRequest_create_DeviceModel  <- pattern did not match any executable range
+sig            OK         1      ConnectionRequest_create_DeviceOS
+sig            MISSING    0      ConnectionRequest_create_DefaultInputMode  <- pattern did not match any executable range
+sig            MISSING    0      ConnectionRequest_create_CurrentInputMode  <- pattern did not match any executable range
+sig            MISSING    0      InputModeBypass  <- pattern did not match any executable range
+sig            OK         1      InputModeBypassFix
+sig            OK         1      TapSwingAnim
+sig            OK         1      Unknown_updatePlayerFromCamera
+sig            MISSING    0      FluxSwing  <- pattern did not match any executable range
+sig            OK         1      BobHurt
+sig            AMBIGUOUS  3      CameraComponent_applyRotation  <- pattern matched 3 executable locations
+sig            AMBIGUOUS  2      FireRender  <- pattern matched 2 executable locations
+sig            AMBIGUOUS  11     Actor_canSee  <- pattern matched 11 executable locations
+sig            OK         1      ItemInHandRenderer_renderItem_bytepatch
+sig            OK         1      ItemInHandRenderer_renderItem_bytepatch2
+sig            OK         1      Actor_getGameMode
+sig            MISSING    0      Actor_getLevel  <- pattern did not match any executable range
+sig            OK         1      BaseActorRenderContext_ctor
+sig            OK         1      ClientInstance_getCamera
+sig            OK         1      ClientInstance_getItemRenderer
+sig            AMBIGUOUS  19     ClientInstance_switchControlMode  <- pattern matched 19 executable locations
+sig            OK         1      ComplexInventoryTransaction_fromType
+sig            AMBIGUOUS  35     ContainerManagerController_handleSwap  <- pattern matched 35 executable locations
+sig            AMBIGUOUS  2      ContainerManagerController_transferItems  <- pattern matched 2 executable locations
+sig            OK         1      ContainerScreenController_handleDropItem
+sig            AMBIGUOUS  5      ContainerScreenController_handlePlaceAll  <- pattern matched 5 executable locations
+sig            OK         1      ContainerScreenController_handleTakeAll
+sig            OK         1      Dimension_getBrightnessDependentFogColor
+sig            OK         1      GameRenderer_bobHurt
+sig            OK         1      GuiData_getOptions
+sig            OK         1      HIDController_onKeyDown
+sig            OK         1      HIDController_onKeyUp
+sig            AMBIGUOUS  2      HudScreenController_shouldRenderScoreboardSidebar  <- pattern matched 2 executable locations
+sig            AMBIGUOUS  3      ItemInHandRenderer_FluxSwingCallsite  <- pattern matched 3 executable locations
+sig            OK         1      ItemInHandRenderer_TapSwingAngleRadians
+sig            OK         1      ItemInHandRenderer_applyTransform
+sig            AMBIGUOUS  3      ItemRenderer_renderGuiItemNew  <- pattern matched 3 executable locations
+sig            OK         1      ItemStack_ctor_ItemStack
+sig            OK         1      ItemStack_ctor_void
+sig            OK         1      LevelRendererCamera_updateCameraTransform
+sig            OK         1      LevelRendererPlayer_renderNametag
+sig            MISSING    0      LocalPlayer_applyTurnDelta  <- pattern did not match any executable range
+sig            OK         1      MainView_getInstance
+sig            OK         1      MobEquipmentPacket_ctor_ActorRuntimeID
+sig            OK         1      Mob_getInterpolatedSwingProgress
+sig            MISSING    0      MoveInputComponent_ClearMoveState1  <- pattern did not match any executable range
+sig            OK         1      NoItemRotation_PatchSig
+sig            OK         1      OverworldDimension_getBrightnessDependentFogColor
+sig            OK         1      Player_getSupplies
+sig            OK         1      PythonRuntime_DeleteThread
+sig            OK         1      PythonRuntime_Execute
+sig            OK         1      PythonRuntime_NewThread
+sig            OK         1      PythonRuntime_SetReleaseCheck
+sig            MISSING    0      RenderController_getHurtColor  <- pattern did not match any executable range
+sig            OK         1      ScoreboardScreenController_getScoreboardSidebarTitle
+sig            AMBIGUOUS  4      Scoreboard_getDisplaySlotEntries  <- pattern matched 4 executable locations
+
+summary: AMBIGUOUS=32, IMPLAUSIBLE=6, MISSING=41, OK=92, OUT_OF_RANGE=1
+statically usable scanned mappings: 92/172  (STATIC PRE-CHECK ONLY - NOT a runtime verification result)
+  offline results are CANDIDATES: the runtime additionally skips uncommitted/non-readable pages, applies a host-module bounds check, and aborts if decryption times out
+
+hardcoded mappings: 18 UNVERIFIED (DEFINE_FIELD audit only; CLASS_FIELD and literal offsets elsewhere are NOT covered)
+  0 commented-out declarations ignored
+  these are pure version snapshots and are NEVER counted as scanned OK
+   ClientInstance_mLevelRenderer                  = 0xF0
+   ClientInstance_mPacketSender                   = 0x108
+   Actor_baseTick                                 = 29
+   Container_getItem                              = 8
+   ClientInputHandler_mMappingFactory             = 0x28
+   ContainerScreenController_tryExit              = 12
+   ItemStack_reInit                               = 3
+   MinecraftUIRenderContext_drawImage             = 7
+   Actor_mEntityIdentifier                        = 0x240
+   Actor_mLocalName                               = 0xCB0
+   ClientInstance_mViewMatrix                     = 0x358
+   ClientInstance_mFovX                           = 0x720
+   ClientInstance_mFovY                           = 0x724
+   Block_mRuntimeId                               = 0xC0
+   Block_mLegacy                                  = 0x30
+   ClientInstance_getScreenName                   = 266
+   ClientInstance_mGuiData                        = 0x6C0
+   BlockPalette_mLevel                            = 0x80
+
+report written to solstice/solstice-src/solstice-master-main/solstice-master-main/docs/mapping-audit/verify-sigs.json

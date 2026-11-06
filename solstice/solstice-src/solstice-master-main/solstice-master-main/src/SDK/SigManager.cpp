@@ -10,12 +10,68 @@
 #include <Utils/Logger.hpp>
 #include <Utils/MemUtils.hpp>
 #include <chrono>
+#include <cstring>
 #include <omp.h>
 #include <libhat.hpp>
 
 #define NOW std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count()
 
-hat::scan_result SigManager::scanSig(hat::signature_view sig, const std::string& name, int offset)
+namespace {
+enum class Rel32Read { Ok, OutOfRange, Unreadable };
+
+bool guardedReadInt32(const void* source, int32_t& value)
+{
+    __try {
+        std::memcpy(&value, source, sizeof(value));
+        return true;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+}
+
+Rel32Read resolveRel32(uintptr_t match, int operandOffset, uintptr_t& target)
+{
+    const auto module = hat::process::get_process_module();
+    const uintptr_t base = module.address();
+    const size_t size = module.get_module_data().size();
+    if (size < sizeof(int32_t) || match < base || match - base >= size)
+        return Rel32Read::OutOfRange;
+
+    const size_t matchOffset = static_cast<size_t>(match - base);
+    size_t operandOffsetInModule = 0;
+    if (operandOffset >= 0) {
+        const size_t delta = static_cast<size_t>(operandOffset);
+        if (delta > size - matchOffset || matchOffset + delta > size - sizeof(int32_t))
+            return Rel32Read::OutOfRange;
+        operandOffsetInModule = matchOffset + delta;
+    } else {
+        const size_t delta = static_cast<size_t>(-(static_cast<long long>(operandOffset)));
+        if (delta > matchOffset || matchOffset - delta > size - sizeof(int32_t))
+            return Rel32Read::OutOfRange;
+        operandOffsetInModule = matchOffset - delta;
+    }
+
+    const uintptr_t operand = base + operandOffsetInModule;
+    if (!MemUtils::isReadableRange(operand, sizeof(int32_t)))
+        return Rel32Read::Unreadable;
+
+    int32_t displacement = 0;
+    if (!guardedReadInt32(reinterpret_cast<const void*>(operand), displacement))
+        return Rel32Read::Unreadable;
+
+    // Compute in image-relative signed space so a hostile displacement cannot
+    // wrap uintptr_t and impersonate an in-module address.
+    const int64_t resolvedOffset = static_cast<int64_t>(operandOffsetInModule) +
+                                   sizeof(int32_t) + static_cast<int64_t>(displacement);
+    if (resolvedOffset < 0 || static_cast<uint64_t>(resolvedOffset) >= size)
+        return Rel32Read::OutOfRange;
+    target = base + static_cast<size_t>(resolvedOffset);
+    return Rel32Read::Ok;
+}
+}
+
+hat::scan_result SigManager::scanSig(hat::signature_view sig, const std::string& name,
+                                     SigType type, int offset)
 {
     // The old code scanned
     //
@@ -61,9 +117,18 @@ hat::scan_result SigManager::scanSig(hat::signature_view sig, const std::string&
     }
 
     mSigMatchCounts[name] = matches;
-    const uintptr_t resolved = (offset == 0)
-        ? reinterpret_cast<uintptr_t>(result.get())
-        : reinterpret_cast<uintptr_t>(result.rel(offset));
+    uintptr_t resolved = reinterpret_cast<uintptr_t>(result.get());
+    if (type == SigType::RefSig) {
+        const auto relStatus = resolveRel32(resolved, offset, resolved);
+        if (relStatus != Rel32Read::Ok) {
+            mSigs[name] = 0;
+            mStatus.set(name,
+                        relStatus == Rel32Read::OutOfRange
+                            ? ResolveStatus::OutOfRange : ResolveStatus::Inconsistent,
+                        reinterpret_cast<uintptr_t>(result.get()), 0, matches);
+            return {};
+        }
+    }
     mSigs[name] = resolved;
     mStatus.set(name, ResolveStatus::Ok, resolved, 0, matches);
     return result;
@@ -91,11 +156,19 @@ bool SigManager::initialize()
     }
     for (const auto& name : mStatus.namesWith(ResolveStatus::Inconsistent)) {
         const auto e = mStatus.get(name);
-        Solstice::console->critical("[signatures] INCONSISTENT {} -- find() hit but the count saw {} matches; refused",
-                                    name, e.matches);
+        if (e.matches == 1)
+            Solstice::console->critical("[signatures] INCONSISTENT {} -- rel32 operand memory was unreadable; refused", name);
+        else
+            Solstice::console->critical("[signatures] INCONSISTENT {} -- find() hit but the count saw {} matches; refused",
+                                        name, e.matches);
     }
     for (const auto& name : mStatus.namesWith(ResolveStatus::Missing))
         Solstice::console->critical("[signatures] MISSING {}", name);
+    for (const auto& name : mStatus.namesWith(ResolveStatus::OutOfRange)) {
+        const auto e = mStatus.get(name);
+        Solstice::console->critical("[signatures] OUT-OF-RANGE {} -- rel32 operand or target from {} exceeds the module; refused",
+                                    name, MemUtils::getMbMemoryString(e.address));
+    }
 
     // Bounds validation now runs in every build (CMake defines __DEBUG__
     // unconditionally, so the old #ifndef block never compiled).
