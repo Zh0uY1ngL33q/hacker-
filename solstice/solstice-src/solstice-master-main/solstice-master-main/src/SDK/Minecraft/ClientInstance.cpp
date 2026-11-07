@@ -159,7 +159,31 @@ Actor* ClientInstance::getLocalPlayer()
 
 BlockSource* ClientInstance::getBlockSource()
 {
-    return MemUtils::callVirtualFunc<BlockSource*>(OffsetProvider::ClientInstance_getBlockSource, this);
+    // Slot 318 is a one-line getter: `mov rax,[rcx+0x118]; ret` (vtable RVA
+    // 0x8DDB590, slot body 0x1A26180), so the slot and the member offset are
+    // both settled. The pointee TYPE is not.
+    //
+    // Offline evidence on 3.9.20.300505 says the member never holds a BlockSource:
+    //   * ClientInstance's own initialiser (0x1945160) nulls 0xF0 / 0x108 / 0x110
+    //     / 0x118 as one contiguous block of subsystem pointers;
+    //   * across 541 qword stores to [reg+0x118] in .text, ZERO are fed by a
+    //     function that installs the BlockSource vtable (0x921B490);
+    //   * all 73 direct calls into the three BlockSource constructors
+    //     (0x5D285E0 / 0x5D28670 / 0x5D29C40) construct it in place on the stack
+    //     (`lea rcx,[rbp+X]; call ctor`), never as a heap pointer into a member.
+    // The one runtime observation we have agrees: the object there started with
+    // 0x0F910AE0, a heap address, not a vtable in the game image.
+    //
+    // Handing that pointer to the 17 consumers as BlockSource*, as this getter
+    // used to, turns "we do not know what this is" into a wild vtable jump. Ask
+    // the same question getGuiData() asks of its member: is this even a game
+    // object? A real BlockSource passes (its vtable lives in the main module);
+    // anything else is refused.
+    auto* blockSource = MemUtils::callVirtualFunc<BlockSource*>(
+        OffsetProvider::ClientInstance_getBlockSource, this);
+    if (!InstanceLocator::isPlausibleObject(blockSource))
+        return nullptr;
+    return blockSource;
 }
 
 Options* ClientInstance::getOptions()
