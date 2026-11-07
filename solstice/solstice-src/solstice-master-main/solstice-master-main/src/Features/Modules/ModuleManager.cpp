@@ -146,7 +146,14 @@ void ModuleManager::init()
     mModules.emplace_back(std::make_shared<HudEditor>());
 
     // Combat
+#ifndef SOLSTICE_DISABLE_AURA_DIAGNOSTIC
+    // Diagnostic isolation: when SOLSTICE_DISABLE_AURA_DIAGNOSTIC is defined, Aura is
+    // never constructed or added to the registry. Because Aura registers all of its
+    // event/packet listeners in onEnable() (and removes them in onDisable()), and it
+    // installs no exclusive MinHook detours, not constructing it removes the whole
+    // Aura execution path. Other modules below are unaffected.
     mModules.emplace_back(std::make_shared<Aura>());
+#endif
     mModules.emplace_back(std::make_shared<TriggerBot>());
     mModules.emplace_back(std::make_shared<AutoClicker>());
     mModules.emplace_back(std::make_shared<Reach>());

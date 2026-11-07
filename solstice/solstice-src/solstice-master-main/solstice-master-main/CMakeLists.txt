@@ -37,6 +37,18 @@ if (SOLSTICE_ALLOW_UNVERIFIED_MAPPINGS)
     add_compile_definitions(SOLSTICE_ALLOW_UNVERIFIED_MAPPINGS)
 endif ()
 
+# Diagnostic-only build option. When ON, the Aura module is never constructed or
+# registered, so its entire execution path (constructor, onEnable/onDisable/onTick,
+# event and packet listeners registered through the shared dispatcher) is absent
+# from the running process. Used to test whether Aura is the cause of a startup
+# hang regression. Default OFF keeps the released binary identical; every other
+# module, the shared SDK, and the global DEBUG override are untouched.
+option(SOLSTICE_DISABLE_AURA_DIAGNOSTIC
+       "Build without the Aura module to isolate a suspected hang regression (diagnostics only)" OFF)
+if (SOLSTICE_DISABLE_AURA_DIAGNOSTIC)
+    add_compile_definitions(SOLSTICE_DISABLE_AURA_DIAGNOSTIC)
+endif ()
+
 find_program(LD_COMMAND ld)
 
 if (NOT LD_COMMAND)

@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "task": "Batch 3.6.2-A Aura Isolation & Hang Regression Diagnosis",
+  "generatedAt": "2026-11-08",
+  "branch": "feat/aura-isolation-hang-diagnosis",
+  "baseCommit": "bf1522f",
+  "moduleUnderIsolation": "Combat/Aura",
+  "summary": "Aura 是单个 ModuleBase<Aura> 模块，全部事件/Packet 监听仅在 onEnable() 通过共享 dispatcher 注册，自身没有任何 MinHook 钩子。隔离只需在 ModuleManager::init() 的注册点不构造/不加入 Aura 即可彻底移除其执行路径。",
+
+  "auraExclusiveCode": {
+    "class": {
+      "file": "src/Features/Modules/Combat/Aura.hpp",
+      "decl": "class Aura : public ModuleBase<Aura>",
+      "category": "Combat",
+      "defaultEnabled": false
+    },
+    "lifecycle": [
+      "Aura() 构造函数 (Aura.hpp:78)",
+      "onEnable() (Aura.cpp:113) — 注册 6 个事件/Packet 监听",
+      "onDisable() (Aura.cpp:127) — 注销监听 + 复位静态状态",
+      "onBaseTickEvent() (Aura.cpp:409) — 主攻击逻辑",
+      "onRenderEvent() (Aura.cpp:273) — 球体可视化",
+      "onPacketOutEvent() (Aura.cpp:618) — 旋转注入/挥动记录",
+      "onPacketInEvent() (Aura.cpp:664) — 目标移除/维度切换",
+      "onBobHurtEvent() (Aura.cpp:686)",
+      "onBoneRenderEvent() (Aura.cpp:694)"
+    ],
+    "helperMethods": [
+      "getSword(Actor*) (Aura.cpp:32)",
+      "shouldUseFireSword(Actor*) (Aura.cpp:92)",
+      "rotate(Actor*) (Aura.cpp:141)",
+      "shootBow(Actor*) (Aura.cpp:168)",
+      "throwProjectiles(Actor*) (Aura.cpp:224)",
+      "findObstructingActor(Actor*,Actor*) (Aura.cpp:702)"
+    ],
+    "fileLocalSymbols": {
+      "EaseInOutExpo": "Aura.cpp:263 普通自由函数（仅 Aura.cpp 内使用）",
+      "chargingBow": "Aura.cpp:125 全局 bool=false（平凡初始化，无副作用；仅 shootBow 写入）"
+    },
+    "staticMembers": {
+      "sHasTarget": "Aura.hpp:155 static inline bool = false",
+      "sTarget": "Aura.hpp:156 static inline Actor* = nullptr",
+      "sTargetRuntimeID": "Aura.hpp:157 static inline int64_t = 0",
+      "note": "三个静态成员在头文件声明，其他模块仅【读取】(TargetStrafe/AutoBoombox/AutoSpellBook/Scaffold/TargetHUD)，隔离 Aura 后它们保持默认值(false/nullptr)且都有空/状态守卫，不会崩溃"
+    },
+    "eventPacketListeners": {
+      "registeredIn": "onEnable() 仅此处注册，onDisable() 注销",
+      "list": [
+        "BaseTickEvent -> Aura::onBaseTickEvent",
+        "PacketOutEvent -> Aura::onPacketOutEvent",
+        "PacketInEvent -> Aura::onPacketInEvent",
+        "RenderEvent -> Aura::onRenderEvent",
+        "BobHurtEvent(FIRST) -> Aura::onBobHurtEvent",
+        "BoneRenderEvent(FIRST) -> Aura::onBoneRenderEvent"
+      ],
+      "hooks": "NONE — Aura 不安装任何 MinHook 钩子，所有回调都经由共享 dispatcher"
+    },
+    "registrationPoint": {
+      "function": "ModuleManager::init()",
+      "file": "src/Features/Modules/ModuleManager.cpp:149",
+      "statement": "mModules.emplace_back(std::make_shared<Aura>());",
+      "note": "全代码库唯一实例化 Aura 之处；registerModule() 接口存在但未被调用，实际注册均用 mModules.emplace_back"
+    }
+  },
+
+  "conceptualHelpersNotSeparateClasses": {
+    "TargetSelector": "代码库中不存在名为 TargetSelector 的类。Aura 的选敌逻辑内联在 onBaseTickEvent：ActorUtils::getActorList(false,true) + std::ranges::sort(距离/上次攻击) + 距离/可见性/好友判定。无可独立隔离的辅助类。",
+    "Rotation": "代码库中不存在名为 Rotation 的类。Aura 的旋转通过共享 MathUtils::getRots(pos, aabb) 完成（Aura.cpp:161/632/638）。无可独立隔离的辅助类。"
+  },
+
+  "externalReadersOfAuraStatics": {
+    "TargetStrafe.cpp": ["Aura::sHasTarget", "Aura::sTarget", "Aura.hpp 仍被 include，符号存在，仅在无目标时跳过"],
+    "AutoBoombox.cpp": ["Aura::sTarget（只读，且 if(!Aura::sHasTarget ...) 守卫）"],
+    "AutoSpellBook.cpp": ["getModule<Aura>() 后 if(!aura || !aura->sHasTarget) return; (已空判断)"],
+    "Scaffold.cpp": ["getModule<Aura>() 后 auraMod->sHasTarget（原本【无空判断】，隔离后崩溃；已补 auraMod && 守卫）"],
+    "TargetHUD.cpp": ["Aura::sTarget / Aura::sHasTarget（只读，符号始终存在）"],
+    "impact": "这些模块仅读取 Aura 的 inline 静态成员，Aura 不构造时符号仍在（头文件声明），值为默认 false/nullptr，各读取点均有状态守卫，安全。仅 Scaffold 需补空指针守卫即可继续工作。"
+  },
+
+  "sharedDependenciesUsedByAura_NOT_auraExclusive": [
+    "MathUtils::getRots / getRotationKeyOffset / lerp / wrap / random / fov",
+    "ActorUtils::getActorList / createAttackTransaction",
+    "PacketUtils::queueSend / createMobEquipmentPacket",
+    "RenderUtils::transform.mMatrix / mOrigin",
+    "OWorldToScreen (RenderUtils)",
+    "ClientInstance / InstanceLocator / gFriendManager / gFeatureManager->mDispatcher",
+    "ItemUtils / Keyboard / ChatUtils / ColorUtils",
+    "LegitCriticals.hpp (仅 include，注释说明其自行监听攻击包，无调用)"
+  ],
+
+  "separateModulesNOT_in_aura_scope": {
+    "InfiniteAura": "src/Features/Modules/Combat/InfiniteAura.{hpp,cpp} — 独立 ModuleBase<InfiniteAura>，与 Aura 无继承关系；本次不隔离",
+    "ChestAura": "src/Features/Modules/Player/ChestAura.{hpp,cpp} — 独立 ModuleBase<ChestAura>，与 Aura 无继承关系；本次不隔离",
+    "LegitCriticals": "src/Features/Modules/Combat/LegitCriticals.{hpp,cpp} — 独立模块，Aura 仅 include 其头文件，无调用；本次不隔离",
+    "decision": "本次隔离范围严格限定为 Combat/Aura 模块本身；其他 Combat/Player 模块保持原状，符合任务'其他 Combat 模块不自动禁用，只有实际属于 Aura 执行范围的代码才隔离'。"
+  }
+}

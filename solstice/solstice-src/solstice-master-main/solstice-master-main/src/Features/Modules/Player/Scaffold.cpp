@@ -452,7 +452,7 @@ void Scaffold::onPacketOutEvent(PacketOutEvent& event)
 
             auto auraMod = gFeatureManager->mModuleManager->getModule<Aura>();
 
-            if (auraMod->sHasTarget && mFlickMode.mValue == FlickMode::Combat || mFlickMode.mValue == FlickMode::Always) flickRotate = true;
+            if (auraMod && auraMod->sHasTarget && mFlickMode.mValue == FlickMode::Combat || mFlickMode.mValue == FlickMode::Always) flickRotate = true;
 
             if (flickRotate) mShouldRotate = false;
             else
@@ -461,7 +461,7 @@ void Scaffold::onPacketOutEvent(PacketOutEvent& event)
                 if (NOW - mLastSwitchTime > 500) mShouldRotate = false;
             }
 
-            if (auraMod->sHasTarget && mFlickMode.mValue == FlickMode::None)
+            if (auraMod && auraMod->sHasTarget && mFlickMode.mValue == FlickMode::None)
             {
                 mShouldRotate = false;
                 flickRotate = false;
