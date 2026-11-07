@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 4,
+  "batch": "3.6",
+  "diagnosticRevision": "3.6.1c",
+  "baseline": "411fa4e",
+  "diagnosticCommits": [
+    {"sha": "54f9188", "summary": "record the projection's provenance, row translation and raw fov once"},
+    {"sha": "a7158d4", "summary": "make the projection probe capture a complete frame, once"},
+    {"sha": "11ff965", "summary": "project the point with the renderer's own parameters too"},
+    {"sha": "worktree", "summary": "3.6.1c probe temporal consistency, same-frame pairing, 8 AABB corners, sensitivity scoring, throttled search (uncommitted, awaiting review)"}
+  ],
+  "branch": "feat/esp-projection-root-cause",
+  "target": {
+    "version": "1.21.120.0",
+    "build": "3.9.20.300505",
+    "image": "unpacked/unpacked_Minecraft.Windows.exe",
+    "imageSha256": "5fb2e893f724b1d644561161b8a5c2180a333e8d7f181b44b856a05f89026deb",
+    "verified": true
+  },
+  "verdict": "NEEDS_RUNTIME_MATRIX_CAPTURE",
+  "chain": [
+    {
+      "stage": "aabb",
+      "file": "src/SDK/Minecraft/Actor/Actor.cpp",
+      "function": "Actor::getAABB(bool normal = false)",
+      "input": "Actor*",
+      "output": "AABB (mMin/mMax)",
+      "space": "world, blocks",
+      "evidence": "rebuilds from getRenderPositionComponent()->mPosition, not from the component's raw min/max; players subtract PLAYER_HEIGHT (1.62f, the eye height) so the box lands at the feet",
+      "status": "STATIC VERIFIED",
+      "note": "the 1.62 subtraction applies only when isPlayer(); if that assumption is wrong on this build, player boxes shift by exactly 1.62 blocks while mob boxes stay correct"
+    },
+    {
+      "stage": "camera_origin",
+      "file": "src/SDK/Minecraft/Rendering/LevelRenderer.cpp",
+      "function": "LevelRendererPlayer::getCameraPos()",
+      "returns": "&member_at<glm::vec3>(LevelRendererPlayer_mCameraPos)",
+      "space": "assumed world, blocks",
+      "status": "STATIC CANDIDATE",
+      "note": "same space as the AABB only if LevelRendererPlayer stores an absolute position; a render-relative origin here would put every box off by the render origin"
+    },
+    {
+      "stage": "view_matrix_source",
+      "file": "src/SDK/Minecraft/ClientInstance.cpp",
+      "function": "ClientInstance::getViewMatrix()",
+      "returns": "member_at<glmatrixf>(ClientInstance_mViewMatrix = 0x358)",
+      "status": "UNVERIFIED",
+      "evidence": {
+        "vtable_accessor_scan": {
+          "method": "disassemble the first instructions of all 470 ClientInstance vtable slots and look for the displacement in the body",
+          "self_check_on_known_members": {
+            "0xF0": [1, 8, 27, 44, 197, 198],
+            "0x108": [308],
+            "0x118": [318],
+            "0xE0": [17, 27, 64, 177, 178, 179],
+            "0x6C0": [232, 233],
+            "0x720": [455, 456],
+            "0x724": [457, 458]
+          },
+          "result_for_0x358": [],
+          "result_for_0x368": [],
+          "interpretation": "every ClientInstance member the SDK already relies on has a virtual accessor; 0x358 and 0x368 have none, so these offsets were found structurally, not through the game's own interface"
+        }
+      }
+    },
+    {
+      "stage": "view_matrix_selection",
+      "file": "src/Hook/Hooks/RenderHooks/OpenGLGui.cpp",
+      "function": "OpenGLGui::render(HDC)",
+      "candidates": [
+        {"source": 0, "origin": "ClientInstance::getViewMatrix()", "normalised": false, "w_forced_zero": false},
+        {"source": 1, "origin": "scanForViewMatrix over ClientInstance / LevelRenderer / LevelRendererPlayer", "normalised": true, "w_forced_zero": true},
+        {"source": 2, "origin": "viewMatrixFromRotation(yaw, pitch)", "normalised": true, "w_forced_zero": true},
+        {"source": 3, "origin": "no candidate validated", "normalised": false, "w_forced_zero": false}
+      ],
+      "acceptance_test": "isCameraBasis(): three columns unit length and mutually orthogonal; checks the 3x3 only, never the translation",
+      "bug": "source 0 and source 3 are accepted/kept without forcing w == 0, while the rows are dotted against a point the caller already made camera-relative",
+      "additional": "the entire fallback chain lives inside `if (auto* rot = player->getActorRotationComponent())`; when that component is missing the chain never runs and viewSource stays 3",
+      "status": "STATIC VERIFIED (the inconsistency) / UNVERIFIED (whether the game matrix actually carries w)"
+    },
+    {
+      "stage": "fov",
+      "file": "src/SDK/Minecraft/ClientInstance.cpp",
+      "function": "ClientInstance::getFov()",
+      "members": {"x": "0x720", "y": "0x724"},
+      "conversion": "toFactor(): (0.1,10) treated as the multiplier 1/tan(fov/2); (30,130) treated as degrees; otherwise fall back to 70 deg vertical",
+      "consumer_contract": "OWorldToScreen multiplies the offset by fov.x / fov.y, so it must be 1/tan(hfov/2) and 1/tan(vfov/2)",
+      "status": "UNVERIFIED",
+      "evidence": {
+        "vtable_pair": "slot 455 = movss xmm0,[rcx+0x720]; ret, slot 456 = movss [rcx+0x720],xmm1; ret, slot 457/458 the same for 0x724 -- a real float property with getter and setter",
+        "who_reads_it": "7 movss sites for 0x720 in the whole .text: the getter, the setter, and five inside a 64-byte struct copy at 0x352B3xx / 0x5EB82F6",
+        "interpretation": "no rendering code reads ClientInstance+0x720, so this member is not the value the renderer builds its projection from; using it for projection is unsound if the two can diverge (fov setting, sprinting, spyglass)"
+      },
+      "dead_alternative": "LevelRendererPlayer::getFovX()/getFovY() exist in the SDK and are mapped, but no caller exists anywhere in the tree"
+    },
+    {
+      "stage": "box_projection_entry",
+      "file": "src/Utils/MiscUtils/MathUtils.cpp",
+      "function": "MathUtils::getBoxPoints(const AABB&) / getImBoxPoints(const AABB&)",
+      "line": 149,
+      "call": "corrected.OWorldToScreen(origin, wp, result, fov, displaySize)",
+      "matrix_source": "RenderUtils::transform.mMatrix (local reference `corrected`)",
+      "parameter_sources": {
+        "origin": "MathUtils::origin -- the static, because the name is unqualified inside a MathUtils member function",
+        "fov": "MathUtils::fov -- same reasoning",
+        "displaySize": "MathUtils::displaySize -- same reasoning"
+      },
+      "status": "STATIC VERIFIED",
+      "note": "the production path is MIXED: the matrix comes from the transform, the three projection parameters come from the MathUtils statics. OpenGLGui assigns both sets in the same block today (MathUtils::fov = transform.mFov; MathUtils::origin = transform.mOrigin), so they agree in practice -- but nothing in the type system keeps them equal, and the D3D path never writes the statics. A probe that reads only the transform copies can therefore describe a projection the renderer does not perform.",
+      "consequence": "the diagnostic now computes the same point twice, once per parameter set, and reports both plus their deltas"
+    },
+    {
+      "stage": "projection",
+      "file": "src/Utils/Structs.hpp",
+      "function": "glmatrixf::OWorldToScreen",
+      "formula": "rel = pos - origin; x = dot(row0, (rel,1)); y = dot(row1, (rel,1)); z = dot(row2, (rel,1)); reject z>0; sx = W/2 + W/2 * x/(-z) * fov.x; sy = H/2 - H/2 * y/(-z) * fov.y",
+      "requires": ["rows[i].w == 0", "row0 = right", "row1 = up", "row2 = -forward", "fov.* = 1/tan(half-angle)"],
+      "status": "STATIC VERIFIED",
+      "note": "the formula itself is a correct pinhole projection once the requirements hold; the reference implementation reproduces it and passes 35 checks"
+    },
+    {
+      "stage": "viewport",
+      "file": "src/Hook/Hooks/RenderHooks/OpenGLGui.cpp",
+      "function": "OpenGLGui::render(HDC)",
+      "display_size_source": "GetClientRect(clientRect) -> io.DisplaySize -> MathUtils::displaySize",
+      "draw_target": "ImGui::GetBackgroundDrawList() in the same ImGui frame",
+      "status": "STATIC VERIFIED",
+      "conclusion": "viewport and ImGui coordinates share one source; no framebuffer/logical-size mismatch on this path"
+    }
+  ],
+  "open_questions": [
+    {
+      "id": "Q1",
+      "question": "does ClientInstance+0x358 hold a view matrix at all, and does it carry translation?",
+      "answerable_by": "matrixSource + basis v0/v1/v2 with v0w/v1w/v2w + mat16 glmColumnMajor",
+      "calibration": "a non-zero w is reported as AFFINE_TRANSLATION_TERM_PRESENT. Double subtraction is only claimed when residualMath = w + dot(axis, mathOrigin) is ~0 on all three rows -- the condition for the matrix having already subtracted the very origin getBoxPoints() subtracts again. residualTransform and verdictIfTransformOrigin are printed as a control only; the verdict never uses them."
+    },
+    {
+      "id": "Q2",
+      "question": "what unit are ClientInstance+0x720/0x724 stored in?",
+      "answerable_by": "ciFovRaw next to ciFovConverted, transformFov and mathFov in the same capture",
+      "not_answerable_by": "a single capture. One sample cannot separate 'a multiplier' from 'degrees that happen to convert to the same factor'; two runs with different in-game FOV settings are required, see diagnostic-probe.md section 4",
+      "production_note": "the projecting path consumes mathFov, so judge proportion with mathFovFactorRatio first; fovFactorRatio is the transform copy and only a control"
+    },
+    {
+      "id": "Q3",
+      "question": "is LevelRendererPlayer::getCameraPos absolute or render-relative?",
+      "answerable_by": "playerToCamera in the control capture, plus camera in the matrix capture"
+    },
+    {
+      "id": "Q4",
+      "question": "do the MathUtils statics and the transform snapshot agree in a real frame?",
+      "answerable_by": "control line: comparable + originsMatch + fovsMatch, then screenDelta as a sensitivity number only",
+      "interpretation": "originsMatch/fovsMatch false means the probe was previously describing a projection the renderer does not perform. A small or zero screenDelta does NOT prove equality: on the view axis a 30% fov difference still moves the pixel by exactly 0 (reference T13a)."
+    },
+    {
+      "id": "Q5",
+      "question": "can the control be measured at all, i.e. is there a point in front of the camera?",
+      "answerable_by": "testPoint source / world / testViewZ / transformTestViewZ, or the explicit 'no usable test point' line",
+      "failure_mode": "the local player's render position sits on the camera plane and is rejected by OWorldToScreen's z>=0 guard, which is how 3.6.1a produced a control that measured nothing",
+      "note": "matrixCaptured and projectionControlCaptured are separate: a scene with no usable point still reports the matrix"
+    },
+    {
+      "id": "Q6",
+      "question": "if matrixSource=2, is the synthesised matrix actually correct?",
+      "answerable_by": "not by this probe. Source 2 means viewMatrixFromRotation(yaw, pitch) was adopted, not validated: the yaw/pitch sign convention, the camera direction and the handedness still need independent checks",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "Q7",
+      "question": "are the matrix facts and the control point from the same frame?",
+      "answerable_by": "matrixCaptureFrame / controlCaptureFrame / sameFrame on the paired header",
+      "guarantee": "structural, not statistical: the paired block re-reads matrixSource, origins, fov, mat16, rowW and the affine verdict on the control frame, so it never reuses the preliminary block's numbers. sameFrame only reports whether the two blocks coincide.",
+      "failure_mode": "pairing the preliminary snapshot with a later control point would describe a projection the renderer never performed -- matrix from frame N, point from frame M"
+    }
+  ],
+  "diagnosticFields": {
+    "lifecycle": ["sFrame (monotonic RenderEvent counter)", "preliminaryDone", "pairedDone", "sSearches", "kSearchIntervalFrames=20", "kProbeSearchBudget=900 (searches)", "kProbeSlowRetryFrames=600", "kTestPointMinDepth=0.1", "kMinSensitivity=0.15", "kMaxActorsScanned=256"],
+    "frameStamps": ["matrixCaptureFrame", "controlCaptureFrame", "sameFrame", "searches"],
+    "matrix": ["matrixSource", "camera", "transformOrigin", "mathOrigin", "cameraToTransform", "v0/v1/v2 with v0w/v1w/v2w", "mat16 glmColumnMajor"],
+    "fov": ["ciFovRaw", "ciFovConverted", "transformFov", "mathFov", "displayWidth", "displayHeight", "displayAspect", "fovFactorRatio", "mathFovFactorRatio"],
+    "affine": ["verdict (from mathOrigin)", "rowW", "axisDotMathOrigin", "residualMath", "originsAgree", "axisDotTransformOrigin", "residualTransform", "verdictIfTransformOrigin"],
+    "testPoint": ["source", "actor", "world", "sensitivityScore", "sensitivity (OK | LOW_SENSITIVITY)", "testViewX", "testViewY", "testViewZ", "transformTestViewZ"],
+    "projectionA": ["mathOk", "mathScreen", "mathViewX", "mathViewY", "mathViewZ"],
+    "projectionB": ["transformOk", "transformScreen", "transformViewX", "transformViewY", "transformViewZ"],
+    "control": ["comparable", "originsMatch", "fovsMatch", "screenDelta (sensitivity only)", "viewDelta", "screenDeltaUsable"],
+    "localPlayer": ["render", "known", "playerToCamera"]
+  }
+}

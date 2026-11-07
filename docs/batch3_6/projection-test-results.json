@@ -1,0 +1,258 @@
+{
+ "checks": [
+  {
+   "name": "T1 point 10 ahead projects to screen centre",
+   "pass": true,
+   "detail": "(960.0, 540.0)"
+  },
+  {
+   "name": "T2 same relative point gives the same pixel",
+   "pass": true,
+   "detail": "(960.0, 540.0)"
+  },
+  {
+   "name": "T3 world -X is the player's RIGHT -> screen x > centre",
+   "pass": true,
+   "detail": "(1114.2399847281483, 540.0)"
+  },
+  {
+   "name": "T3 world +X is the player's LEFT -> screen x < centre",
+   "pass": true,
+   "detail": "(805.7600152718517, 540.0)"
+  },
+  {
+   "name": "T4 +Y is ABOVE centre (screen y < centre)",
+   "pass": true,
+   "detail": "(960.0, 385.7600152718516)"
+  },
+  {
+   "name": "T4 -Y is BELOW centre",
+   "pass": true,
+   "detail": "(960.0, 694.2399847281483)"
+  },
+  {
+   "name": "T5 point behind is rejected (z > 0)",
+   "pass": true,
+   "detail": "{'reason': 'z>0 (behind camera)'}"
+  },
+  {
+   "name": "T6a with a per-display fov the normalised y is resolution-invariant",
+   "pass": true,
+   "detail": "n1=-0.285630 n2=-0.285630"
+  },
+  {
+   "name": "T6b a stale aspect in fov shifts the point (this is detectable at runtime)",
+   "pass": true,
+   "detail": "n2(correct)=0.6025 n3(stale)=0.8033"
+  },
+  {
+   "name": "T7 with w == 0 the same relative geometry gives the same pixel",
+   "pass": true,
+   "detail": "(960.0, 540.0) vs (960.0, 540.0)"
+  },
+  {
+   "name": "T7 with w == camera the same relative geometry lands on DIFFERENT pixels",
+   "pass": true,
+   "detail": "1256.6 vs 3629.5 px"
+  },
+  {
+   "name": "T7 the leak is proportional to the world position, not to the offset",
+   "pass": true,
+   "detail": "shift=296.6 px at camera x=100"
+  },
+  {
+   "name": "T8 treating degrees as a multiplier collapses the aspect correction",
+   "pass": true,
+   "detail": "deg-x=-66240.0  correct-x=188.8"
+  },
+  {
+   "name": "T9 point 10 blocks down -X is at the centre",
+   "pass": true,
+   "detail": "(960.0, 540.0)"
+  },
+  {
+   "name": "T9 -Z is the player's RIGHT when facing -X (screen x > centre)",
+   "pass": true,
+   "detail": "(1114.2399847281483, 540.0)"
+  },
+  {
+   "name": "T10 a point at the camera is rejected, not divided by zero",
+   "pass": true,
+   "detail": "{'reason': 'z==0 (divide by zero)'}"
+  },
+  {
+   "name": "T11a equal parameter sets give an exactly identical pixel",
+   "pass": true,
+   "detail": "(921.4400038179629, 501.4400038179629) vs (921.4400038179629, 501.4400038179629)"
+  },
+  {
+   "name": "T11b a 0.25-block origin difference moves the pixel by > 1 px",
+   "pass": true,
+   "detail": "delta_y=19.280 px"
+  },
+  {
+   "name": "T11c a 5% fov drift moves the pixel by > 1 px",
+   "pass": true,
+   "detail": "delta_x=-1.928 px"
+  },
+  {
+   "name": "T11d equal parameters produce zero delta, and the selected perturbations are detectable",
+   "pass": true,
+   "detail": "equal=0.000000 origin=19.280 fov=1.928"
+  },
+  {
+   "name": "T12a w == -dot(axis, origin) classifies as DOUBLE_ORIGIN_SUBTRACTION_CONFIRMED",
+   "pass": true,
+   "detail": "DOUBLE_ORIGIN_SUBTRACTION_CONFIRMED resid=[0.0, 0.0, 0.0]"
+  },
+  {
+   "name": "T12b the projection really shifts, so the duplication is not cosmetic",
+   "pass": true,
+   "detail": "shift=333.7 px"
+  },
+  {
+   "name": "T12c an unexplained w is AFFINE_TRANSLATION_TERM_PRESENT and nothing more",
+   "pass": true,
+   "detail": "AFFINE_TRANSLATION_TERM_PRESENT resid=[-95.0, 67.0, 252.0]"
+  },
+  {
+   "name": "T12d w == 0 is NO_TRANSLATION_TERM, not a silent pass",
+   "pass": true,
+   "detail": "NO_TRANSLATION_TERM"
+  },
+  {
+   "name": "T13a an on-axis point keeps its pixel even with a 30% fov difference",
+   "pass": true,
+   "detail": "delta=(0.000000,0.000000)"
+  },
+  {
+   "name": "T13b yet the two parameter sets are NOT equal -- fovsMatch would be false",
+   "pass": true,
+   "detail": "fov=(0.8033,1.4281) vs (1.0443,1.4281)"
+  },
+  {
+   "name": "T13c off-axis the same fov difference does move the pixel -- sensitivity, quantified",
+   "pass": true,
+   "detail": "delta_x=-11.568 px"
+  },
+  {
+   "name": "T14a production origin -> residual zero -> DOUBLE_ORIGIN_SUBTRACTION_CONFIRMED",
+   "pass": true,
+   "detail": "DOUBLE_ORIGIN_SUBTRACTION_CONFIRMED resid=[0.0, 0.0, 0.0]"
+  },
+  {
+   "name": "T14b the stale transform origin misclassifies the same matrix",
+   "pass": true,
+   "detail": "AFFINE_TRANSLATION_TERM_PRESENT resid=[0.0, 0.5, 0.0]"
+  },
+  {
+   "name": "T14c the two verdicts disagree here, so the choice of origin is load-bearing",
+   "pass": true,
+   "detail": "DOUBLE_ORIGIN_SUBTRACTION_CONFIRMED vs AFFINE_TRANSLATION_TERM_PRESENT"
+  },
+  {
+   "name": "T15a the local player's render position is at the camera plane -> rejected",
+   "pass": true,
+   "detail": "z=0 / z=0"
+  },
+  {
+   "name": "T15b a point behind the camera is rejected",
+   "pass": true,
+   "detail": "z>0"
+  },
+  {
+   "name": "T15c a non-finite coordinate is rejected",
+   "pass": true,
+   "detail": "nan"
+  },
+  {
+   "name": "T15d an AABB corner below and beside the camera is accepted",
+   "pass": true,
+   "detail": "z<-0.1"
+  },
+  {
+   "name": "T15e the picker skips every unusable candidate and returns the corner",
+   "pass": true,
+   "detail": "(100.3, 68.38, -249.7)"
+  },
+  {
+   "name": "T16a pairing stale matrix facts with a later control frame is refused",
+   "pass": true,
+   "detail": "frames 41 vs 900"
+  },
+  {
+   "name": "T16b facts read on the control frame pair, and both stamps are equal",
+   "pass": true,
+   "detail": "{'matrixCaptureFrame': 41, 'controlCaptureFrame': 41, 'sameFrame': True, 'mat16': ('m@41',)}"
+  },
+  {
+   "name": "T16c the paired block is self-contained: it carries the control frame's matrix",
+   "pass": true,
+   "detail": "paired mat16=('m@900',), preliminary=('m@41',)"
+  },
+  {
+   "name": "T17a eight distinct vertices, covering min and max on every axis",
+   "pass": true,
+   "detail": "8 corners"
+  },
+  {
+   "name": "T17b a box whose only usable corners lie outside the old four is still found",
+   "pass": true,
+   "detail": "eight-corner scan=2, four-corner scan=0"
+  },
+  {
+   "name": "T17c the old four were a strict subset: four vertices were never examined",
+   "pass": true,
+   "detail": "unexamined corners: 4"
+  },
+  {
+   "name": "T18a the off-axis point wins even though the on-axis one is listed first",
+   "pass": true,
+   "detail": "picked=(105.0, 72.0, -240.0)"
+  },
+  {
+   "name": "T18b and its sensitivity score is strictly larger",
+   "pass": true,
+   "detail": "off=0.5385 near=0.0050"
+  },
+  {
+   "name": "T19a the local fallback is flagged from its source even though its raw score is high",
+   "pass": true,
+   "detail": "S=5.4918"
+  },
+  {
+   "name": "T19b a nearly on-axis non-local point is flagged from its score",
+   "pass": true,
+   "detail": "S=0.000010"
+  },
+  {
+   "name": "T19c an off-axis non-local point is OK, so screenDelta is usable there",
+   "pass": true,
+   "detail": "S=0.5385"
+  },
+  {
+   "name": "T20a first search on the first frame, then no more often than the interval",
+   "pass": true,
+   "detail": "frames=[1, 21, 41, 61, 81, 681] gaps=[20, 20, 20, 20, 600]"
+  },
+  {
+   "name": "T20b the budget counts searches, not frames",
+   "pass": true,
+   "detail": "budget900 -> 900 budgeted searches, budget4 -> 4"
+  },
+  {
+   "name": "T20c after the budget the cadence drops to the slow retry interval",
+   "pass": true,
+   "detail": "gap after the budget = 600 frames"
+  }
+ ],
+ "total": 49,
+ "failed": 0,
+ "result": "ALL_PASS",
+ "conventions": {
+  "viewSpace": "camera looks down -Z; z_v < 0 in front",
+  "rows": "rows[0]=right, rows[1]=up, rows[2]=-forward, w must be 0",
+  "fov": "(1/tan(hfov/2), 1/tan(vfov/2))",
+  "screen": "sx = W/2 + W/2 * x_v/(depth*fovx); sy = H/2 - H/2 * y_v/(depth*fovy)"
+ }
+}

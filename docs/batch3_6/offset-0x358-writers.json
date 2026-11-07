@@ -1,0 +1,2336 @@
+{
+ "image": "G:/hacker/unpacked/unpacked_Minecraft.Windows.exe",
+ "imageBase": "0x7ff66b9f0000",
+ "disp": "0x358",
+ "hitCount": 147,
+ "byKind": {
+  "STORE8": 136,
+  "STORE16": 11
+ },
+ "hits": [
+  {
+   "rva": 2379405,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], 0xf",
+   "func": 2378576
+  },
+  {
+   "rva": 2437585,
+   "kind": "STORE8",
+   "base": "r14",
+   "text": "mov qword ptr [r14 + 0x358], rax",
+   "func": 2436049
+  },
+  {
+   "rva": 2515778,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], 0xf",
+   "func": 2514992
+  },
+  {
+   "rva": 2671372,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rbp",
+   "func": 2670528
+  },
+  {
+   "rva": 3442778,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "movsd qword ptr [rdi + 0x358], xmm0",
+   "func": 3441242
+  },
+  {
+   "rva": 7980689,
+   "kind": "STORE8",
+   "base": "r10",
+   "text": "mov qword ptr [r10 + 0x358], rdx",
+   "func": 7979153
+  },
+  {
+   "rva": 11741533,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], r14",
+   "func": 11739997
+  },
+  {
+   "rva": 12573669,
+   "kind": "STORE8",
+   "base": "r13",
+   "text": "mov qword ptr [r13 + 0x358], rax",
+   "func": 12572816
+  },
+  {
+   "rva": 20667922,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], 0xf",
+   "func": 20667008
+  },
+  {
+   "rva": 21055967,
+   "kind": "STORE16",
+   "base": "r13",
+   "text": "movups xmmword ptr [r13 + 0x358], xmm0",
+   "func": 21055232
+  },
+  {
+   "rva": 26518204,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], rbp",
+   "func": 26516704
+  },
+  {
+   "rva": 26518239,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], 0xf",
+   "func": 26516703
+  },
+  {
+   "rva": 29186910,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], r15",
+   "func": 29186240
+  },
+  {
+   "rva": 34248185,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "mov qword ptr [rsi + 0x358], rax",
+   "func": 34246649
+  },
+  {
+   "rva": 34988542,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], rcx",
+   "func": 34987006
+  },
+  {
+   "rva": 35105524,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], r12",
+   "func": 35103988
+  },
+  {
+   "rva": 35218683,
+   "kind": "STORE8",
+   "base": "r13",
+   "text": "mov qword ptr [r13 + 0x358], rax",
+   "func": 35217147
+  },
+  {
+   "rva": 41626948,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], r13",
+   "func": 41625412
+  },
+  {
+   "rva": 41629074,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], r14",
+   "func": 41627600
+  },
+  {
+   "rva": 41781654,
+   "kind": "STORE8",
+   "base": "rcx",
+   "text": "movsd qword ptr [rcx + 0x358], xmm0",
+   "func": 41780118
+  },
+  {
+   "rva": 41926255,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], rbx",
+   "func": 41925328
+  },
+  {
+   "rva": 42301021,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], rax",
+   "func": 42299552
+  },
+  {
+   "rva": 42309154,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], rax",
+   "func": 42307618
+  },
+  {
+   "rva": 44346612,
+   "kind": "STORE16",
+   "base": "rsi",
+   "text": "movups xmmword ptr [rsi + 0x358], xmm0",
+   "func": 44345076
+  },
+  {
+   "rva": 44346640,
+   "kind": "STORE16",
+   "base": "rsi",
+   "text": "movups xmmword ptr [rsi + 0x358], xmm0",
+   "func": 44345104
+  },
+  {
+   "rva": 46824324,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], 0xf",
+   "func": 46824224
+  },
+  {
+   "rva": 47674848,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "mov qword ptr [rsi + 0x358], r12",
+   "func": 47673648
+  },
+  {
+   "rva": 47675601,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "mov qword ptr [rsi + 0x358], rax",
+   "func": 47674065
+  },
+  {
+   "rva": 47676332,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "mov qword ptr [rsi + 0x358], rax",
+   "func": 47674796
+  },
+  {
+   "rva": 47724049,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], rcx",
+   "func": 47723936
+  },
+  {
+   "rva": 47873422,
+   "kind": "STORE8",
+   "base": "rcx",
+   "text": "movsd qword ptr [rcx + 0x358], xmm0",
+   "func": 47872560
+  },
+  {
+   "rva": 52167253,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], 0xf",
+   "func": 52166816
+  },
+  {
+   "rva": 52992944,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], r12",
+   "func": 52992320
+  },
+  {
+   "rva": 52992979,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 52992320
+  },
+  {
+   "rva": 53002457,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rbp",
+   "func": 53001248
+  },
+  {
+   "rva": 53515410,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], r12",
+   "func": 53515152
+  },
+  {
+   "rva": 53515434,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 53515152
+  },
+  {
+   "rva": 55053158,
+   "kind": "STORE16",
+   "base": "rsi",
+   "text": "movups xmmword ptr [rsi + 0x358], xmm1",
+   "func": 55052480
+  },
+  {
+   "rva": 55319959,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "mov qword ptr [rsi + 0x358], rax",
+   "func": 55319712
+  },
+  {
+   "rva": 55329301,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rdi",
+   "func": 55328176
+  },
+  {
+   "rva": 55371420,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "mov qword ptr [rsi + 0x358], rcx",
+   "func": 55371280
+  },
+  {
+   "rva": 55371612,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "mov qword ptr [rsi + 0x358], rax",
+   "func": 55371504
+  },
+  {
+   "rva": 56010350,
+   "kind": "STORE16",
+   "base": "rsi",
+   "text": "movups xmmword ptr [rsi + 0x358], xmm1",
+   "func": 56010016
+  },
+  {
+   "rva": 56012718,
+   "kind": "STORE16",
+   "base": "rsi",
+   "text": "movups xmmword ptr [rsi + 0x358], xmm1",
+   "func": 56012384
+  },
+  {
+   "rva": 56018888,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "mov qword ptr [rsi + 0x358], rbp",
+   "func": 56018768
+  },
+  {
+   "rva": 56070318,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rdi",
+   "func": 56069056
+  },
+  {
+   "rva": 56134536,
+   "kind": "STORE8",
+   "base": "rcx",
+   "text": "mov qword ptr [rcx + 0x358], rax",
+   "func": 56133000
+  },
+  {
+   "rva": 56169651,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "mov qword ptr [rsi + 0x358], r12",
+   "func": 56168115
+  },
+  {
+   "rva": 56169802,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "mov qword ptr [rsi + 0x358], rax",
+   "func": 56168266
+  },
+  {
+   "rva": 56394025,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "mov qword ptr [rsi + 0x358], r12",
+   "func": 56392800
+  },
+  {
+   "rva": 56602952,
+   "kind": "STORE16",
+   "base": "rdi",
+   "text": "movups xmmword ptr [rdi + 0x358], xmm1",
+   "func": 56601552
+  },
+  {
+   "rva": 56607841,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], rbp",
+   "func": 56607536
+  },
+  {
+   "rva": 56607872,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], rax",
+   "func": 56607536
+  },
+  {
+   "rva": 56608339,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], rbp",
+   "func": 56608064
+  },
+  {
+   "rva": 56608370,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], rax",
+   "func": 56608064
+  },
+  {
+   "rva": 56617428,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], 0xf",
+   "func": 56617344
+  },
+  {
+   "rva": 58590616,
+   "kind": "STORE8",
+   "base": "rcx",
+   "text": "movsd qword ptr [rcx + 0x358], xmm6",
+   "func": 58590416
+  },
+  {
+   "rva": 91068762,
+   "kind": "STORE8",
+   "base": "r14",
+   "text": "mov qword ptr [r14 + 0x358], rax",
+   "func": 91067226
+  },
+  {
+   "rva": 91123175,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "mov qword ptr [rsi + 0x358], rax",
+   "func": 91121639
+  },
+  {
+   "rva": 91125188,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 91123652
+  },
+  {
+   "rva": 91592217,
+   "kind": "STORE8",
+   "base": "r14",
+   "text": "mov qword ptr [r14 + 0x358], rax",
+   "func": 91590681
+  },
+  {
+   "rva": 91771502,
+   "kind": "STORE8",
+   "base": "r14",
+   "text": "mov qword ptr [r14 + 0x358], rax",
+   "func": 91770304
+  },
+  {
+   "rva": 92335211,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rsi",
+   "func": 92334928
+  },
+  {
+   "rva": 94123767,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rsi",
+   "func": 94122848
+  },
+  {
+   "rva": 98877150,
+   "kind": "STORE16",
+   "base": "r14",
+   "text": "movups xmmword ptr [r14 + 0x358], xmm0",
+   "func": 98876432
+  },
+  {
+   "rva": 102720726,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], r15",
+   "func": 102719600
+  },
+  {
+   "rva": 102724456,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], rbp",
+   "func": 102723712
+  },
+  {
+   "rva": 109204024,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], r12",
+   "func": 109203728
+  },
+  {
+   "rva": 109359768,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "mov qword ptr [rsi + 0x358], r12",
+   "func": 109358544
+  },
+  {
+   "rva": 109375225,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], r14",
+   "func": 109374256
+  },
+  {
+   "rva": 109619900,
+   "kind": "STORE8",
+   "base": "r15",
+   "text": "mov qword ptr [r15 + 0x358], r14",
+   "func": 109619536
+  },
+  {
+   "rva": 109624060,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "mov qword ptr [rsi + 0x358], rbx",
+   "func": 109623504
+  },
+  {
+   "rva": 109629899,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "mov qword ptr [rsi + 0x358], rbp",
+   "func": 109629072
+  },
+  {
+   "rva": 109631091,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "mov qword ptr [rsi + 0x358], r15",
+   "func": 109630016
+  },
+  {
+   "rva": 109632254,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rdi",
+   "func": 109630718
+  },
+  {
+   "rva": 112001390,
+   "kind": "STORE16",
+   "base": "rdi",
+   "text": "movups xmmword ptr [rdi + 0x358], xmm0",
+   "func": 112000624
+  },
+  {
+   "rva": 112887643,
+   "kind": "STORE16",
+   "base": "rax",
+   "text": "movups xmmword ptr [rax + 0x358], xmm0",
+   "func": 112886107
+  },
+  {
+   "rva": 113245453,
+   "kind": "STORE16",
+   "base": "r14",
+   "text": "movups xmmword ptr [r14 + 0x358], xmm1",
+   "func": 113244912
+  },
+  {
+   "rva": 113340536,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "movsd qword ptr [rsi + 0x358], xmm0",
+   "func": 113339200
+  },
+  {
+   "rva": 113346500,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "movsd qword ptr [rdi + 0x358], xmm0",
+   "func": 113346288
+  },
+  {
+   "rva": 114386495,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rbp",
+   "func": 114384959
+  },
+  {
+   "rva": 129389939,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], r15",
+   "func": 129389184
+  },
+  {
+   "rva": 129883252,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], 0xf",
+   "func": 129882864
+  },
+  {
+   "rva": 132592439,
+   "kind": "STORE8",
+   "base": "rcx",
+   "text": "mov qword ptr [rcx + 0x358], rdx",
+   "func": 132592160
+  },
+  {
+   "rva": 133932905,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], 0",
+   "func": 133932800
+  },
+  {
+   "rva": 135308851,
+   "kind": "STORE8",
+   "base": "r14",
+   "text": "mov qword ptr [r14 + 0x358], r12",
+   "func": 135308224
+  },
+  {
+   "rva": 135870218,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], r13",
+   "func": 135868800
+  },
+  {
+   "rva": 135892467,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], 0xf",
+   "func": 135891968
+  },
+  {
+   "rva": 136057886,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "mov qword ptr [rsi + 0x358], rdi",
+   "func": 136057056
+  },
+  {
+   "rva": 136058187,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rdi",
+   "func": 136058080
+  },
+  {
+   "rva": 136153585,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 136153520
+  },
+  {
+   "rva": 136155679,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], 0",
+   "func": 136155600
+  },
+  {
+   "rva": 140151947,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140151872
+  },
+  {
+   "rva": 140152355,
+   "kind": "STORE8",
+   "base": "rcx",
+   "text": "mov qword ptr [rcx + 0x358], rax",
+   "func": 140152304
+  },
+  {
+   "rva": 140152506,
+   "kind": "STORE8",
+   "base": "rcx",
+   "text": "mov qword ptr [rcx + 0x358], rax",
+   "func": 140152448
+  },
+  {
+   "rva": 140162568,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140162464
+  },
+  {
+   "rva": 140183990,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140182800
+  },
+  {
+   "rva": 140195599,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rsi",
+   "func": 140194063
+  },
+  {
+   "rva": 140196464,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rdi",
+   "func": 140196128
+  },
+  {
+   "rva": 140197947,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140197872
+  },
+  {
+   "rva": 140201342,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rsi",
+   "func": 140201136
+  },
+  {
+   "rva": 140404410,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rdx",
+   "func": 140404016
+  },
+  {
+   "rva": 140467966,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rdi",
+   "func": 140467552
+  },
+  {
+   "rva": 140555450,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rcx",
+   "func": 140555344
+  },
+  {
+   "rva": 140555716,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], 0",
+   "func": 140555616
+  },
+  {
+   "rva": 140556006,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], 0",
+   "func": 140555776
+  },
+  {
+   "rva": 140556230,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], 0",
+   "func": 140556064
+  },
+  {
+   "rva": 140556503,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], 0",
+   "func": 140556064
+  },
+  {
+   "rva": 140556686,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rdi",
+   "func": 140556560
+  },
+  {
+   "rva": 140556775,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140556560
+  },
+  {
+   "rva": 140556901,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rdi",
+   "func": 140556560
+  },
+  {
+   "rva": 140557514,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], 0",
+   "func": 140556560
+  },
+  {
+   "rva": 140557607,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140556560
+  },
+  {
+   "rva": 140558059,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140557888
+  },
+  {
+   "rva": 140558192,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140557888
+  },
+  {
+   "rva": 140613272,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140613152
+  },
+  {
+   "rva": 140613754,
+   "kind": "STORE8",
+   "base": "rcx",
+   "text": "mov qword ptr [rcx + 0x358], rax",
+   "func": 140613696
+  },
+  {
+   "rva": 140636966,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140636896
+  },
+  {
+   "rva": 140640574,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140640272
+  },
+  {
+   "rva": 140670539,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140670432
+  },
+  {
+   "rva": 140670843,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140670768
+  },
+  {
+   "rva": 140676381,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140676304
+  },
+  {
+   "rva": 140676513,
+   "kind": "STORE8",
+   "base": "rcx",
+   "text": "mov qword ptr [rcx + 0x358], rax",
+   "func": 140676464
+  },
+  {
+   "rva": 140676872,
+   "kind": "STORE8",
+   "base": "rcx",
+   "text": "mov qword ptr [rcx + 0x358], rax",
+   "func": 140676816
+  },
+  {
+   "rva": 140679194,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140679088
+  },
+  {
+   "rva": 140692918,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140692832
+  },
+  {
+   "rva": 140693886,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140693392
+  },
+  {
+   "rva": 140694433,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140693392
+  },
+  {
+   "rva": 140699180,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rdi",
+   "func": 140699136
+  },
+  {
+   "rva": 140705385,
+   "kind": "STORE8",
+   "base": "rsi",
+   "text": "mov qword ptr [rsi + 0x358], rax",
+   "func": 140705312
+  },
+  {
+   "rva": 140716014,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rdi",
+   "func": 140715952
+  },
+  {
+   "rva": 140716590,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140716576
+  },
+  {
+   "rva": 140717192,
+   "kind": "STORE8",
+   "base": "rcx",
+   "text": "mov qword ptr [rcx + 0x358], rax",
+   "func": 140717136
+  },
+  {
+   "rva": 140718785,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], r14",
+   "func": 140718288
+  },
+  {
+   "rva": 140718904,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], r14",
+   "func": 140718288
+  },
+  {
+   "rva": 140747672,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140747568
+  },
+  {
+   "rva": 140747889,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140747568
+  },
+  {
+   "rva": 140748264,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140748176
+  },
+  {
+   "rva": 140748481,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140748176
+  },
+  {
+   "rva": 140748760,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140748672
+  },
+  {
+   "rva": 140748977,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 140748672
+  },
+  {
+   "rva": 140749974,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rdi",
+   "func": 140749872
+  },
+  {
+   "rva": 141052231,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rdi",
+   "func": 141052160
+  },
+  {
+   "rva": 141052522,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rdi",
+   "func": 141052464
+  },
+  {
+   "rva": 141052852,
+   "kind": "STORE8",
+   "base": "rdi",
+   "text": "mov qword ptr [rdi + 0x358], rax",
+   "func": 141052800
+  },
+  {
+   "rva": 141558349,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 141558256
+  },
+  {
+   "rva": 142466065,
+   "kind": "STORE8",
+   "base": "rbx",
+   "text": "mov qword ptr [rbx + 0x358], rax",
+   "func": 142465696
+  }
+ ],
+ "functions": {
+  "0x244b50": [
+   {
+    "rva": 2379405,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], 0xf",
+    "func": 2378576
+   }
+  ],
+  "0x252bd1": [
+   {
+    "rva": 2437585,
+    "kind": "STORE8",
+    "base": "r14",
+    "text": "mov qword ptr [r14 + 0x358], rax",
+    "func": 2436049
+   }
+  ],
+  "0x266030": [
+   {
+    "rva": 2515778,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], 0xf",
+    "func": 2514992
+   }
+  ],
+  "0x28bfc0": [
+   {
+    "rva": 2671372,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rbp",
+    "func": 2670528
+   }
+  ],
+  "0x34825a": [
+   {
+    "rva": 3442778,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "movsd qword ptr [rdi + 0x358], xmm0",
+    "func": 3441242
+   }
+  ],
+  "0x79c091": [
+   {
+    "rva": 7980689,
+    "kind": "STORE8",
+    "base": "r10",
+    "text": "mov qword ptr [r10 + 0x358], rdx",
+    "func": 7979153
+   }
+  ],
+  "0xb3235d": [
+   {
+    "rva": 11741533,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], r14",
+    "func": 11739997
+   }
+  ],
+  "0xbfd890": [
+   {
+    "rva": 12573669,
+    "kind": "STORE8",
+    "base": "r13",
+    "text": "mov qword ptr [r13 + 0x358], rax",
+    "func": 12572816
+   }
+  ],
+  "0x13b5a80": [
+   {
+    "rva": 20667922,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], 0xf",
+    "func": 20667008
+   }
+  ],
+  "0x1414700": [
+   {
+    "rva": 21055967,
+    "kind": "STORE16",
+    "base": "r13",
+    "text": "movups xmmword ptr [r13 + 0x358], xmm0",
+    "func": 21055232
+   }
+  ],
+  "0x1949ce0": [
+   {
+    "rva": 26518204,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], rbp",
+    "func": 26516704
+   }
+  ],
+  "0x1949cdf": [
+   {
+    "rva": 26518239,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], 0xf",
+    "func": 26516703
+   }
+  ],
+  "0x1bd58c0": [
+   {
+    "rva": 29186910,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], r15",
+    "func": 29186240
+   }
+  ],
+  "0x20a8ff9": [
+   {
+    "rva": 34248185,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "mov qword ptr [rsi + 0x358], rax",
+    "func": 34246649
+   }
+  ],
+  "0x215dbfe": [
+   {
+    "rva": 34988542,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], rcx",
+    "func": 34987006
+   }
+  ],
+  "0x217a4f4": [
+   {
+    "rva": 35105524,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], r12",
+    "func": 35103988
+   }
+  ],
+  "0x2195efb": [
+   {
+    "rva": 35218683,
+    "kind": "STORE8",
+    "base": "r13",
+    "text": "mov qword ptr [r13 + 0x358], rax",
+    "func": 35217147
+   }
+  ],
+  "0x27b2744": [
+   {
+    "rva": 41626948,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], r13",
+    "func": 41625412
+   }
+  ],
+  "0x27b2fd0": [
+   {
+    "rva": 41629074,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], r14",
+    "func": 41627600
+   }
+  ],
+  "0x27d8396": [
+   {
+    "rva": 41781654,
+    "kind": "STORE8",
+    "base": "rcx",
+    "text": "movsd qword ptr [rcx + 0x358], xmm0",
+    "func": 41780118
+   }
+  ],
+  "0x27fbad0": [
+   {
+    "rva": 41926255,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], rbx",
+    "func": 41925328
+   }
+  ],
+  "0x28570a0": [
+   {
+    "rva": 42301021,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], rax",
+    "func": 42299552
+   }
+  ],
+  "0x2859022": [
+   {
+    "rva": 42309154,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], rax",
+    "func": 42307618
+   }
+  ],
+  "0x2a4a6f4": [
+   {
+    "rva": 44346612,
+    "kind": "STORE16",
+    "base": "rsi",
+    "text": "movups xmmword ptr [rsi + 0x358], xmm0",
+    "func": 44345076
+   }
+  ],
+  "0x2a4a710": [
+   {
+    "rva": 44346640,
+    "kind": "STORE16",
+    "base": "rsi",
+    "text": "movups xmmword ptr [rsi + 0x358], xmm0",
+    "func": 44345104
+   }
+  ],
+  "0x2ca7b20": [
+   {
+    "rva": 46824324,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], 0xf",
+    "func": 46824224
+   }
+  ],
+  "0x2d77130": [
+   {
+    "rva": 47674848,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "mov qword ptr [rsi + 0x358], r12",
+    "func": 47673648
+   }
+  ],
+  "0x2d772d1": [
+   {
+    "rva": 47675601,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "mov qword ptr [rsi + 0x358], rax",
+    "func": 47674065
+   }
+  ],
+  "0x2d775ac": [
+   {
+    "rva": 47676332,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "mov qword ptr [rsi + 0x358], rax",
+    "func": 47674796
+   }
+  ],
+  "0x2d835a0": [
+   {
+    "rva": 47724049,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], rcx",
+    "func": 47723936
+   }
+  ],
+  "0x2da7a30": [
+   {
+    "rva": 47873422,
+    "kind": "STORE8",
+    "base": "rcx",
+    "text": "movsd qword ptr [rcx + 0x358], xmm0",
+    "func": 47872560
+   }
+  ],
+  "0x31c00a0": [
+   {
+    "rva": 52167253,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], 0xf",
+    "func": 52166816
+   }
+  ],
+  "0x3289940": [
+   {
+    "rva": 52992944,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], r12",
+    "func": 52992320
+   },
+   {
+    "rva": 52992979,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 52992320
+   }
+  ],
+  "0x328bc20": [
+   {
+    "rva": 53002457,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rbp",
+    "func": 53001248
+   }
+  ],
+  "0x3309390": [
+   {
+    "rva": 53515410,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], r12",
+    "func": 53515152
+   },
+   {
+    "rva": 53515434,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 53515152
+   }
+  ],
+  "0x34808c0": [
+   {
+    "rva": 55053158,
+    "kind": "STORE16",
+    "base": "rsi",
+    "text": "movups xmmword ptr [rsi + 0x358], xmm1",
+    "func": 55052480
+   }
+  ],
+  "0x34c1ca0": [
+   {
+    "rva": 55319959,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "mov qword ptr [rsi + 0x358], rax",
+    "func": 55319712
+   }
+  ],
+  "0x34c3db0": [
+   {
+    "rva": 55329301,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rdi",
+    "func": 55328176
+   }
+  ],
+  "0x34ce610": [
+   {
+    "rva": 55371420,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "mov qword ptr [rsi + 0x358], rcx",
+    "func": 55371280
+   }
+  ],
+  "0x34ce6f0": [
+   {
+    "rva": 55371612,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "mov qword ptr [rsi + 0x358], rax",
+    "func": 55371504
+   }
+  ],
+  "0x356a520": [
+   {
+    "rva": 56010350,
+    "kind": "STORE16",
+    "base": "rsi",
+    "text": "movups xmmword ptr [rsi + 0x358], xmm1",
+    "func": 56010016
+   }
+  ],
+  "0x356ae60": [
+   {
+    "rva": 56012718,
+    "kind": "STORE16",
+    "base": "rsi",
+    "text": "movups xmmword ptr [rsi + 0x358], xmm1",
+    "func": 56012384
+   }
+  ],
+  "0x356c750": [
+   {
+    "rva": 56018888,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "mov qword ptr [rsi + 0x358], rbp",
+    "func": 56018768
+   }
+  ],
+  "0x3578bc0": [
+   {
+    "rva": 56070318,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rdi",
+    "func": 56069056
+   }
+  ],
+  "0x3588588": [
+   {
+    "rva": 56134536,
+    "kind": "STORE8",
+    "base": "rcx",
+    "text": "mov qword ptr [rcx + 0x358], rax",
+    "func": 56133000
+   }
+  ],
+  "0x3590eb3": [
+   {
+    "rva": 56169651,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "mov qword ptr [rsi + 0x358], r12",
+    "func": 56168115
+   }
+  ],
+  "0x3590f4a": [
+   {
+    "rva": 56169802,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "mov qword ptr [rsi + 0x358], rax",
+    "func": 56168266
+   }
+  ],
+  "0x35c7c60": [
+   {
+    "rva": 56394025,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "mov qword ptr [rsi + 0x358], r12",
+    "func": 56392800
+   }
+  ],
+  "0x35fabd0": [
+   {
+    "rva": 56602952,
+    "kind": "STORE16",
+    "base": "rdi",
+    "text": "movups xmmword ptr [rdi + 0x358], xmm1",
+    "func": 56601552
+   }
+  ],
+  "0x35fc330": [
+   {
+    "rva": 56607841,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], rbp",
+    "func": 56607536
+   },
+   {
+    "rva": 56607872,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], rax",
+    "func": 56607536
+   }
+  ],
+  "0x35fc540": [
+   {
+    "rva": 56608339,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], rbp",
+    "func": 56608064
+   },
+   {
+    "rva": 56608370,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], rax",
+    "func": 56608064
+   }
+  ],
+  "0x35fe980": [
+   {
+    "rva": 56617428,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], 0xf",
+    "func": 56617344
+   }
+  ],
+  "0x37e04d0": [
+   {
+    "rva": 58590616,
+    "kind": "STORE8",
+    "base": "rcx",
+    "text": "movsd qword ptr [rcx + 0x358], xmm6",
+    "func": 58590416
+   }
+  ],
+  "0x56d935a": [
+   {
+    "rva": 91068762,
+    "kind": "STORE8",
+    "base": "r14",
+    "text": "mov qword ptr [r14 + 0x358], rax",
+    "func": 91067226
+   }
+  ],
+  "0x56e67e7": [
+   {
+    "rva": 91123175,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "mov qword ptr [rsi + 0x358], rax",
+    "func": 91121639
+   }
+  ],
+  "0x56e6fc4": [
+   {
+    "rva": 91125188,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 91123652
+   }
+  ],
+  "0x5759019": [
+   {
+    "rva": 91592217,
+    "kind": "STORE8",
+    "base": "r14",
+    "text": "mov qword ptr [r14 + 0x358], rax",
+    "func": 91590681
+   }
+  ],
+  "0x5784dc0": [
+   {
+    "rva": 91771502,
+    "kind": "STORE8",
+    "base": "r14",
+    "text": "mov qword ptr [r14 + 0x358], rax",
+    "func": 91770304
+   }
+  ],
+  "0x580eb50": [
+   {
+    "rva": 92335211,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rsi",
+    "func": 92334928
+   }
+  ],
+  "0x59c3360": [
+   {
+    "rva": 94123767,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rsi",
+    "func": 94122848
+   }
+  ],
+  "0x5e4bc10": [
+   {
+    "rva": 98877150,
+    "kind": "STORE16",
+    "base": "r14",
+    "text": "movups xmmword ptr [r14 + 0x358], xmm0",
+    "func": 98876432
+   }
+  ],
+  "0x61f6070": [
+   {
+    "rva": 102720726,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], r15",
+    "func": 102719600
+   }
+  ],
+  "0x61f7080": [
+   {
+    "rva": 102724456,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], rbp",
+    "func": 102723712
+   }
+  ],
+  "0x6825110": [
+   {
+    "rva": 109204024,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], r12",
+    "func": 109203728
+   }
+  ],
+  "0x684add0": [
+   {
+    "rva": 109359768,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "mov qword ptr [rsi + 0x358], r12",
+    "func": 109358544
+   }
+  ],
+  "0x684eb30": [
+   {
+    "rva": 109375225,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], r14",
+    "func": 109374256
+   }
+  ],
+  "0x688a950": [
+   {
+    "rva": 109619900,
+    "kind": "STORE8",
+    "base": "r15",
+    "text": "mov qword ptr [r15 + 0x358], r14",
+    "func": 109619536
+   }
+  ],
+  "0x688b8d0": [
+   {
+    "rva": 109624060,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "mov qword ptr [rsi + 0x358], rbx",
+    "func": 109623504
+   }
+  ],
+  "0x688ce90": [
+   {
+    "rva": 109629899,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "mov qword ptr [rsi + 0x358], rbp",
+    "func": 109629072
+   }
+  ],
+  "0x688d240": [
+   {
+    "rva": 109631091,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "mov qword ptr [rsi + 0x358], r15",
+    "func": 109630016
+   }
+  ],
+  "0x688d4fe": [
+   {
+    "rva": 109632254,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rdi",
+    "func": 109630718
+   }
+  ],
+  "0x6acfe70": [
+   {
+    "rva": 112001390,
+    "kind": "STORE16",
+    "base": "rdi",
+    "text": "movups xmmword ptr [rdi + 0x358], xmm0",
+    "func": 112000624
+   }
+  ],
+  "0x6ba815b": [
+   {
+    "rva": 112887643,
+    "kind": "STORE16",
+    "base": "rax",
+    "text": "movups xmmword ptr [rax + 0x358], xmm0",
+    "func": 112886107
+   }
+  ],
+  "0x6bffaf0": [
+   {
+    "rva": 113245453,
+    "kind": "STORE16",
+    "base": "r14",
+    "text": "movups xmmword ptr [r14 + 0x358], xmm1",
+    "func": 113244912
+   }
+  ],
+  "0x6c16b40": [
+   {
+    "rva": 113340536,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "movsd qword ptr [rsi + 0x358], xmm0",
+    "func": 113339200
+   }
+  ],
+  "0x6c186f0": [
+   {
+    "rva": 113346500,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "movsd qword ptr [rdi + 0x358], xmm0",
+    "func": 113346288
+   }
+  ],
+  "0x6d1603f": [
+   {
+    "rva": 114386495,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rbp",
+    "func": 114384959
+   }
+  ],
+  "0x7b65280": [
+   {
+    "rva": 129389939,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], r15",
+    "func": 129389184
+   }
+  ],
+  "0x7bddaf0": [
+   {
+    "rva": 129883252,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], 0xf",
+    "func": 129882864
+   }
+  ],
+  "0x7e73220": [
+   {
+    "rva": 132592439,
+    "kind": "STORE8",
+    "base": "rcx",
+    "text": "mov qword ptr [rcx + 0x358], rdx",
+    "func": 132592160
+   }
+  ],
+  "0x7fba700": [
+   {
+    "rva": 133932905,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], 0",
+    "func": 133932800
+   }
+  ],
+  "0x810a3c0": [
+   {
+    "rva": 135308851,
+    "kind": "STORE8",
+    "base": "r14",
+    "text": "mov qword ptr [r14 + 0x358], r12",
+    "func": 135308224
+   }
+  ],
+  "0x8193180": [
+   {
+    "rva": 135870218,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], r13",
+    "func": 135868800
+   }
+  ],
+  "0x8198c00": [
+   {
+    "rva": 135892467,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], 0xf",
+    "func": 135891968
+   }
+  ],
+  "0x81c10e0": [
+   {
+    "rva": 136057886,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "mov qword ptr [rsi + 0x358], rdi",
+    "func": 136057056
+   }
+  ],
+  "0x81c14e0": [
+   {
+    "rva": 136058187,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rdi",
+    "func": 136058080
+   }
+  ],
+  "0x81d89b0": [
+   {
+    "rva": 136153585,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 136153520
+   }
+  ],
+  "0x81d91d0": [
+   {
+    "rva": 136155679,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], 0",
+    "func": 136155600
+   }
+  ],
+  "0x85a8c40": [
+   {
+    "rva": 140151947,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140151872
+   }
+  ],
+  "0x85a8df0": [
+   {
+    "rva": 140152355,
+    "kind": "STORE8",
+    "base": "rcx",
+    "text": "mov qword ptr [rcx + 0x358], rax",
+    "func": 140152304
+   }
+  ],
+  "0x85a8e80": [
+   {
+    "rva": 140152506,
+    "kind": "STORE8",
+    "base": "rcx",
+    "text": "mov qword ptr [rcx + 0x358], rax",
+    "func": 140152448
+   }
+  ],
+  "0x85ab5a0": [
+   {
+    "rva": 140162568,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140162464
+   }
+  ],
+  "0x85b0510": [
+   {
+    "rva": 140183990,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140182800
+   }
+  ],
+  "0x85b310f": [
+   {
+    "rva": 140195599,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rsi",
+    "func": 140194063
+   }
+  ],
+  "0x85b3920": [
+   {
+    "rva": 140196464,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rdi",
+    "func": 140196128
+   }
+  ],
+  "0x85b3ff0": [
+   {
+    "rva": 140197947,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140197872
+   }
+  ],
+  "0x85b4cb0": [
+   {
+    "rva": 140201342,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rsi",
+    "func": 140201136
+   }
+  ],
+  "0x85e6530": [
+   {
+    "rva": 140404410,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rdx",
+    "func": 140404016
+   }
+  ],
+  "0x85f5d60": [
+   {
+    "rva": 140467966,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rdi",
+    "func": 140467552
+   }
+  ],
+  "0x860b450": [
+   {
+    "rva": 140555450,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rcx",
+    "func": 140555344
+   }
+  ],
+  "0x860b560": [
+   {
+    "rva": 140555716,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], 0",
+    "func": 140555616
+   }
+  ],
+  "0x860b600": [
+   {
+    "rva": 140556006,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], 0",
+    "func": 140555776
+   }
+  ],
+  "0x860b720": [
+   {
+    "rva": 140556230,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], 0",
+    "func": 140556064
+   },
+   {
+    "rva": 140556503,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], 0",
+    "func": 140556064
+   }
+  ],
+  "0x860b910": [
+   {
+    "rva": 140556686,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rdi",
+    "func": 140556560
+   },
+   {
+    "rva": 140556775,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140556560
+   },
+   {
+    "rva": 140556901,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rdi",
+    "func": 140556560
+   },
+   {
+    "rva": 140557514,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], 0",
+    "func": 140556560
+   },
+   {
+    "rva": 140557607,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140556560
+   }
+  ],
+  "0x860be40": [
+   {
+    "rva": 140558059,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140557888
+   },
+   {
+    "rva": 140558192,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140557888
+   }
+  ],
+  "0x8619620": [
+   {
+    "rva": 140613272,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140613152
+   }
+  ],
+  "0x8619840": [
+   {
+    "rva": 140613754,
+    "kind": "STORE8",
+    "base": "rcx",
+    "text": "mov qword ptr [rcx + 0x358], rax",
+    "func": 140613696
+   }
+  ],
+  "0x861f2e0": [
+   {
+    "rva": 140636966,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140636896
+   }
+  ],
+  "0x8620010": [
+   {
+    "rva": 140640574,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140640272
+   }
+  ],
+  "0x86275e0": [
+   {
+    "rva": 140670539,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140670432
+   }
+  ],
+  "0x8627730": [
+   {
+    "rva": 140670843,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140670768
+   }
+  ],
+  "0x8628cd0": [
+   {
+    "rva": 140676381,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140676304
+   }
+  ],
+  "0x8628d70": [
+   {
+    "rva": 140676513,
+    "kind": "STORE8",
+    "base": "rcx",
+    "text": "mov qword ptr [rcx + 0x358], rax",
+    "func": 140676464
+   }
+  ],
+  "0x8628ed0": [
+   {
+    "rva": 140676872,
+    "kind": "STORE8",
+    "base": "rcx",
+    "text": "mov qword ptr [rcx + 0x358], rax",
+    "func": 140676816
+   }
+  ],
+  "0x86297b0": [
+   {
+    "rva": 140679194,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140679088
+   }
+  ],
+  "0x862cd60": [
+   {
+    "rva": 140692918,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140692832
+   }
+  ],
+  "0x862cf90": [
+   {
+    "rva": 140693886,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140693392
+   },
+   {
+    "rva": 140694433,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140693392
+   }
+  ],
+  "0x862e600": [
+   {
+    "rva": 140699180,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rdi",
+    "func": 140699136
+   }
+  ],
+  "0x862fe20": [
+   {
+    "rva": 140705385,
+    "kind": "STORE8",
+    "base": "rsi",
+    "text": "mov qword ptr [rsi + 0x358], rax",
+    "func": 140705312
+   }
+  ],
+  "0x86327b0": [
+   {
+    "rva": 140716014,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rdi",
+    "func": 140715952
+   }
+  ],
+  "0x8632a20": [
+   {
+    "rva": 140716590,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140716576
+   }
+  ],
+  "0x8632c50": [
+   {
+    "rva": 140717192,
+    "kind": "STORE8",
+    "base": "rcx",
+    "text": "mov qword ptr [rcx + 0x358], rax",
+    "func": 140717136
+   }
+  ],
+  "0x86330d0": [
+   {
+    "rva": 140718785,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], r14",
+    "func": 140718288
+   },
+   {
+    "rva": 140718904,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], r14",
+    "func": 140718288
+   }
+  ],
+  "0x863a330": [
+   {
+    "rva": 140747672,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140747568
+   },
+   {
+    "rva": 140747889,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140747568
+   }
+  ],
+  "0x863a590": [
+   {
+    "rva": 140748264,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140748176
+   },
+   {
+    "rva": 140748481,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140748176
+   }
+  ],
+  "0x863a780": [
+   {
+    "rva": 140748760,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140748672
+   },
+   {
+    "rva": 140748977,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 140748672
+   }
+  ],
+  "0x863ac30": [
+   {
+    "rva": 140749974,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rdi",
+    "func": 140749872
+   }
+  ],
+  "0x8684900": [
+   {
+    "rva": 141052231,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rdi",
+    "func": 141052160
+   }
+  ],
+  "0x8684a30": [
+   {
+    "rva": 141052522,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rdi",
+    "func": 141052464
+   }
+  ],
+  "0x8684b80": [
+   {
+    "rva": 141052852,
+    "kind": "STORE8",
+    "base": "rdi",
+    "text": "mov qword ptr [rdi + 0x358], rax",
+    "func": 141052800
+   }
+  ],
+  "0x87001f0": [
+   {
+    "rva": 141558349,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 141558256
+   }
+  ],
+  "0x87ddaa0": [
+   {
+    "rva": 142466065,
+    "kind": "STORE8",
+    "base": "rbx",
+    "text": "mov qword ptr [rbx + 0x358], rax",
+    "func": 142465696
+   }
+  ]
+ }
+}
