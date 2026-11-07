@@ -4,6 +4,7 @@
 
 #include "ESP.hpp"
 
+#include <cmath>
 #include <string>
 
 #include <Features/FeatureManager.hpp>
@@ -119,31 +120,76 @@ void probeProjectionOnce()
     const glm::vec3 transformOrigin = RenderUtils::transform.mOrigin;
     const glm::vec3 mathOrigin      = MathUtils::origin;
 
-    const glm::vec2 fovRaw  = ci->getFovRaw();
-    const glm::vec2 fovUsed = RenderUtils::transform.mFov;
-    const glm::vec2 fovNow  = ci->getFov();
+    const glm::vec2 ciFovRaw       = ci->getFovRaw();
+    const glm::vec2 ciFovConverted = ci->getFov();
+    const glm::vec2 transformFov   = RenderUtils::transform.mFov;
+    const glm::vec2 mathFov        = MathUtils::fov;
 
-    // Exactly what OWorldToScreen does with this point, in its own order: subtract
-    // the origin, then dot the three vectors it treats as rows. These are VIEW
-    // coordinates, not clip coordinates -- no projection has been applied yet, so
-    // there is no w here and none is invented.
-    const glm::vec3 rel = playerRender - transformOrigin;
-    const glm::vec4 rel4(rel, 1.f);
-    const float viewX = glm::dot(m[0], rel4);
-    const float viewY = glm::dot(m[1], rel4);
-    const float viewZ = glm::dot(m[2], rel4);
+    // Two parameter sets for the same frame, the same matrix and the same point.
+    // getBoxPoints() reads the unqualified `origin` / `fov` / `displaySize`, i.e.
+    // the MathUtils statics, while the matrix it uses is
+    // RenderUtils::transform.mMatrix. OpenGLGui assigns both sets in one block
+    // today, but nothing keeps them equal afterwards and the probe was only ever
+    // reading the transform copy. Projecting the point twice is the only way to
+    // see whether the probe and the renderer are looking through the same
+    // numbers; when they agree the two lines are identical, which is also the
+    // control that proves this comparison is not vacuous.
+    const auto projectWith = [&](const glm::vec3& origin, const glm::vec2& fov,
+                                 glm::vec3& view, glm::vec2& screen) {
+        const glm::vec3 rel = playerRender - origin;
+        const glm::vec4 hom(rel, 1.f);
+        view = { glm::dot(m[0], hom), glm::dot(m[1], hom), glm::dot(m[2], hom) };
+        screen = { -1.f, -1.f };
+        return m.OWorldToScreen(origin, playerRender, screen, fov, display);
+    };
 
-    glm::vec2 screen{ -1.f, -1.f };
-    const bool projected = m.OWorldToScreen(transformOrigin, playerRender, screen,
-                                            fovUsed, display);
+    glm::vec3 mathView{ 0.f }, transformView{ 0.f };
+    glm::vec2 mathScreen{ -1.f, -1.f }, transformScreen{ -1.f, -1.f };
+    const bool mathOk      = projectWith(mathOrigin, mathFov, mathView, mathScreen);
+    const bool transformOk = projectWith(transformOrigin, transformFov, transformView, transformScreen);
+    const bool comparable  = mathOk && transformOk;
 
-    // Two different ratios that were previously conflated: the display's own
-    // width/height, and the fov factor pair's y/x. The second only equals the
-    // screen aspect if the conversion that produced it used the same display.
-    const double displayAspect  = display.y > 0.f
-                                ? static_cast<double>(display.x) / static_cast<double>(display.y) : 0.0;
-    const double fovFactorRatio = fovUsed.x != 0.f
-                                ? static_cast<double>(fovUsed.y) / static_cast<double>(fovUsed.x) : 0.0;
+    const glm::vec2 screenDelta{ mathScreen.x - transformScreen.x,
+                                 mathScreen.y - transformScreen.y };
+    const glm::vec3 viewDelta  = mathView - transformView;
+    const bool originsMatch = mathOrigin == transformOrigin;
+    const bool fovsMatch    = mathFov == transformFov;
+
+    // A non-zero fourth component is a translation term -- and that is all it is.
+    // Whether it duplicates the caller's own origin subtraction is a separate
+    // question that the data can answer: a view matrix that already subtracts
+    // exactly T has row.w == -dot(row.xyz, T), so the residual below is zero if
+    // and only if the caller subtracts the same origin a second time. Any other
+    // non-zero w is a translation of unknown provenance and is reported as such,
+    // never as double subtraction.
+    constexpr float kAffineEps = 1e-4f;
+    const glm::vec3 rowW{ m[0][3], m[1][3], m[2][3] };
+    const glm::vec3 axisDotOrigin{ glm::dot(glm::vec3(m[0]), transformOrigin),
+                                   glm::dot(glm::vec3(m[1]), transformOrigin),
+                                   glm::dot(glm::vec3(m[2]), transformOrigin) };
+    const glm::vec3 residual{ rowW.x + axisDotOrigin.x,
+                              rowW.y + axisDotOrigin.y,
+                              rowW.z + axisDotOrigin.z };
+    const bool hasTranslation   = std::fabs(rowW.x) > kAffineEps
+                               || std::fabs(rowW.y) > kAffineEps
+                               || std::fabs(rowW.z) > kAffineEps;
+    const bool duplicatesOrigin = std::fabs(residual.x) <= kAffineEps
+                               && std::fabs(residual.y) <= kAffineEps
+                               && std::fabs(residual.z) <= kAffineEps;
+    const char* affineVerdict = !hasTranslation
+                              ? "NO_TRANSLATION_TERM"
+                              : (duplicatesOrigin ? "DOUBLE_ORIGIN_SUBTRACTION_CONFIRMED"
+                                                  : "AFFINE_TRANSLATION_TERM_PRESENT");
+
+    // Two different ratios, and the fov pair is not the display: the first is the
+    // display's width/height, the second is fov.y/fov.x. They only coincide when
+    // the conversion that built the pair used this same display.
+    const double displayAspect      = display.y > 0.f
+                                    ? static_cast<double>(display.x) / static_cast<double>(display.y) : 0.0;
+    const double fovFactorRatio     = transformFov.x != 0.f
+                                    ? static_cast<double>(transformFov.y) / static_cast<double>(transformFov.x) : 0.0;
+    const double mathFovFactorRatio = mathFov.x != 0.f
+                                    ? static_cast<double>(mathFov.y) / static_cast<double>(mathFov.x) : 0.0;
 
     const glm::vec3 playerToCamera    = playerRender - camera;
     const glm::vec3 cameraToTransform = camera - transformOrigin;
@@ -166,29 +212,44 @@ void probeProjectionOnce()
                  playerToCamera.x, playerToCamera.y, playerToCamera.z,
                  cameraToTransform.x, cameraToTransform.y, cameraToTransform.z);
 
-    spdlog::info("[ESP probe] fov fovRaw=({:.6f},{:.6f}) fovUsed=({:.6f},{:.6f}) "
-                 "fovNow=({:.6f},{:.6f})",
-                 static_cast<double>(fovRaw.x), static_cast<double>(fovRaw.y),
-                 static_cast<double>(fovUsed.x), static_cast<double>(fovUsed.y),
-                 static_cast<double>(fovNow.x), static_cast<double>(fovNow.y));
+    spdlog::info("[ESP probe] fov ciFovRaw=({:.6f},{:.6f}) ciFovConverted=({:.6f},{:.6f}) "
+                 "transformFov=({:.6f},{:.6f}) mathFov=({:.6f},{:.6f})",
+                 static_cast<double>(ciFovRaw.x), static_cast<double>(ciFovRaw.y),
+                 static_cast<double>(ciFovConverted.x), static_cast<double>(ciFovConverted.y),
+                 static_cast<double>(transformFov.x), static_cast<double>(transformFov.y),
+                 static_cast<double>(mathFov.x), static_cast<double>(mathFov.y));
     spdlog::info("[ESP probe] display displayWidth={:.1f} displayHeight={:.1f} "
-                 "displayAspect={:.6f} fovFactorRatio={:.6f}",
+                 "displayAspect={:.6f} fovFactorRatio={:.6f} mathFovFactorRatio={:.6f}",
                  static_cast<double>(display.x), static_cast<double>(display.y),
-                 displayAspect, fovFactorRatio);
+                 displayAspect, fovFactorRatio, mathFovFactorRatio);
 
-    // The camera sits at eye height while the render position may be the feet, so
-    // a player point is only expected near the centre on the horizontal axis. No
-    // correction is applied: the correction is what this line exists to measure.
-    spdlog::info("[ESP probe] view self: viewOk={} screen=({:.2f},{:.2f}) "
-                 "viewX={:.4f} viewY={:.4f} viewZ={:.4f}",
-                 projected, static_cast<double>(screen.x), static_cast<double>(screen.y),
-                 static_cast<double>(viewX), static_cast<double>(viewY),
-                 static_cast<double>(viewZ));
+    // A: the parameter set getBoxPoints() actually passes (MathUtils statics).
+    // B: the transform snapshot the probe used before this round. Same matrix,
+    // same frame, same point. The camera sits at eye height while the render
+    // position may be the feet, so neither is expected to be exactly centred.
+    spdlog::info("[ESP probe] math view: mathOk={} mathScreen=({:.2f},{:.2f}) "
+                 "mathViewX={:.4f} mathViewY={:.4f} mathViewZ={:.4f}",
+                 mathOk, static_cast<double>(mathScreen.x), static_cast<double>(mathScreen.y),
+                 static_cast<double>(mathView.x), static_cast<double>(mathView.y),
+                 static_cast<double>(mathView.z));
+    spdlog::info("[ESP probe] transform view: transformOk={} transformScreen=({:.2f},{:.2f}) "
+                 "transformViewX={:.4f} transformViewY={:.4f} transformViewZ={:.4f}",
+                 transformOk,
+                 static_cast<double>(transformScreen.x), static_cast<double>(transformScreen.y),
+                 static_cast<double>(transformView.x), static_cast<double>(transformView.y),
+                 static_cast<double>(transformView.z));
+    // comparable=false means at least one path rejected the point, so the deltas
+    // are the difference between two (-1,-1) sentinels and mean nothing.
+    spdlog::info("[ESP probe] control comparable={} screenDelta=({:.4f},{:.4f}) "
+                 "viewDelta=({:.4f},{:.4f},{:.4f}) originsMatch={} fovsMatch={}",
+                 comparable, static_cast<double>(screenDelta.x),
+                 static_cast<double>(screenDelta.y),
+                 static_cast<double>(viewDelta.x), static_cast<double>(viewDelta.y),
+                 static_cast<double>(viewDelta.z), originsMatch, fovsMatch);
 
-    // The three vectors OWorldToScreen dots, with the component that decides
-    // whether the origin subtraction is already baked into the matrix. A non-zero
-    // w means the matrix carries translation while the caller subtracts the origin
-    // itself, i.e. the camera offset is applied twice.
+    // The three vectors OWorldToScreen dots, with their fourth components: the
+    // raw evidence behind the affine verdict, printed uncut so the classification
+    // above can be re-derived by hand instead of trusted.
     spdlog::info("[ESP probe] basis v0(OwTS row0)=({:.6f},{:.6f},{:.6f}) v0w={:.6f} "
                  "v1(OwTS row1)=({:.6f},{:.6f},{:.6f}) v1w={:.6f} "
                  "v2(OwTS row2)=({:.6f},{:.6f},{:.6f}) v2w={:.6f}",
@@ -198,6 +259,19 @@ void probeProjectionOnce()
                  static_cast<double>(m[1][2]), static_cast<double>(m[1][3]),
                  static_cast<double>(m[2][0]), static_cast<double>(m[2][1]),
                  static_cast<double>(m[2][2]), static_cast<double>(m[2][3]));
+    // One term per row: the w the matrix carries, the w a matrix would carry if
+    // it had already baked in transformOrigin, and the residual. residual == 0 on
+    // all three rows is the only form of this that proves double subtraction.
+    spdlog::info("[ESP probe] affine verdict={} rowW=({:.6f},{:.6f},{:.6f}) "
+                 "axisDotTransformOrigin=({:.6f},{:.6f},{:.6f}) "
+                 "residual_w_plus_axisDotOrigin=({:.6f},{:.6f},{:.6f})",
+                 affineVerdict,
+                 static_cast<double>(rowW.x), static_cast<double>(rowW.y),
+                 static_cast<double>(rowW.z),
+                 static_cast<double>(axisDotOrigin.x), static_cast<double>(axisDotOrigin.y),
+                 static_cast<double>(axisDotOrigin.z),
+                 static_cast<double>(residual.x), static_cast<double>(residual.y),
+                 static_cast<double>(residual.z));
 
     // Raw storage in the order glm lays it out in memory (column-major, i.e.
     // m[0][0..3], m[1][0..3], ...). Printed untouched so a transposed matrix, a
