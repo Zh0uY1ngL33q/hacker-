@@ -329,7 +329,20 @@ public:
     // same argument flow at slot 32, providing independent structural evidence.
     DEFINE_INDEX_FIELD(BlockSource_setBlock, "48 89 4C 24 28 4C 8B 7D ? 4C 89 7C 24 20 44 8B CF 4D 8B C6 48 8B D6 49 8B CC 48 8B 80 ? ? ? ? FF 15 ? ? ? ? EB ? 41 83 FF 01", 29, OffsetType::Index);
     DEFINE_INDEX_FIELD(LevelChunk_mSubChunks, "48 2B ? ? ? ? ? 48 8B ? 48 C1 FF ? 48 0F", 3, OffsetType::FieldOffset);
-    DEFINE_INDEX_FIELD_TYPED(uint8_t, BlockSource_mBuildHeight, "0F BF ? ? 3B C8 0F 8D ? ? ? ? 8B 0F", 3, OffsetType::FieldOffset);
+    // Batch-3 FIX (was MISSING). Target-version evidence: BlockSource RTTI
+    // .?AVBlockSource@@ -> vtable RVA 0x921B490 (66 slots). Slot 38 is
+    // "movzx eax, word ptr [rcx+0x38]; ret" and slot 37 reads [rcx+0x3A].
+    // BlockSource.hpp declares getBuildHeight()/getBuildDepth() as two adjacent
+    // int16 members at base and base+2, and its CLASS_FIELD layout
+    // (mChunkSource 0x28, mDimension 0x30) is confirmed by vtable getters at
+    // slot 54 ([rcx+0x28]) and slots 39-41 ([rcx+0x30]).
+    // The disp8 below is a WILDCARD: the value is parsed from the 1.21.120
+    // image, not hardcoded. The pattern anchors that getter plus the following
+    // BlockSource-specific getter sequence, giving exactly one hit at
+    // 0x5D3B130 -> 0x38. 1.21.44 shows the same word-sized pair at 0x38/0x3A
+    // (reference evidence only; no offset or RVA was copied).
+    // New status OK; STATIC VERIFIED, runtime behaviour NEEDS_RUNTIME_TEST.
+    DEFINE_INDEX_FIELD_TYPED(uint8_t, BlockSource_mBuildHeight, "0F B7 41 ? C3 CC CC CC CC CC CC CC CC CC CC CC 48 8B 41 08 0F B7 40 14 C3", 3, OffsetType::FieldOffset);
     DEFINE_INDEX_FIELD_TYPED(uint8_t, ContainerManagerModel_getContainerType, "48 8B ? ? FF 15 ? ? ? ? 84 C0 75 ? 48 8B ? 48 8B ? 48 8B ? ? FF 15 ? ? ? ? 84 C0 74 ? B0", 3, OffsetType::Index);
     DEFINE_INDEX_FIELD_TYPED(uint8_t, ContainerManagerModel_getSlot, "48 8B ? ? FF 15 ? ? ? ? 0F B6 ? ? 44 89", 3, OffsetType::Index); // what the actual fcuk is wrong with me.
     DEFINE_INDEX_FIELD(Actor_mSerializedSkin, "4C 8B ? ? ? ? ? 48 8B ? 48 8B ? ? 89 44", 3, OffsetType::FieldOffset);
