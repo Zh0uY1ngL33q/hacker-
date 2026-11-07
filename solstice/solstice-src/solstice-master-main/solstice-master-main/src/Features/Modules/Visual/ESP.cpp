@@ -77,6 +77,29 @@ void ESP::onRenderEvent(RenderEvent& event)
                              m[1][0], m[1][1], m[1][2], m[1][3],
                              m[2][0], m[2][1], m[2][2], m[2][3],
                              m[3][0], m[3][1], m[3][2], m[3][3]);
+
+                // Batch 3.6: the two inputs the projection still cannot justify
+                // from the code are where the matrix came from and what unit the
+                // FOV pair is stored in. Both are recorded once here instead of
+                // being changed blind. rowW is the translation column: the
+                // projection subtracts the camera origin itself, so a non-zero w
+                // adds a constant shift that grows with world position.
+                const glm::vec2 rawFov = ci->getFovRaw();
+                const glm::vec2 usedFov = ci->getFov();
+                const glm::vec4 rel4(rel.x, rel.y, rel.z, 1.f);
+                const float clipX = glm::dot(m[0], rel4);
+                const float clipY = glm::dot(m[1], rel4);
+                const float clipZ = glm::dot(m[2], rel4);
+                spdlog::info("[ESP probe] matrixSource={} rowW=({:.4f},{:.4f},{:.4f}) "
+                             "fovRaw=({:.6f},{:.6f}) fovUsed=({:.6f},{:.6f}) aspectUsed={:.4f}",
+                             RenderUtils::transform.mSource,
+                             m[0][3], m[1][3], m[2][3],
+                             static_cast<double>(rawFov.x), static_cast<double>(rawFov.y),
+                             static_cast<double>(usedFov.x), static_cast<double>(usedFov.y),
+                             static_cast<double>(usedFov.y > 0.f ? usedFov.y / usedFov.x : 0.f));
+                spdlog::info("[ESP probe] clip self: x={:.4f} y={:.4f} z={:.4f} w(camera depth)={:.4f}",
+                             static_cast<double>(clipX), static_cast<double>(clipY),
+                             static_cast<double>(clipZ), static_cast<double>(vz));
             }
         }
 

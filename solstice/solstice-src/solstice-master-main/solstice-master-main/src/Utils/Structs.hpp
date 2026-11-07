@@ -147,6 +147,15 @@ struct FrameTransform {
     glm::vec3 mOrigin    {};
     glm::vec3 mPlayerPos {};
     glm::vec2 mFov       {};
+    // Which of the GL path's three matrix candidates produced mMatrix:
+    //   0 = ClientInstance::getViewMatrix() accepted as-is
+    //   1 = located by scanning ClientInstance / LevelRenderer / RendererPlayer
+    //   2 = synthesised from the player's yaw and pitch
+    //   3 = none of the above ever validated (the value is untrusted)
+    // -1 = not set (the D3D path does not record a source).
+    // Read by the one-shot ESP projection probe so a log line can say where the
+    // matrix came from; it never participates in the projection itself.
+    int mSource = -1;
 };
 
 using BlockPos = glm::ivec3;

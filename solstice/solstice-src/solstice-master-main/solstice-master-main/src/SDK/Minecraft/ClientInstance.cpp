@@ -47,6 +47,15 @@ glmatrixf ClientInstance::getViewMatrix()
     return hat::member_at<glmatrixf>(this, OffsetProvider::ClientInstance_mViewMatrix);
 }
 
+glm::vec2 ClientInstance::getFovRaw()
+{
+    // No interpretation on purpose: this exists so a single log line can settle
+    // whether 0x720/0x724 hold a multiplier, degrees or radians. See getFov()
+    // for the conversion the projection uses.
+    return { hat::member_at<float>(this, OffsetProvider::ClientInstance_mFovX),
+             hat::member_at<float>(this, OffsetProvider::ClientInstance_mFovY) };
+}
+
 glm::vec2 ClientInstance::getFov()
 {
     // OWorldToScreen multiplies the projected offset by these, so what it needs is

@@ -479,7 +479,7 @@ void OpenGLGui::render(HDC dc) try
                             }
                         }
                         RenderUtils::transform = FrameTransform{
-                            view, *cam, rpc->mPosition, ci->getFov() };
+                            view, *cam, rpc->mPosition, ci->getFov(), viewSource };
                         // getBoxPoints() and getImBoxPoints() read these three
                         // statics, not the transform members, and they are
                         // otherwise only filled by D3DHook::igBeginFrame -- i.e.

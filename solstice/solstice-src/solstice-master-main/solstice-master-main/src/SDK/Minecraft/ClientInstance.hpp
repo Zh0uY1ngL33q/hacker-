@@ -24,6 +24,11 @@ public:
     class bgfx_context* getBGFX();
     glmatrixf getViewMatrix();
     glm::vec2 getFov();
+    // The two floats exactly as stored at the FOV members, before any unit
+    // interpretation. Diagnostics only: the projection must keep using getFov(),
+    // which normalises them. Logged once by the ESP probe so the stored unit can
+    // be settled from a log instead of guessed.
+    glm::vec2 getFovRaw();
 
     class ClientInputHandler* getInputHandler();
     class KeyboardMouseSettings* getKeyboardSettings();
