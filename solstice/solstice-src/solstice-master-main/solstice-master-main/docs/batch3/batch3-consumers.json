@@ -1,0 +1,3192 @@
+{
+ "schemaVersion": 1,
+ "baselineCommit": "0ece30280170a3794a1cae860b769a659629addf",
+ "note": "Dependencies = direct OffsetProvider/SigManager references PLUS SDK getter calls traced to their backing mappings. defaultEnabled is recorded separately from readiness. READY is static-evidence only; global default-deny startup is still active.",
+ "getterToMapping": {
+  "getLocalPlayer": [
+   "ClientInstance_getLocalPlayer"
+  ],
+  "getBlockSource": [
+   "ClientInstance_getBlockSource"
+  ],
+  "getMouseGrabbed": [],
+  "getMobHurtTimeComponent": [],
+  "getBuildHeight": [
+   "BlockSource_mBuildHeight"
+  ],
+  "getBuildDepth": [
+   "BlockSource_mBuildHeight"
+  ],
+  "getPlayerList": [
+   "Level_getPlayerList"
+  ],
+  "getLevelData": [
+   "Level_getLevelData"
+  ],
+  "getGameSim": [
+   "MinecraftSim_mGameSim"
+  ],
+  "getRenderSim": [
+   "MinecraftSim_mRenderSim"
+  ],
+  "getContainerManagerModel": [
+   "Actor_mContainerManagerModel"
+  ],
+  "getChunk": [
+   "BlockSource_getChunk"
+  ],
+  "clip": [
+   "BlockSource_clip"
+  ],
+  "getInputHandler": [
+   "ClientInstance_getInputHandler"
+  ]
+ },
+ "nonOkMappings": [
+  "ActorAnimationControllerPlayer_applyToPose",
+  "Actor_canSee",
+  "Actor_getLevel",
+  "Actor_getNameTag",
+  "Actor_getStatusFlag",
+  "Actor_mContainerManagerModel",
+  "Actor_mHurtTimeComponent",
+  "Actor_setPosition",
+  "Actor_swing",
+  "BlockLegacy_getCollisionShape",
+  "BlockLegacy_mBlockId",
+  "BlockSource_clip",
+  "BlockSource_fireBlockChanged",
+  "BlockSource_getChunk",
+  "BlockSource_mBuildHeight",
+  "CameraComponent_applyRotation",
+  "ClientInputMappingFactory_mKeyboardMouseSettings",
+  "ClientInstance_getInputHandler",
+  "ClientInstance_getMouseGrabbed",
+  "ClientInstance_grabMouse",
+  "ClientInstance_releaseMouse",
+  "ClientInstance_setDisableInput",
+  "ClientInstance_switchControlMode",
+  "ConnectionRequest_create_CurrentInputMode",
+  "ConnectionRequest_create_DefaultInputMode",
+  "ConnectionRequest_create_DeviceModel",
+  "ContainerManagerController_handleSwap",
+  "ContainerManagerController_transferItems",
+  "ContainerManagerModel_getContainerType",
+  "ContainerManagerModel_getSlot",
+  "ContainerScreenController_handlePlaceAll",
+  "EnchantUtils_getEnchantLevel",
+  "FireRender",
+  "FluxSwing",
+  "GuiData_displayClientMessage",
+  "HoverTextRenderer_render",
+  "HudScreenController_shouldRenderScoreboardSidebar",
+  "InputModeBypass",
+  "ItemInHandRenderer_FluxSwingCallsite",
+  "ItemRenderer_render",
+  "ItemRenderer_renderGuiItemNew",
+  "ItemStack_fromDescriptor",
+  "ItemStack_vTable",
+  "JSON_parse",
+  "LevelChunk_mSubChunks",
+  "LevelData_mTick",
+  "LevelRendererPlayer_mFovX",
+  "LevelRendererPlayer_mFovY",
+  "Level_getHitResult",
+  "Level_getLevelData",
+  "Level_getPlayerList",
+  "LocalPlayer_applyTurnDelta",
+  "MainView_bedrockPlatform",
+  "MinecraftGame_mMouseGrabbed",
+  "MinecraftGame_mProfanityContext",
+  "MinecraftSim_mGameSim",
+  "MinecraftSim_mRenderSim",
+  "Mob_getCurrentSwingDuration",
+  "MoveInputComponent_ClearMoveState1",
+  "NetworkStackItemDescriptor_ctor",
+  "PlayerMovement_clearInputStateInlined",
+  "Reach",
+  "RenderController_getHurtColor",
+  "ResourcePackManager_composeFullStackBp",
+  "Scoreboard_getDisplaySlotEntries",
+  "ScreenView_setupAndRender",
+  "UIProfanityContext_mEnabled",
+  "WaterBlockLegacy_getCollisionShapeForCamera",
+  "bgfx_context_m_renderCtx",
+  "bgfx_d3d12_RendererContextD3D12_m_commandQueue",
+  "gDataUtil_MiscData_Instance",
+  "tickEntity_ItemUseSlowdownModifierComponent"
+ ],
+ "moduleCount": 131,
+ "modules": [
+  {
+   "name": "Aura",
+   "category": "Combat",
+   "files": [
+    "Features/Modules/Combat/Aura.cpp",
+    "Features/Modules/Combat/Aura.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "AutoClicker",
+   "category": "Combat",
+   "files": [
+    "Features/Modules/Combat/AutoClicker.cpp",
+    "Features/Modules/Combat/AutoClicker.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Criticals",
+   "category": "Combat",
+   "files": [
+    "Features/Modules/Combat/Criticals.cpp",
+    "Features/Modules/Combat/Criticals.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "InfiniteAura",
+   "category": "Combat",
+   "files": [
+    "Features/Modules/Combat/InfiniteAura.cpp",
+    "Features/Modules/Combat/InfiniteAura.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getBlockSource",
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getBlockSource",
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "LegitCriticals",
+   "category": "Combat",
+   "files": [
+    "Features/Modules/Combat/LegitCriticals.cpp",
+    "Features/Modules/Combat/LegitCriticals.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Reach",
+   "category": "Combat",
+   "files": [
+    "Features/Modules/Combat/Reach.cpp",
+    "Features/Modules/Combat/Reach.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [
+    "BlockReach",
+    "Reach"
+   ],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "BlockReach",
+    "Reach"
+   ],
+   "blockingMappings": [
+    "Reach"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "TriggerBot",
+   "category": "Combat",
+   "files": [
+    "Features/Modules/Combat/TriggerBot.cpp",
+    "Features/Modules/Combat/TriggerBot.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "AntiBot",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/AntiBot.cpp",
+    "Features/Modules/Misc/AntiBot.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer",
+    "getPlayerList"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "true",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer",
+    "Level_getPlayerList"
+   ],
+   "blockingMappings": [
+    "Level_getPlayerList"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "AntiCheatDetector",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/AntiCheatDetector.cpp",
+    "Features/Modules/Misc/AntiCheatDetector.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "Anticheat",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/Anticheat.cpp",
+    "Features/Modules/Misc/Anticheat.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer",
+    "getMobHurtTimeComponent"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "AutoAccept",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/AutoAccept.cpp",
+    "Features/Modules/Misc/AutoAccept.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "AutoCosmetic",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/AutoCosmetic.cpp",
+    "Features/Modules/Misc/AutoCosmetic.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "AutoDodge",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/AutoDodge.cpp",
+    "Features/Modules/Misc/AutoDodge.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "AutoLootbox",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/AutoLootbox.cpp",
+    "Features/Modules/Misc/AutoLootbox.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "AutoMessage",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/AutoMessage.cpp",
+    "Features/Modules/Misc/AutoMessage.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "AutoQueue",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/AutoQueue.cpp",
+    "Features/Modules/Misc/AutoQueue.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "AutoReport",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/AutoReport.cpp",
+    "Features/Modules/Misc/AutoReport.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "AutoSnipe",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/AutoSnipe.cpp",
+    "Features/Modules/Misc/AutoSnipe.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer",
+    "getPlayerList"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer",
+    "Level_getPlayerList"
+   ],
+   "blockingMappings": [
+    "Level_getPlayerList"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "AutoVote",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/AutoVote.cpp",
+    "Features/Modules/Misc/AutoVote.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "CostumeSpammer",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/CostumeSpammer.cpp",
+    "Features/Modules/Misc/CostumeSpammer.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Desync",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/Desync.cpp",
+    "Features/Modules/Misc/Desync.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "DeviceSpoof",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/DeviceSpoof.cpp",
+    "Features/Modules/Misc/DeviceSpoof.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [
+    "ConnectionRequest_create_DeviceModel"
+   ],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ConnectionRequest_create_DeviceModel"
+   ],
+   "blockingMappings": [
+    "ConnectionRequest_create_DeviceModel"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "Disabler",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/Disabler.cpp",
+    "Features/Modules/Misc/Disabler.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "EditionFaker",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/EditionFaker.cpp",
+    "Features/Modules/Misc/EditionFaker.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [
+    "ConnectionRequest_create_CurrentInputMode",
+    "ConnectionRequest_create_DefaultInputMode",
+    "ConnectionRequest_create_DeviceOS",
+    "InputModeBypass",
+    "InputModeBypassFix"
+   ],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ConnectionRequest_create_CurrentInputMode",
+    "ConnectionRequest_create_DefaultInputMode",
+    "ConnectionRequest_create_DeviceOS",
+    "InputModeBypass",
+    "InputModeBypassFix"
+   ],
+   "blockingMappings": [
+    "ConnectionRequest_create_CurrentInputMode",
+    "ConnectionRequest_create_DefaultInputMode",
+    "InputModeBypass"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "Friends",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/Friends.cpp",
+    "Features/Modules/Misc/Friends.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "IRC",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/IRC.cpp",
+    "Features/Modules/Misc/IRC.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "KickSounds",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/KickSounds.cpp",
+    "Features/Modules/Misc/KickSounds.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "Killsults",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/Killsults.cpp",
+    "Features/Modules/Misc/Killsults.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "NetSkip",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/NetSkip.cpp",
+    "Features/Modules/Misc/NetSkip.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "NoFilter",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/NoFilter.cpp",
+    "Features/Modules/Misc/NoFilter.hpp"
+   ],
+   "offsetProvider": [
+    "MinecraftGame_mProfanityContext",
+    "UIProfanityContext_mEnabled"
+   ],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "true",
+   "mappingDependencies": [
+    "MinecraftGame_mProfanityContext",
+    "UIProfanityContext_mEnabled"
+   ],
+   "blockingMappings": [
+    "MinecraftGame_mProfanityContext",
+    "UIProfanityContext_mEnabled"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "NoPacket",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/NoPacket.cpp",
+    "Features/Modules/Misc/NoPacket.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "PacketLogger",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/PacketLogger.cpp",
+    "Features/Modules/Misc/PacketLogger.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "PartySpammer",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/PartySpammer.cpp",
+    "Features/Modules/Misc/PartySpammer.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer",
+    "getPlayerList"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer",
+    "Level_getPlayerList"
+   ],
+   "blockingMappings": [
+    "Level_getPlayerList"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "SkinBlinker",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/SkinBlinker.cpp",
+    "Features/Modules/Misc/SkinBlinker.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "SkinStealer",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/SkinStealer.cpp",
+    "Features/Modules/Misc/SkinStealer.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Spammer",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/Spammer.cpp",
+    "Features/Modules/Misc/Spammer.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer",
+    "getPlayerList"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer",
+    "Level_getPlayerList"
+   ],
+   "blockingMappings": [
+    "Level_getPlayerList"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "StaffAlert",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/StaffAlert.cpp",
+    "Features/Modules/Misc/StaffAlert.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getPlayerList"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "Level_getPlayerList"
+   ],
+   "blockingMappings": [
+    "Level_getPlayerList"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "TestModule",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/TestModule.cpp",
+    "Features/Modules/Misc/TestModule.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getBlockSource",
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getBlockSource",
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "ToggleSounds",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/ToggleSounds.cpp",
+    "Features/Modules/Misc/ToggleSounds.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "true",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "VoiceChat",
+   "category": "Misc",
+   "files": [
+    "Features/Modules/Misc/VoiceChat.cpp",
+    "Features/Modules/Misc/VoiceChat.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "Module",
+   "category": "Modules",
+   "files": [
+    "Features/Modules/Module.cpp",
+    "Features/Modules/Module.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "unknown",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "ModuleCategory",
+   "category": "Modules",
+   "files": [
+    "Features/Modules/ModuleCategory.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "unknown",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "ModuleManager",
+   "category": "Modules",
+   "files": [
+    "Features/Modules/ModuleManager.cpp",
+    "Features/Modules/ModuleManager.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "unknown",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "Setting",
+   "category": "Modules",
+   "files": [
+    "Features/Modules/Setting.cpp",
+    "Features/Modules/Setting.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "unknown",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "AirJump",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/AirJump.cpp",
+    "Features/Modules/Movement/AirJump.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "AirSpeed",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/AirSpeed.cpp",
+    "Features/Modules/Movement/AirSpeed.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [
+    "GetSpeedInAirWithSprint"
+   ],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "GetSpeedInAirWithSprint"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "AntiImmobile",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/AntiImmobile.cpp",
+    "Features/Modules/Movement/AntiImmobile.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getBlockSource",
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getBlockSource",
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "AutoPath",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/AutoPath.cpp",
+    "Features/Modules/Movement/AutoPath.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getBlockSource",
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getBlockSource",
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "DamageBoost",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/DamageBoost.cpp",
+    "Features/Modules/Movement/DamageBoost.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "DebugFly",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/DebugFly.cpp",
+    "Features/Modules/Movement/DebugFly.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "FastStop",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/FastStop.cpp",
+    "Features/Modules/Movement/FastStop.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "Fly",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/Fly.cpp",
+    "Features/Modules/Movement/Fly.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "HiveFly",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/HiveFly.cpp",
+    "Features/Modules/Movement/HiveFly.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "InventoryMove",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/InventoryMove.cpp",
+    "Features/Modules/Movement/InventoryMove.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [
+    "PlayerMovement_clearInputStateInlined",
+    "PlayerMovement_clearInputStateInlined2"
+   ],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer",
+    "PlayerMovement_clearInputStateInlined",
+    "PlayerMovement_clearInputStateInlined2"
+   ],
+   "blockingMappings": [
+    "PlayerMovement_clearInputStateInlined"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "Jesus",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/Jesus.cpp",
+    "Features/Modules/Movement/Jesus.hpp"
+   ],
+   "offsetProvider": [
+    "BlockLegacy_getCollisionShape"
+   ],
+   "sigManager": [
+    "ConcreteBlockLegacy_getCollisionShapeForCamera",
+    "WaterBlockLegacy_getCollisionShapeForCamera"
+   ],
+   "events": [],
+   "sdkGetters": [
+    "getBlockSource",
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "BlockLegacy_getCollisionShape",
+    "ClientInstance_getBlockSource",
+    "ClientInstance_getLocalPlayer",
+    "ConcreteBlockLegacy_getCollisionShapeForCamera",
+    "WaterBlockLegacy_getCollisionShapeForCamera"
+   ],
+   "blockingMappings": [
+    "BlockLegacy_getCollisionShape",
+    "WaterBlockLegacy_getCollisionShapeForCamera"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "Jetpack",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/Jetpack.cpp",
+    "Features/Modules/Movement/Jetpack.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "LongJump",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/LongJump.cpp",
+    "Features/Modules/Movement/LongJump.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "MoveFix",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/MoveFix.cpp",
+    "Features/Modules/Movement/MoveFix.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "NoJumpDelay",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/NoJumpDelay.cpp",
+    "Features/Modules/Movement/NoJumpDelay.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "NoSlowDown",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/NoSlowDown.cpp",
+    "Features/Modules/Movement/NoSlowDown.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [
+    "tickEntity_ItemUseSlowdownModifierComponent"
+   ],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer",
+    "tickEntity_ItemUseSlowdownModifierComponent"
+   ],
+   "blockingMappings": [
+    "tickEntity_ItemUseSlowdownModifierComponent"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "Phase",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/Phase.cpp",
+    "Features/Modules/Movement/Phase.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "ReverseStep",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/ReverseStep.cpp",
+    "Features/Modules/Movement/ReverseStep.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getBlockSource",
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getBlockSource",
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "SafeWalk",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/SafeWalk.cpp",
+    "Features/Modules/Movement/SafeWalk.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [
+    "SneakMovementSystem_tickSneakMovementSystem"
+   ],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "SneakMovementSystem_tickSneakMovementSystem"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "ServerSneak",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/ServerSneak.cpp",
+    "Features/Modules/Movement/ServerSneak.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Speed",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/Speed.cpp",
+    "Features/Modules/Movement/Speed.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Spider",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/Spider.cpp",
+    "Features/Modules/Movement/Spider.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Sprint",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/Sprint.cpp",
+    "Features/Modules/Movement/Sprint.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "Step",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/Step.cpp",
+    "Features/Modules/Movement/Step.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "TargetStrafe",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/TargetStrafe.cpp",
+    "Features/Modules/Movement/TargetStrafe.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Velocity",
+   "category": "Movement",
+   "files": [
+    "Features/Modules/Movement/Velocity.cpp",
+    "Features/Modules/Movement/Velocity.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "AntiVoid",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/AntiVoid.cpp",
+    "Features/Modules/Player/AntiVoid.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "AutoBoombox",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/AutoBoombox.cpp",
+    "Features/Modules/Player/AutoBoombox.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "AutoKick",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/AutoKick.cpp",
+    "Features/Modules/Player/AutoKick.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getBlockSource",
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getBlockSource",
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "AutoSpellBook",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/AutoSpellBook.cpp",
+    "Features/Modules/Player/AutoSpellBook.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "AutoTool",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/AutoTool.cpp",
+    "Features/Modules/Player/AutoTool.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getBlockSource",
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getBlockSource",
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "ChestAura",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/ChestAura.cpp",
+    "Features/Modules/Player/ChestAura.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getBlockSource",
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getBlockSource",
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "ChestStealer",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/ChestStealer.cpp",
+    "Features/Modules/Player/ChestStealer.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getContainerManagerModel",
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "Actor_mContainerManagerModel",
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [
+    "Actor_mContainerManagerModel"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "ClickTp",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/ClickTp.cpp",
+    "Features/Modules/Player/ClickTp.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Derp",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/Derp.cpp",
+    "Features/Modules/Player/Derp.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Extinguisher",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/Extinguisher.cpp",
+    "Features/Modules/Player/Extinguisher.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getBlockSource",
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getBlockSource",
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "FastEat",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/FastEat.cpp",
+    "Features/Modules/Player/FastEat.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [
+    "FastEat",
+    "mSigMatchCounts"
+   ],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "FastEat",
+    "mSigMatchCounts"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "FastMine",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/FastMine.cpp",
+    "Features/Modules/Player/FastMine.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getBlockSource"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getBlockSource"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Freecam",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/Freecam.cpp",
+    "Features/Modules/Player/Freecam.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getGameSim",
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer",
+    "MinecraftSim_mGameSim"
+   ],
+   "blockingMappings": [
+    "MinecraftSim_mGameSim"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "InvManager",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/InvManager.cpp",
+    "Features/Modules/Player/InvManager.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer",
+    "getMouseGrabbed"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "MidclickAction",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/MidclickAction.cpp",
+    "Features/Modules/Player/MidclickAction.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getBlockSource",
+    "getLocalPlayer",
+    "getMouseGrabbed"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getBlockSource",
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "NoFall",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/NoFall.cpp",
+    "Features/Modules/Player/NoFall.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "NoRotate",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/NoRotate.cpp",
+    "Features/Modules/Player/NoRotate.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Nuker",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/Nuker.cpp",
+    "Features/Modules/Player/Nuker.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getBlockSource",
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getBlockSource",
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "OreMiner",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/OreMiner.cpp",
+    "Features/Modules/Player/OreMiner.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getBlockSource",
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getBlockSource",
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Regen",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/Regen.cpp",
+    "Features/Modules/Player/Regen.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getBlockSource",
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getBlockSource",
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "RegenRecode",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/RegenRecode.cpp",
+    "Features/Modules/Player/RegenRecode.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "unknown",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "Scaffold",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/Scaffold.cpp",
+    "Features/Modules/Player/Scaffold.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer",
+    "getMouseGrabbed"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Teams",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/Teams.cpp",
+    "Features/Modules/Player/Teams.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Timer",
+   "category": "Player",
+   "files": [
+    "Features/Modules/Player/Timer.cpp",
+    "Features/Modules/Player/Timer.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "Animations",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/Animations.cpp",
+    "Features/Modules/Visual/Animations.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [
+    "FluxSwing",
+    "ItemInHandRenderer_TapSwingAngleRadians",
+    "ItemInHandRenderer_renderItem_bytepatch",
+    "ItemInHandRenderer_render_bytepatch",
+    "TapSwingAnim"
+   ],
+   "events": [],
+   "sdkGetters": [
+    "getGameSim",
+    "getLocalPlayer",
+    "getMouseGrabbed"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer",
+    "FluxSwing",
+    "ItemInHandRenderer_TapSwingAngleRadians",
+    "ItemInHandRenderer_renderItem_bytepatch",
+    "ItemInHandRenderer_render_bytepatch",
+    "MinecraftSim_mGameSim",
+    "TapSwingAnim"
+   ],
+   "blockingMappings": [
+    "FluxSwing",
+    "MinecraftSim_mGameSim"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "Arraylist",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/Arraylist.cpp",
+    "Features/Modules/Visual/Arraylist.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "true",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "AutoScale",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/AutoScale.cpp",
+    "Features/Modules/Visual/AutoScale.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "BlockESP",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/BlockESP.cpp",
+    "Features/Modules/Visual/BlockESP.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getBlockSource",
+    "getBuildDepth",
+    "getBuildHeight",
+    "getChunk",
+    "getLocalPlayer",
+    "getMouseGrabbed"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "BlockSource_getChunk",
+    "BlockSource_mBuildHeight",
+    "ClientInstance_getBlockSource",
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [
+    "BlockSource_getChunk",
+    "BlockSource_mBuildHeight"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "BoneEsp",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/BoneEsp.cpp",
+    "Features/Modules/Visual/BoneEsp.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "ChinaHat",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/ChinaHat.cpp",
+    "Features/Modules/Visual/ChinaHat.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "ClickGui",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/ClickGui.cpp",
+    "Features/Modules/Visual/ClickGui.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getMouseGrabbed"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "CustomChat",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/CustomChat.cpp",
+    "Features/Modules/Visual/CustomChat.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "DestroyProgress",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/DestroyProgress.cpp",
+    "Features/Modules/Visual/DestroyProgress.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer",
+    "getMouseGrabbed"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "ESP",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/ESP.cpp",
+    "Features/Modules/Visual/ESP.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Freelook",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/Freelook.cpp",
+    "Features/Modules/Visual/Freelook.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "FullBright",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/FullBright.cpp",
+    "Features/Modules/Visual/FullBright.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "Glint",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/Glint.cpp",
+    "Features/Modules/Visual/Glint.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "Goofy",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/Goofy.cpp",
+    "Features/Modules/Visual/Goofy.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer",
+    "getMouseGrabbed"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "HudEditor",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/HudEditor.cpp",
+    "Features/Modules/Visual/HudEditor.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getMouseGrabbed"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "Interface",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/Interface.cpp",
+    "Features/Modules/Visual/Interface.hpp"
+   ],
+   "offsetProvider": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "sigManager": [
+    "ResourcePackManager_composeFullStackBp"
+   ],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "true",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer",
+    "ResourcePackManager_composeFullStackBp"
+   ],
+   "blockingMappings": [
+    "ResourcePackManager_composeFullStackBp"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "ItemESP",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/ItemESP.cpp",
+    "Features/Modules/Visual/ItemESP.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "ItemPhysics",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/ItemPhysics.cpp",
+    "Features/Modules/Visual/ItemPhysics.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [
+    "ItemPositionConst",
+    "SigManager",
+    "glm_rotate",
+    "glm_rotateRef",
+    "glm_translateRef",
+    "glm_translateRef2"
+   ],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer",
+    "ItemPositionConst",
+    "SigManager",
+    "glm_rotate",
+    "glm_rotateRef",
+    "glm_translateRef",
+    "glm_translateRef2"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "JumpCircles",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/JumpCircles.cpp",
+    "Features/Modules/Visual/JumpCircles.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Keystrokes",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/Keystrokes.cpp",
+    "Features/Modules/Visual/Keystrokes.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "LevelInfo",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/LevelInfo.cpp",
+    "Features/Modules/Visual/LevelInfo.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer",
+    "getMouseGrabbed"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "MotionBlur",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/MotionBlur.cpp",
+    "Features/Modules/Visual/MotionBlur.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "NameProtect",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/NameProtect.cpp",
+    "Features/Modules/Visual/NameProtect.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Nametags",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/Nametags.cpp",
+    "Features/Modules/Visual/Nametags.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "NoCameraClip",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/NoCameraClip.cpp",
+    "Features/Modules/Visual/NoCameraClip.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "NoDebuff",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/NoDebuff.cpp",
+    "Features/Modules/Visual/NoDebuff.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "NoHurtcam",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/NoHurtcam.cpp",
+    "Features/Modules/Visual/NoHurtcam.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [
+    "CameraComponent_applyRotation"
+   ],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "CameraComponent_applyRotation"
+   ],
+   "blockingMappings": [
+    "CameraComponent_applyRotation"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "NoRender",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/NoRender.cpp",
+    "Features/Modules/Visual/NoRender.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [
+    "FireRender",
+    "Unknown_renderBlockOverlay"
+   ],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "FireRender",
+    "Unknown_renderBlockOverlay"
+   ],
+   "blockingMappings": [
+    "FireRender"
+   ],
+   "readiness": "BLOCKED"
+  },
+  {
+   "name": "Notifications",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/Notifications.cpp",
+    "Features/Modules/Visual/Notifications.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "true",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "RobloxCamera",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/RobloxCamera.cpp",
+    "Features/Modules/Visual/RobloxCamera.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getBlockSource",
+    "getLocalPlayer",
+    "getMouseGrabbed"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getBlockSource",
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "SessionInfo",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/SessionInfo.cpp",
+    "Features/Modules/Visual/SessionInfo.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "TargetHUD",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/TargetHUD.cpp",
+    "Features/Modules/Visual/TargetHUD.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer",
+    "getMobHurtTimeComponent"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "Tracers",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/Tracers.cpp",
+    "Features/Modules/Visual/Tracers.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  },
+  {
+   "name": "UpdateForm",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/UpdateForm.cpp",
+    "Features/Modules/Visual/UpdateForm.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getMouseGrabbed"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "true",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "ViewModel",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/ViewModel.cpp",
+    "Features/Modules/Visual/ViewModel.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "Watermark",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/Watermark.cpp",
+    "Features/Modules/Visual/Watermark.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "true",
+   "mappingDependencies": [],
+   "blockingMappings": [],
+   "readiness": "READY"
+  },
+  {
+   "name": "Zoom",
+   "category": "Visual",
+   "files": [
+    "Features/Modules/Visual/Zoom.cpp",
+    "Features/Modules/Visual/Zoom.hpp"
+   ],
+   "offsetProvider": [],
+   "sigManager": [],
+   "events": [],
+   "sdkGetters": [
+    "getLocalPlayer",
+    "getMouseGrabbed"
+   ],
+   "rawMemberAt": 0,
+   "callVirtual": 0,
+   "classField": 0,
+   "defaultEnabled": "false",
+   "mappingDependencies": [
+    "ClientInstance_getLocalPlayer"
+   ],
+   "blockingMappings": [],
+   "readiness": "NEEDS_RUNTIME_TEST"
+  }
+ ]
+}

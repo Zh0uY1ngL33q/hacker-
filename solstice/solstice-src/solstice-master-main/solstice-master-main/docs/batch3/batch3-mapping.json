@@ -1,0 +1,306 @@
+{
+ "schemaVersion": 1,
+ "baselineCommit": "0ece30280170a3794a1cae860b769a659629addf",
+ "target": {
+  "version": "1.21.120.0",
+  "build": "3.9.20.300505",
+  "image": "G:/hacker/Dump/Minecraft.Windows_1.21.120.0_20261027_005946.image",
+  "size": 226144256,
+  "sha256": "11147749f1a4085b15b13cec4f45952d297acb275c0966954bdff4cbd2ff9b70",
+  "imageBase": "0x7FF714E80000",
+  "sizeOfImage": "0xD7AB000"
+ },
+ "evidenceBoundary": "STATIC evidence only. OK means the scan/parse gate passed; it is NOT semantic or runtime verification. 1.21.44 is reference evidence only - no RVA, offset or vtable index was copied.",
+ "vtableCalibration": "ClientInstance slot 308 = mov rax,[rcx+0x108]; ret (getPacketSender) and slot 318 = mov rax,[rcx+0x118]; ret (getBlockSource), matching the five Batch-2 runtime-verified mappings.",
+ "vtables": {
+  "ClientInstance": {
+   "rtti": ".?AVClientInstance@@",
+   "vtableRva": "0x8DDB590",
+   "slots": 400,
+   "tinyGetters": 42
+  },
+  "Level": {
+   "rtti": ".?AVLevel@@",
+   "vtableRva": "0x921FA60",
+   "slots": 400,
+   "tinyGetters": 42
+  },
+  "BlockSource": {
+   "rtti": ".?AVBlockSource@@",
+   "vtableRva": "0x921B490",
+   "slots": 66,
+   "tinyGetters": 6
+  },
+  "Actor": {
+   "rtti": ".?AVActor@@",
+   "vtableRva": "0x9170898",
+   "slots": 155,
+   "tinyGetters": 3
+  },
+  "MinecraftSim": {
+   "rtti": null,
+   "vtableRva": null,
+   "slots": 0,
+   "tinyGetters": 0,
+   "note": "no RTTI type descriptor -> non-polymorphic data object"
+  }
+ },
+ "mappings": [
+  {
+   "name": "ClientInstance_getInputHandler",
+   "owner": "ClientInstance",
+   "originalStatus": "MISSING",
+   "originalSignature": "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 48 8B C8 E8 ? ? ? ? 83 F8 ? 0F 85 ? ? ? ? 48 8B 8D ? ? ? ? 48 8B 01 48 8B 80 ? ? ? ?",
+   "candidateRvas120": [],
+   "candidateRvas44": [
+    "0xC7098C"
+   ],
+   "referenceDerivedValue44": 331,
+   "instruction": "see batch3-report.md section 5 and docs/batch3-candidates.json / batch3-reference-candidates.json",
+   "xrefs": "target-version vtable getter enumeration + 1.21.44 reference candidate (function boundaries from PE RUNTIME_FUNCTION)",
+   "dataFlow": "120 ClientInstance vtable 0x8DDB590 (400 slots): 42 tiny getters enumerated; none reads [rcx+0xdd8]. 44 call site at 0xC7098C first loads rcx=[rcx+0xdd8], so slot 331 belongs to a member object, not ClientInstance itself.",
+   "type": "Index (vtable slot)",
+   "evidence": "120 ClientInstance vtable 0x8DDB590 (400 slots): 42 tiny getters enumerated; none reads [rcx+0xdd8]. 44 call site at 0xC7098C first loads rcx=[rcx+0xdd8], so slot 331 belongs to a member object, not ClientInstance itself.",
+   "consumer": "ClientInstance.cpp:136",
+   "newValue": null,
+   "newStatus": "UNVERIFIED / MISSING",
+   "semanticConclusion": "NOT CONFIRMED",
+   "runtimeStatus": "PENDING (default-deny startup; no FeatureManager initialisation)",
+   "stopReason": "Signature has 0 hits in 1.21.120. The 1.21.44 call site contradicts the SDK callVirtualFunc(index,this) shape, and no 1.21.120 getter can be tied to ClientInputHandler by independent evidence.",
+   "alternativePath": "getInputHandler() guards index<2||>=4096 and returns nullptr."
+  },
+  {
+   "name": "ClientInstance_getMouseGrabbed",
+   "owner": "ClientInstance",
+   "originalStatus": "MISSING",
+   "originalSignature": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 84 C0 75 ? 48 8B ? ? ? ? ? 48 85 ? 0F 84 ? ? ? ? 80 38 ? 0F 84 ? ? ? ? 48 8B ? ? ? ? ? 48 85 ? 74 ? F0 FF ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? ? ? ? F2 0F",
+   "candidateRvas120": [],
+   "candidateRvas44": [
+    "0x1B6AAE"
+   ],
+   "referenceDerivedValue44": 162,
+   "instruction": "see batch3-report.md section 5 and docs/batch3-candidates.json / batch3-reference-candidates.json",
+   "xrefs": "target-version vtable getter enumeration + 1.21.44 reference candidate (function boundaries from PE RUNTIME_FUNCTION)",
+   "dataFlow": "No OffsetProvider:: reference exists anywhere in src/. ClientInstance::getMouseGrabbed() uses getScreenName() plus a cursor-visibility fallback.",
+   "type": "Index (vtable slot)",
+   "evidence": "No OffsetProvider:: reference exists anywhere in src/. ClientInstance::getMouseGrabbed() uses getScreenName() plus a cursor-visibility fallback.",
+   "consumer": "(none)",
+   "newValue": null,
+   "newStatus": "UNVERIFIED / MISSING",
+   "semanticConclusion": "NOT CONFIRMED",
+   "runtimeStatus": "PENDING (default-deny startup; no FeatureManager initialisation)",
+   "stopReason": "Dead mapping with no consumer. Distinct from MinecraftGame_mMouseGrabbed (still IMPLAUSIBLE); merging them or copying a field offset is forbidden.",
+   "alternativePath": "Screen-name / cursor fallback is already authoritative."
+  },
+  {
+   "name": "MinecraftSim_mGameSim",
+   "owner": "MinecraftSim",
+   "originalStatus": "MISSING",
+   "originalSignature": "49 8B 85 ? ? ? ? 8B 40",
+   "candidateRvas120": [],
+   "candidateRvas44": [
+    "0x2E96685"
+   ],
+   "referenceDerivedValue44": 224,
+   "instruction": "see batch3-report.md section 5 and docs/batch3-candidates.json / batch3-reference-candidates.json",
+   "xrefs": "target-version vtable getter enumeration + 1.21.44 reference candidate (function boundaries from PE RUNTIME_FUNCTION)",
+   "dataFlow": ".?AVMinecraftSim@@ type descriptor is ABSENT from 1.21.120 RTTI -> pure data object, no vtable. 120 signatures: 0 hits.",
+   "type": "field offset",
+   "evidence": ".?AVMinecraftSim@@ type descriptor is ABSENT from 1.21.120 RTTI -> pure data object, no vtable. 120 signatures: 0 hits.",
+   "consumer": "MinecraftSim.cpp:137",
+   "newValue": null,
+   "newStatus": "UNVERIFIED / MISSING",
+   "semanticConclusion": "NOT CONFIRMED",
+   "runtimeStatus": "PENDING (default-deny startup; no FeatureManager initialisation)",
+   "stopReason": "No RTTI/vtable to anchor a constructor scan; 1.21.44 value 0xE0 cannot be copied. No independent 1.21.120 member-initialisation evidence.",
+   "alternativePath": "resolveGameSimOffset() performs a runtime structure probe and is used when the offset is 0."
+  },
+  {
+   "name": "MinecraftSim_mRenderSim",
+   "owner": "MinecraftSim",
+   "originalStatus": "MISSING",
+   "originalSignature": "48 8B ? ? ? ? ? F3 0F ? ? ? F3 41 ? ? ? ? 48 8D",
+   "candidateRvas120": [],
+   "candidateRvas44": [
+    "0x1B6351"
+   ],
+   "referenceDerivedValue44": 232,
+   "instruction": "see batch3-report.md section 5 and docs/batch3-candidates.json / batch3-reference-candidates.json",
+   "xrefs": "target-version vtable getter enumeration + 1.21.44 reference candidate (function boundaries from PE RUNTIME_FUNCTION)",
+   "dataFlow": "Same object as mGameSim; 120 signatures: 0 hits. No RTTI/vtable.",
+   "type": "field offset",
+   "evidence": "Same object as mGameSim; 120 signatures: 0 hits. No RTTI/vtable.",
+   "consumer": "MinecraftSim.cpp:149",
+   "newValue": null,
+   "newStatus": "UNVERIFIED / MISSING",
+   "semanticConclusion": "NOT CONFIRMED",
+   "runtimeStatus": "PENDING (default-deny startup; no FeatureManager initialisation)",
+   "stopReason": "GameSim and RenderSim must not be assumed to be the same type; no independent 1.21.120 evidence distinguishes two Simulation pointers.",
+   "alternativePath": "getRenderSim() reuses the probed adjacent field via sRenderSimOffset."
+  },
+  {
+   "name": "Level_getLevelData",
+   "owner": "Level",
+   "originalStatus": "MISSING",
+   "originalSignature": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 8B 88",
+   "candidateRvas120": [],
+   "candidateRvas44": [
+    "0xCC8EC0"
+   ],
+   "referenceDerivedValue44": 160,
+   "instruction": "see batch3-report.md section 5 and docs/batch3-candidates.json / batch3-reference-candidates.json",
+   "xrefs": "target-version vtable getter enumeration + 1.21.44 reference candidate (function boundaries from PE RUNTIME_FUNCTION)",
+   "dataFlow": "120 Level vtable 0x921FA60 (400 slots): 42 tiny getters enumerated; no getter can be tied to LevelData by type or xref.",
+   "type": "Index (vtable slot)",
+   "evidence": "120 Level vtable 0x921FA60 (400 slots): 42 tiny getters enumerated; no getter can be tied to LevelData by type or xref.",
+   "consumer": "Level.cpp:182",
+   "newValue": null,
+   "newStatus": "UNVERIFIED / MISSING",
+   "semanticConclusion": "NOT CONFIRMED",
+   "runtimeStatus": "PENDING (default-deny startup; no FeatureManager initialisation)",
+   "stopReason": "Signature has 0 hits in 1.21.120; the 1.21.44 slot 160 cannot be copied. Comment in Level.cpp records a shared_ptr release sequence as a rejected near-miss.",
+   "alternativePath": "getLevelData() guards vIndex<2||>=4096 and returns nullptr."
+  },
+  {
+   "name": "Level_getPlayerList",
+   "owner": "Level",
+   "originalStatus": "MISSING",
+   "originalSignature": "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 8B 48 ? 39 8E ? ? ? ? 0F 84",
+   "candidateRvas120": [],
+   "candidateRvas44": [
+    "0x141E465"
+   ],
+   "referenceDerivedValue44": 302,
+   "instruction": "see batch3-report.md section 5 and docs/batch3-candidates.json / batch3-reference-candidates.json",
+   "xrefs": "target-version vtable getter enumeration + 1.21.44 reference candidate (function boundaries from PE RUNTIME_FUNCTION)",
+   "dataFlow": "120 Level vtable has no [rcx+0x918] getter. ClientInstance slots 10/11 read a byte flag at [rcx+0x918], i.e. 0x918 is a different object there. Container type and lifetime unconfirmed.",
+   "type": "Index (vtable slot)",
+   "evidence": "120 Level vtable has no [rcx+0x918] getter. ClientInstance slots 10/11 read a byte flag at [rcx+0x918], i.e. 0x918 is a different object there. Container type and lifetime unconfirmed.",
+   "consumer": "Level.cpp:23",
+   "newValue": null,
+   "newStatus": "UNVERIFIED / MISSING",
+   "semanticConclusion": "NOT CONFIRMED",
+   "runtimeStatus": "PENDING (default-deny startup; no FeatureManager initialisation)",
+   "stopReason": "The alleged member 0x918 is not a Level getter in 1.21.120; a similar STL-shaped member is not sufficient to identify the player list.",
+   "alternativePath": "getPlayerList() guards the index and validates the returned map with isReadableMemory."
+  },
+  {
+   "name": "Actor_mHurtTimeComponent",
+   "owner": "Actor",
+   "originalStatus": "MISSING",
+   "originalSignature": "48 8B ? ? ? ? ? 48 85 ? 74 ? 66 0F ? ? ? ? ? ? 0F 5B ? 0F 2F",
+   "candidateRvas120": [],
+   "candidateRvas44": [
+    "0x4DDE2D8"
+   ],
+   "referenceDerivedValue44": 1144,
+   "instruction": "see batch3-report.md section 5 and docs/batch3-candidates.json / batch3-reference-candidates.json",
+   "xrefs": "target-version vtable getter enumeration + 1.21.44 reference candidate (function boundaries from PE RUNTIME_FUNCTION)",
+   "dataFlow": "No OffsetProvider:: reference exists in src/. Actor::getMobHurtTimeComponent() is entt-based in 1.21.120.",
+   "type": "field offset",
+   "evidence": "No OffsetProvider:: reference exists in src/. Actor::getMobHurtTimeComponent() is entt-based in 1.21.120.",
+   "consumer": "(none)",
+   "newValue": null,
+   "newStatus": "UNVERIFIED / MISSING",
+   "semanticConclusion": "NOT CONFIRMED",
+   "runtimeStatus": "PENDING (default-deny startup; no FeatureManager initialisation)",
+   "stopReason": "Dead mapping: the component is no longer stored as a raw Actor field. Finding an old offset would reintroduce a wrong access path.",
+   "alternativePath": "entt component lookup is authoritative."
+  },
+  {
+   "name": "Actor_mContainerManagerModel",
+   "owner": "Actor",
+   "originalStatus": "MISSING",
+   "originalSignature": "49 8B ? ? ? ? ? 48 89 ? ? ? 48 89 ? ? ? F0 FF ? ? 66 0F ? ? ? ? EB ? 0F 57 ? 66 0F 73 D8 ? 66 48 ? ? ? 0F 57 ? 66 0F ? ? ? ? ? ? 48 85",
+   "candidateRvas120": [],
+   "candidateRvas44": [
+    "0x1C77DA7"
+   ],
+   "referenceDerivedValue44": 1552,
+   "instruction": "see batch3-report.md section 5 and docs/batch3-candidates.json / batch3-reference-candidates.json",
+   "xrefs": "target-version vtable getter enumeration + 1.21.44 reference candidate (function boundaries from PE RUNTIME_FUNCTION)",
+   "dataFlow": "120 Actor vtable 0x9170898 (155 slots) enumerated. Actor_mContainerModel (3304) is a separate, already-resolved field.",
+   "type": "field offset",
+   "evidence": "120 Actor vtable 0x9170898 (155 slots) enumerated. Actor_mContainerModel (3304) is a separate, already-resolved field.",
+   "consumer": "Actor.cpp:263",
+   "newValue": null,
+   "newStatus": "UNVERIFIED / MISSING",
+   "semanticConclusion": "NOT CONFIRMED",
+   "runtimeStatus": "PENDING (default-deny startup; no FeatureManager initialisation)",
+   "stopReason": "Signature has 0 hits in 1.21.120. The two similarly named fields belong to different container systems and must not be merged.",
+   "alternativePath": "Actor.cpp falls back to Actor_mContainerModel when this one is 0."
+  },
+  {
+   "name": "BlockSource_getChunk",
+   "owner": "BlockSource",
+   "originalStatus": "MISSING",
+   "originalSignature": "48 8B 80 ? ? ? ? 44 89 ? ? ? FF 15 ? ? ? ? 48 83 C4",
+   "candidateRvas120": [],
+   "candidateRvas44": [
+    "0x338488D"
+   ],
+   "referenceDerivedValue44": 39,
+   "instruction": "see batch3-report.md section 5 and docs/batch3-candidates.json / batch3-reference-candidates.json",
+   "xrefs": "target-version vtable getter enumeration + 1.21.44 reference candidate (function boundaries from PE RUNTIME_FUNCTION)",
+   "dataFlow": "120 BlockSource vtable 0x921B490 (66 slots): slots 39/40/41 are all \"mov rax,[rcx+0x30]; ret\" (mDimension getter), not the 1.21.44 getChunk wrapper. A search for the 44 wrapper shape (two sar/4 + vtable disp32) found only chunk-boundary arithmetic, no virtual call.",
+   "type": "Index (vtable slot)",
+   "evidence": "120 BlockSource vtable 0x921B490 (66 slots): slots 39/40/41 are all \"mov rax,[rcx+0x30]; ret\" (mDimension getter), not the 1.21.44 getChunk wrapper. A search for the 44 wrapper shape (two sar/4 + vtable disp32) found only chunk-boundary arithmetic, no virtual call.",
+   "consumer": "BlockSource.cpp:19",
+   "newValue": null,
+   "newStatus": "UNVERIFIED / MISSING",
+   "semanticConclusion": "NOT CONFIRMED",
+   "runtimeStatus": "PENDING (default-deny startup; no FeatureManager initialisation)",
+   "stopReason": "Un-explained divergence between versions: the 1.21.44 short wrapper is gone/inlined and slot 39 changed meaning. Selecting a slot would be a guess.",
+   "alternativePath": "callVirtualFunc index guard keeps the unresolved value inert."
+  },
+  {
+   "name": "BlockSource_clip",
+   "owner": "BlockSource",
+   "originalStatus": "MISSING",
+   "originalSignature": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 90 48 8D ? ? ? ? ? 48 8D ? ? ? ? ? E8 ? ? ? ? 48 8B",
+   "candidateRvas120": [],
+   "candidateRvas44": [
+    "0x1C9FE78"
+   ],
+   "referenceDerivedValue44": 45,
+   "instruction": "see batch3-report.md section 5 and docs/batch3-candidates.json / batch3-reference-candidates.json",
+   "xrefs": "target-version vtable getter enumeration + 1.21.44 reference candidate (function boundaries from PE RUNTIME_FUNCTION)",
+   "dataFlow": "120 BlockSource slot 45 is \"mov rax,[rcx+0x20]; ret\"; the 1.21.44 clip call site (0x1C9FE78, slot 45) has no homologue identifiable in 1.21.120.",
+   "type": "Index (vtable slot)",
+   "evidence": "120 BlockSource slot 45 is \"mov rax,[rcx+0x20]; ret\"; the 1.21.44 clip call site (0x1C9FE78, slot 45) has no homologue identifiable in 1.21.120.",
+   "consumer": "BlockSource.cpp:42",
+   "newValue": null,
+   "newStatus": "UNVERIFIED / MISSING",
+   "semanticConclusion": "NOT CONFIRMED",
+   "runtimeStatus": "PENDING (default-deny startup; no FeatureManager initialisation)",
+   "stopReason": "Several clip-like collision/ray functions exist; no independent evidence identifies which is the SDK target.",
+   "alternativePath": "callVirtualFunc index guard keeps the unresolved value inert."
+  },
+  {
+   "name": "BlockSource_mBuildHeight",
+   "owner": "BlockSource",
+   "originalStatus": "MISSING",
+   "originalSignature": "0F BF ? ? 3B C8 0F 8D ? ? ? ? 8B 0F",
+   "candidateRvas120": [],
+   "candidateRvas44": [
+    "0x337BA8C"
+   ],
+   "referenceDerivedValue44": 56,
+   "instruction": "see batch3-report.md section 5 and docs/batch3-candidates.json / batch3-reference-candidates.json",
+   "xrefs": "target-version vtable getter enumeration + 1.21.44 reference candidate (function boundaries from PE RUNTIME_FUNCTION)",
+   "dataFlow": "120 BlockSource vtable slot 38 = \"movzx eax, word ptr [rcx+0x38]; ret\", slot 37 = \"[rcx+0x3A]\". SDK declares getBuildHeight()/getBuildDepth() as two adjacent int16 at base and base+2. CLASS_FIELD layout (mChunkSource 0x28, mDimension 0x30) is confirmed by vtable getters at slots 54 and 39-41.",
+   "type": "field offset",
+   "evidence": "120 BlockSource vtable slot 38 = \"movzx eax, word ptr [rcx+0x38]; ret\", slot 37 = \"[rcx+0x3A]\". SDK declares getBuildHeight()/getBuildDepth() as two adjacent int16 at base and base+2. CLASS_FIELD layout (mChunkSource 0x28, mDimension 0x30) is confirmed by vtable getters at slots 54 and 39-41.",
+   "consumer": "BlockSource.hpp:22,26",
+   "newValue": 56,
+   "newStatus": "OK",
+   "semanticConclusion": "STATIC VERIFIED (value parsed from 1.21.120)",
+   "runtimeStatus": "PENDING (default-deny startup; no FeatureManager initialisation)",
+   "stopReason": "n/a - resolved",
+   "alternativePath": "",
+   "newSignature": "0F B7 41 ? C3 CC CC CC CC CC CC CC CC CC CC CC 48 8B 41 08 0F B7 40 14 C3",
+   "newPatternHitRva120": "0x5D3B130",
+   "operandWildcard": true
+  }
+ ]
+}
