@@ -1,0 +1,172 @@
+{
+  "schema": "solstice.reconstruction/integration-manifest/v1",
+  "objective": "STABLE_RUNTIME_WITH_CURRENT_SDK",
+  "overall_status": "STABLE_RUNTIME_WITH_CURRENT_SDK / BUILD_UNVERIFIED",
+  "evidence_grades": [
+    "STATICALLY_CONFIRMED",
+    "BUILD_VERIFIED",
+    "RUNTIME_VERIFIED",
+    "UNVERIFIED",
+    "DEFERRED"
+  ],
+  "grade_policy": "Every conclusion carries exactly one grade. No RUNTIME_VERIFIED claim is made in this integration.",
+  "branch": {
+    "name": "recovery/b32d185-full-integration",
+    "start_point": "b32d1856702ef8f1d3e4f92bb17b5a286736932f",
+    "merge_base_with_origin_main": "b32d1856702ef8f1d3e4f92bb17b5a286736932f",
+    "origin_main_merged": false,
+    "main_unchanged": true,
+    "main_ref": "e8755437d5adf91e7ba952791d39d72d87741348",
+    "recovery_sdk_branch_untouched": true,
+    "force_push_used": false,
+    "grade": "STATICALLY_CONFIRMED"
+  },
+  "baseline_decision": {
+    "runtime_base": "b32d185",
+    "sdk_diff_source": "4141241",
+    "sdk_snapshot": "1ec0571",
+    "rationale": "4141241 is topologically after b32d185 but its tree is byte-identical to the older f8c3541; using it as the runtime base would re-import an 8-file / -284-line SDK revert. Keeping b32d185 as runtime base and taking 4141241..1ec0571 as the SDK net diff preserves both.",
+    "facts": [
+      "f8c3541 is an ancestor of b32d185",
+      "b32d185 is an ancestor of 4141241",
+      "git ls-tree -r 4141241 == git ls-tree -r f8c3541 within the project subtree (IDENTICAL)",
+      "4141241 is the direct parent of 4b93323 (mapping trust state machine)",
+      "4141241..1ec0571 = 36 files: 14 CMake/SDK/Utils code, 15 docs, 5 tools, 2 root audit artefacts",
+      "4141241..1ec0571 touches zero Hook / Features / include/nes / Client files"
+    ],
+    "grade": "STATICALLY_CONFIRMED"
+  },
+  "commit_groups": [
+    {
+      "index": 1,
+      "name": "Build Bootstrap",
+      "hash": "942736271cc1db38d6f3c9c065cd139338c5a1ed",
+      "subject": "CPM bootstrap offline fix - vendor pinned v0.38.7",
+      "files": ["cmake/CPM.cmake", "cmake/CPM_0.38.7.cmake", "tools/verify_cpm_bootstrap.cmake"],
+      "grade": "BUILD_VERIFIED"
+    },
+    {
+      "index": 2,
+      "name": "Mapping State Machine",
+      "hash": "d3a2e274028242ad8e65cbbea952abef80f31063",
+      "subject": "13-file dependency closure, 4141241..47284b7 net diff",
+      "files": [
+        "src/SDK/CodeSection.cpp", "src/SDK/CodeSection.hpp",
+        "src/SDK/OffsetProvider.cpp", "src/SDK/OffsetProvider.hpp",
+        "src/SDK/ResolveState.hpp", "src/SDK/SigFuzz.cpp",
+        "src/SDK/SigManager.cpp", "src/SDK/SigManager.hpp",
+        "src/Solstice.cpp",
+        "src/Utils/MemUtils.cpp", "src/Utils/MemUtils.hpp",
+        "src/Utils/SysUtils/ExceptionHandler.cpp", "src/Utils/SysUtils/ExceptionHandler.hpp"
+      ],
+      "grade": "STATICALLY_CONFIRMED"
+    },
+    {
+      "index": 3,
+      "name": "Batch 1-3 SDK Mapping",
+      "hash": "caa03fb15e51eda84c185c90b1dbead04a3acbb7",
+      "subject": "Evidence mappings + playUi slot 164 call-safety gate",
+      "files": ["src/SDK/Minecraft/MinecraftGame.cpp", "src/SDK/OffsetProvider.hpp"],
+      "grade": "STATICALLY_CONFIRMED"
+    },
+    {
+      "index": 4,
+      "name": "MinecraftSim SDK",
+      "hash": "90e320f73281121ac646bdcc1ae5cf7aab31ea2c",
+      "subject": "Probe retries after a failed attempt (411fa4e)",
+      "files": ["src/SDK/Minecraft/MinecraftSim.cpp"],
+      "grade": "STATICALLY_CONFIRMED"
+    },
+    {
+      "index": 5,
+      "name": "Safe SDK Compatibility",
+      "hash": "3988d6a80f612e2ec5bb9036cebd751ca63978d8",
+      "subject": "ExceptionHandler null guards + raw fault context, with upstream nullptr-stackwalk defect corrected",
+      "files": ["src/Utils/SysUtils/ExceptionHandler.cpp"],
+      "grade": "STATICALLY_CONFIRMED"
+    },
+    {
+      "index": 6,
+      "name": "Stable Runtime Integration",
+      "hash": "HEAD_AT_PUSH",
+      "subject": "Zero-diff runtime verification, 9 deliverables, reproducible acceptance gate",
+      "files": [
+        "docs/solstice_reconstruction/reconstruction-summary.md",
+        "docs/solstice_reconstruction/integration-manifest.json",
+        "docs/solstice_reconstruction/sdk-preservation.md",
+        "docs/solstice_reconstruction/mapping-state-machine-integration.md",
+        "docs/solstice_reconstruction/runtime-restoration.md",
+        "docs/solstice_reconstruction/build-system-fix.md",
+        "docs/solstice_reconstruction/regression-history.md",
+        "docs/solstice_reconstruction/compatibility-risks.md",
+        "docs/solstice_reconstruction/final-validation.md",
+        "tools/verify_full_integration.py"
+      ],
+      "grade": "STATICALLY_CONFIRMED"
+    }
+  ],
+  "changed_code_files": [
+    {"path": "cmake/CPM.cmake", "added": 78, "deleted": 19, "area": "build"},
+    {"path": "cmake/CPM_0.38.7.cmake", "added": 1161, "deleted": 0, "area": "build"},
+    {"path": "src/SDK/CodeSection.cpp", "added": 31, "deleted": 27, "area": "sdk"},
+    {"path": "src/SDK/CodeSection.hpp", "added": 2, "deleted": 1, "area": "sdk"},
+    {"path": "src/SDK/Minecraft/MinecraftGame.cpp", "added": 38, "deleted": 3, "area": "sdk"},
+    {"path": "src/SDK/Minecraft/MinecraftSim.cpp", "added": 35, "deleted": 4, "area": "sdk"},
+    {"path": "src/SDK/OffsetProvider.cpp", "added": 180, "deleted": 75, "area": "sdk"},
+    {"path": "src/SDK/OffsetProvider.hpp", "added": 198, "deleted": 20, "area": "sdk"},
+    {"path": "src/SDK/ResolveState.hpp", "added": 95, "deleted": 0, "area": "sdk"},
+    {"path": "src/SDK/SigFuzz.cpp", "added": 39, "deleted": 45, "area": "sdk"},
+    {"path": "src/SDK/SigManager.cpp", "added": 142, "deleted": 54, "area": "sdk"},
+    {"path": "src/SDK/SigManager.hpp", "added": 28, "deleted": 7, "area": "sdk"},
+    {"path": "src/Solstice.cpp", "added": 76, "deleted": 28, "area": "sdk-startup"},
+    {"path": "src/Utils/MemUtils.cpp", "added": 39, "deleted": 0, "area": "sdk"},
+    {"path": "src/Utils/MemUtils.hpp", "added": 56, "deleted": 1, "area": "sdk"},
+    {"path": "src/Utils/SysUtils/ExceptionHandler.cpp", "added": 92, "deleted": 16, "area": "sdk"},
+    {"path": "src/Utils/SysUtils/ExceptionHandler.hpp", "added": 4, "deleted": 0, "area": "sdk"},
+    {"path": "tools/verify_cpm_bootstrap.cmake", "added": 12, "deleted": 0, "area": "build"}
+  ],
+  "runtime_zero_diff": {
+    "command": "git diff --name-only b32d185..HEAD -- src/Hook src/Client src/Features src/Utils/Render include resources",
+    "result": "empty",
+    "named_runtime_files_enumerated": 25,
+    "grade": "STATICALLY_CONFIRMED"
+  },
+  "ported": [
+    {"item": "ResolveState.hpp / ResolveTable / ResolveStatus (6 states)", "grade": "STATICALLY_CONFIRMED"},
+    {"item": "statusTable() authority in OffsetProvider and SigManager", "grade": "STATICALLY_CONFIRMED"},
+    {"item": "rejectOffset / plausibleOffset / hardcodedFields / 8-byte index alignment", "grade": "STATICALLY_CONFIRMED"},
+    {"item": "b32d185 verbatim DEBUG manual gate", "grade": "STATICALLY_CONFIRMED"},
+    {"item": "Batch 1-3 evidence mappings (517646e / 1d2c493 / 1ec0571)", "grade": "STATICALLY_CONFIRMED"},
+    {"item": "MinecraftSim 2s probe retry (411fa4e)", "grade": "STATICALLY_CONFIRMED"},
+    {"item": "MemUtils isValidVirtualCall / isReadableRange / readMemberChecked", "grade": "STATICALLY_CONFIRMED"},
+    {"item": "ExceptionHandler shutdown() on SDK early-abort", "grade": "STATICALLY_CONFIRMED"},
+    {"item": "ExceptionHandler null guards + raw fault context", "grade": "STATICALLY_CONFIRMED"}
+  ],
+  "excluded": [
+    {"item": "9229523 getBlockSource() nullptr gate", "reason": "~55-57 call sites / 21 files, mostly unprotected chained deref", "grade": "DEFERRED"},
+    {"item": "SOLSTICE_RENDER_DIAG subscriber-level instrumentation", "reason": "experimental runtime diagnostics from main line", "grade": "DEFERRED"},
+    {"item": "diagnosePlayUiRejection()", "reason": "no runtime rejection path in default-deny design; upstream ABI chain later corrected", "grade": "DEFERRED"},
+    {"item": "E.1 WORKTREE_DIRTY / diagnostic option 0/1 recording", "reason": "options do not exist in b32d185 build graph", "grade": "DEFERRED"},
+    {"item": "4141241 runtime revert (26 files)", "reason": "would undo b32d185 SDK and stable runtime fixes", "grade": "DEFERRED"},
+    {"item": "main CMakeLists diagnostic/Build-Info additions", "reason": "CMakeLists kept byte-identical to b32d185", "grade": "DEFERRED"}
+  ],
+  "unverified": [
+    {"item": "slot 164 target function identity", "grade": "UNVERIFIED"},
+    {"item": "MinecraftGame object lifetime / starting address", "grade": "UNVERIFIED"},
+    {"item": "playUi thread constraint", "grade": "UNVERIFIED"},
+    {"item": "running game image identity", "grade": "UNVERIFIED"},
+    {"item": "hardcoded DEFINE_FIELD constants", "grade": "UNVERIFIED"},
+    {"item": "GL first-frame RenderEvent hang root cause", "grade": "UNVERIFIED"}
+  ],
+  "verification": {
+    "script": "tools/verify_full_integration.py",
+    "check_count": 30,
+    "cpm_script_mode": "cmake -P tools/verify_cpm_bootstrap.cmake -> VERIFY_PASS",
+    "cpm_sha256": "83e5eb71b2bbb8b1f2ad38f1950287a057624e385c238f6087f94cdfc44af9c5",
+    "full_configure": "DEFERRED",
+    "release_x64_build": "DEFERRED",
+    "dll_sha256": "DEFERRED",
+    "runtime_capture": "DEFERRED",
+    "missing_toolchain": ["cl", "ld", "ninja", "g++"]
+  }
+}
