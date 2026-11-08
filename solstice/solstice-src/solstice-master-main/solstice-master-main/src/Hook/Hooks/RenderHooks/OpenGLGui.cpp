@@ -7,6 +7,7 @@
 #include <exception>
 #include <mutex>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 #include <gl/GL.h>
 #include <imgui.h>
@@ -14,6 +15,7 @@
 #include <imgui_impl_win32.h>
 #include <Solstice.hpp>
 #include <Features/FeatureManager.hpp>
+#include <Features/Modules/Module.hpp>
 #include <Features/Events/KeyEvent.hpp>
 #include <Features/Events/RenderEvent.hpp>
 #include <Features/Events/WindowResizeEvent.hpp>
@@ -30,6 +32,7 @@
 #include <Utils/Keyboard.hpp>
 #include <Utils/MiscUtils/MathUtils.hpp>
 #include <Utils/ProcUtils.hpp>
+#include <cstdio>
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
 
@@ -153,6 +156,79 @@ namespace {
                 stage, phase, static_cast<unsigned long>(tid), glGuiFrameCounter, ctx);
         }
     }
+    // 3.6.2-F subscriber-level fault localization diagnostics.
+    // A dedicated, low-overhead diagnostic file (flush-on-write) records one
+    // BEGIN/END line per RenderEvent subscriber on the GL presentation thread for
+    // the first kRenderDiagMaxFrames frames. Every record is flushed immediately,
+    // so a hang or AV inside a subscriber leaves the last BEGIN without a matching
+    // END on disk. The diagnostic path never goes through spdlog: render() already
+    // holds glGuiMutex in this scope, so re-entering the spdlog sink (which takes
+    // its own lock) from inside a dispatcher callback is deliberately avoided.
+    // Module names come from an address table built once at open time. listen()
+    // stores the most-derived object pointer as void* in listener.mInstance, and
+    // dynamic_cast<void*>(Module*) reproduces exactly that address, so an unknown
+    // or non-module listener pointer is never dereferenced as a Module*.
+#ifdef SOLSTICE_RENDER_DIAG
+    constexpr unsigned kRenderDiagMaxFrames = 8;
+    HANDLE gRenderDiagFile = INVALID_HANDLE_VALUE;
+    unsigned gRenderDiagFramesRemaining = kRenderDiagMaxFrames;
+    bool gRenderDiagOpened = false;
+    std::unordered_map<void*, std::string> gRenderDiagNames;
+
+    void renderDiagWrite(const char* data, DWORD len) {
+        if (gRenderDiagFile == INVALID_HANDLE_VALUE || len == 0) return;
+        DWORD written = 0;
+        WriteFile(gRenderDiagFile, data, len, &written, nullptr);
+        FlushFileBuffers(gRenderDiagFile);
+    }
+
+    void renderDiagOpen() {
+        if (gRenderDiagOpened) return;
+        gRenderDiagOpened = true;
+        char path[MAX_PATH] = {0};
+        DWORD n = GetEnvironmentVariableA("TEMP", path, MAX_PATH);
+        std::string full;
+        if (n > 0 && n < MAX_PATH) full = std::string(path) + "\\solstice_render_diag.log";
+        else full = "solstice_render_diag.log";
+        gRenderDiagFile = CreateFileA(full.c_str(), FILE_APPEND_DATA, FILE_SHARE_READ, nullptr,
+                                     OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+        // Build the address -> name table once, outside the per-callback path.
+        if (gFeatureManager && gFeatureManager->mModuleManager) {
+            for (const auto& mod : gFeatureManager->mModuleManager->getModules()) {
+                if (!mod) continue;
+                void* mostDerived = dynamic_cast<void*>(mod.get());
+                gRenderDiagNames.emplace(mostDerived, mod->mName);
+                gRenderDiagNames.emplace(static_cast<void*>(mod.get()), mod->mName);
+            }
+        }
+        char hdr[512];
+        int len = snprintf(hdr, sizeof(hdr),
+            "[RENDER-DIAG] opened maxFrames=%u modules=%zu file=%s handle=%s\n",
+            kRenderDiagMaxFrames, gRenderDiagNames.size(), full.c_str(),
+            gRenderDiagFile == INVALID_HANDLE_VALUE ? "INVALID" : "OK");
+        if (len > 0) {
+            const int capped = len < (int)sizeof(hdr) - 1 ? len : (int)sizeof(hdr) - 1;
+            renderDiagWrite(hdr, static_cast<DWORD>(capped));
+        }
+    }
+
+    const char* renderDiagName(void* inst) {
+        auto it = gRenderDiagNames.find(inst);
+        return it != gRenderDiagNames.end() ? it->second.c_str() : "(non-module)";
+    }
+
+    void renderDiagRecord(unsigned frame, unsigned index, const char* module, int phase) {
+        char buf[256];
+        int len = snprintf(buf, sizeof(buf),
+            "[RENDER-DIAG] frame=%u index=%u module=%s phase=%s tid=%#x\n",
+            frame, index, module, phase == 0 ? "BEGIN" : "END",
+            static_cast<unsigned>(GetCurrentThreadId()));
+        if (len < 0) return;
+        const int capped = len < (int)sizeof(buf) - 1 ? len : (int)sizeof(buf) - 1;
+        renderDiagWrite(buf, static_cast<DWORD>(capped));
+    }
+#endif
+
     ImGuiContext* glGuiContext = nullptr;
     HGLRC glGuiOwner = nullptr;
     HWND glGuiWindow = nullptr;
@@ -543,7 +619,30 @@ void OpenGLGui::render(HDC dc) try
         if (ClientInstance::get()) {
             glHangMarker(1, "HUD_DISPATCH_BEGIN", reinterpret_cast<uintptr_t>(current), GetCurrentThreadId());
             auto holder = nes::make_holder<RenderEvent>();
+#ifdef SOLSTICE_RENDER_DIAG
+            // 3.6.2-F: per-subscriber BEGIN/END fault localization. The diagnostic
+            // path mirrors the production trigger() exactly (same lock + ordering);
+            // it only adds flush-on-write BEGIN/END markers. After the capped window
+            // of frames it falls back to the unchanged production trigger().
+            renderDiagOpen();
+            if (gRenderDiagFramesRemaining > 0) {
+                --gRenderDiagFramesRemaining;
+                const unsigned frame = glGuiFrameCounter;
+                auto& disp = gFeatureManager->mDispatcher->get<RenderEvent>();
+                disp.diagnostic_trigger(
+                    holder,
+                    [](void* inst) -> const char* {
+                        return renderDiagName(inst);
+                    },
+                    [frame](unsigned index, const char* name, int phase) {
+                        renderDiagRecord(frame, index, name, phase);
+                    });
+            } else {
+                gFeatureManager->mDispatcher->trigger(holder);
+            }
+#else
             gFeatureManager->mDispatcher->trigger(holder);
+#endif
             glHangMarker(1, "HUD_DISPATCH_END", reinterpret_cast<uintptr_t>(current), GetCurrentThreadId());
         }
         ImGui::End();

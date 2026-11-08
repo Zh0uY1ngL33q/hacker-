@@ -1,0 +1,1546 @@
+{
+  "event": "RenderEvent",
+  "inventory": [
+    {
+      "name": "BlockESP",
+      "file": "src\\Features\\Modules\\Visual\\BlockESP.cpp",
+      "callback": "onRenderEvent",
+      "priority": "VERY_FIRST",
+      "priority_num": 1,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 92,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 0,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\BlockESP.cpp",
+          "src\\Features\\Modules\\Visual\\BlockESP.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 2230,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": true,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "HudEditor",
+      "file": "src\\Features\\Modules\\Visual\\HudEditor.hpp",
+      "callback": "onRenderEvent",
+      "priority": "FIRST",
+      "priority_num": 2,
+      "registrationSite": "constructor",
+      "constructed": true,
+      "registrationOrder": 0,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 1,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\HudEditor.hpp",
+          "src\\Features\\Modules\\Visual\\HudEditor.cpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 9785,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": true,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": false
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "Aura",
+      "file": "src\\Features\\Modules\\Combat\\Aura.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 1,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 2,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Combat\\Aura.cpp",
+          "src\\Features\\Modules\\Combat\\Aura.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 5653,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "AutoClicker",
+      "file": "src\\Features\\Modules\\Combat\\AutoClicker.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 3,
+      "defaultEnabled": false,
+      "runtimeObserved": false,
+      "dispatchOrder": 3,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Combat\\AutoClicker.cpp",
+          "src\\Features\\Modules\\Combat\\AutoClicker.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 2444,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "InfiniteAura",
+      "file": "src\\Features\\Modules\\Combat\\InfiniteAura.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 7,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 4,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Combat\\InfiniteAura.cpp",
+          "src\\Features\\Modules\\Combat\\InfiniteAura.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 1847,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": true,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "InventoryMove",
+      "file": "src\\Features\\Modules\\Movement\\InventoryMove.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 14,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 5,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Movement\\InventoryMove.cpp",
+          "src\\Features\\Modules\\Movement\\InventoryMove.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 1905,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "TargetStrafe",
+      "file": "src\\Features\\Modules\\Movement\\TargetStrafe.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 25,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 6,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Movement\\TargetStrafe.cpp",
+          "src\\Features\\Modules\\Movement\\TargetStrafe.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 495,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "Jesus",
+      "file": "src\\Features\\Modules\\Movement\\Jesus.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 26,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 7,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Movement\\Jesus.cpp",
+          "src\\Features\\Modules\\Movement\\Jesus.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 103,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "ChestStealer",
+      "file": "src\\Features\\Modules\\Player\\ChestStealer.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 33,
+      "defaultEnabled": false,
+      "runtimeObserved": false,
+      "dispatchOrder": 8,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Player\\ChestStealer.cpp",
+          "src\\Features\\Modules\\Player\\ChestStealer.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 1740,
+        "constructsPresent": {
+          "sdkGetter": false,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": false
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "Scaffold",
+      "file": "src\\Features\\Modules\\Player\\Scaffold.hpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "constructor",
+      "constructed": true,
+      "registrationOrder": 37,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 9,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Player\\Scaffold.hpp",
+          "src\\Features\\Modules\\Player\\Scaffold.cpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 5292,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "Nuker",
+      "file": "src\\Features\\Modules\\Player\\Nuker.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 38,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 10,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Player\\Nuker.cpp",
+          "src\\Features\\Modules\\Player\\Nuker.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 1008,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "OreMiner",
+      "file": "src\\Features\\Modules\\Player\\OreMiner.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 39,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 11,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Player\\OreMiner.cpp",
+          "src\\Features\\Modules\\Player\\OreMiner.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 133,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "TestModule",
+      "file": "src\\Features\\Modules\\Misc\\TestModule.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 82,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 12,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Misc\\TestModule.cpp",
+          "src\\Features\\Modules\\Misc\\TestModule.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 21503,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": true,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": true,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "Watermark",
+      "file": "src\\Features\\Modules\\Visual\\Watermark.hpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "constructor",
+      "constructed": true,
+      "registrationOrder": 83,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 13,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\Watermark.hpp",
+          "src\\Features\\Modules\\Visual\\Watermark.cpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 3309,
+        "constructsPresent": {
+          "sdkGetter": false,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": false
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "AutoScale",
+      "file": "src\\Features\\Modules\\Visual\\AutoScale.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 85,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 14,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\AutoScale.cpp",
+          "src\\Features\\Modules\\Visual\\AutoScale.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 333,
+        "constructsPresent": {
+          "sdkGetter": false,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": false
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "Interface",
+      "file": "src\\Features\\Modules\\Visual\\Interface.hpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "constructor",
+      "constructed": true,
+      "registrationOrder": 86,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 15,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\Interface.hpp",
+          "src\\Features\\Modules\\Visual\\Interface.cpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 1732,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "Arraylist",
+      "file": "src\\Features\\Modules\\Visual\\Arraylist.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 87,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 16,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\Arraylist.cpp",
+          "src\\Features\\Modules\\Visual\\Arraylist.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 13305,
+        "constructsPresent": {
+          "sdkGetter": false,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": false
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "LevelInfo",
+      "file": "src\\Features\\Modules\\Visual\\LevelInfo.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 88,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 17,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\LevelInfo.cpp",
+          "src\\Features\\Modules\\Visual\\LevelInfo.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 3736,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "DestroyProgress",
+      "file": "src\\Features\\Modules\\Visual\\DestroyProgress.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 90,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 18,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\DestroyProgress.cpp",
+          "src\\Features\\Modules\\Visual\\DestroyProgress.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 1684,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "ESP",
+      "file": "src\\Features\\Modules\\Visual\\ESP.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 91,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 19,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\ESP.cpp",
+          "src\\Features\\Modules\\Visual\\ESP.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 2818,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": true,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "ItemESP",
+      "file": "src\\Features\\Modules\\Visual\\ItemESP.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 98,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 20,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\ItemESP.cpp",
+          "src\\Features\\Modules\\Visual\\ItemESP.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 2796,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": true,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "Nametags",
+      "file": "src\\Features\\Modules\\Visual\\Nametags.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 99,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 21,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\Nametags.cpp",
+          "src\\Features\\Modules\\Visual\\Nametags.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 4722,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": true,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": false
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "FullBright",
+      "file": "src\\Features\\Modules\\Visual\\FullBright.hpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "constructor",
+      "constructed": true,
+      "registrationOrder": 101,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 22,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\FullBright.hpp",
+          "src\\Features\\Modules\\Visual\\FullBright.cpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 501,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "Keystrokes",
+      "file": "src\\Features\\Modules\\Visual\\Keystrokes.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 102,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 23,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\Keystrokes.cpp",
+          "src\\Features\\Modules\\Visual\\Keystrokes.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 7590,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "SessionInfo",
+      "file": "src\\Features\\Modules\\Visual\\SessionInfo.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 104,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 24,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\SessionInfo.cpp",
+          "src\\Features\\Modules\\Visual\\SessionInfo.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 2243,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "Tracers",
+      "file": "src\\Features\\Modules\\Visual\\Tracers.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 105,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 25,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\Tracers.cpp",
+          "src\\Features\\Modules\\Visual\\Tracers.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 1595,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": true,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "ChinaHat",
+      "file": "src\\Features\\Modules\\Visual\\ChinaHat.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 106,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 26,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\ChinaHat.cpp",
+          "src\\Features\\Modules\\Visual\\ChinaHat.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 2425,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "Zoom",
+      "file": "src\\Features\\Modules\\Visual\\Zoom.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 108,
+      "defaultEnabled": false,
+      "runtimeObserved": false,
+      "dispatchOrder": 27,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\Zoom.cpp",
+          "src\\Features\\Modules\\Visual\\Zoom.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 426,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "JumpCircles",
+      "file": "src\\Features\\Modules\\Visual\\JumpCircles.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 111,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 28,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\JumpCircles.cpp",
+          "src\\Features\\Modules\\Visual\\JumpCircles.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 2494,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "AutoPath",
+      "file": "src\\Features\\Modules\\Movement\\AutoPath.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 119,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 29,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Movement\\AutoPath.cpp",
+          "src\\Features\\Modules\\Movement\\AutoPath.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 1174,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": true,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "ItemPhysics",
+      "file": "src\\Features\\Modules\\Visual\\ItemPhysics.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 121,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 30,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\ItemPhysics.cpp",
+          "src\\Features\\Modules\\Visual\\ItemPhysics.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 345,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "BoneEsp",
+      "file": "src\\Features\\Modules\\Visual\\BoneEsp.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 123,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 31,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\BoneEsp.cpp",
+          "src\\Features\\Modules\\Visual\\BoneEsp.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 1804,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": true,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": false
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "CustomChat",
+      "file": "src\\Features\\Modules\\Visual\\CustomChat.cpp",
+      "callback": "onRenderEvent",
+      "priority": "NORMAL",
+      "priority_num": 4,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 124,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 32,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\CustomChat.cpp",
+          "src\\Features\\Modules\\Visual\\CustomChat.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 3934,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "Regen",
+      "file": "src\\Features\\Modules\\Player\\Regen.hpp",
+      "callback": "onRenderEvent",
+      "priority": "LAST",
+      "priority_num": 6,
+      "registrationSite": "constructor",
+      "constructed": true,
+      "registrationOrder": 35,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 33,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Player\\Regen.hpp",
+          "src\\Features\\Modules\\Player\\Regen.cpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 671,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "ClickGui",
+      "file": "src\\Features\\Modules\\Visual\\ClickGui.hpp",
+      "callback": "onRenderEvent",
+      "priority": "LAST",
+      "priority_num": 6,
+      "registrationSite": "constructor",
+      "constructed": true,
+      "registrationOrder": 84,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 34,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\ClickGui.hpp",
+          "src\\Features\\Modules\\Visual\\ClickGui.cpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 1292,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": false
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "MotionBlur",
+      "file": "src\\Features\\Modules\\Visual\\MotionBlur.cpp",
+      "callback": "onRenderEvent",
+      "priority": "LAST",
+      "priority_num": 6,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 93,
+      "defaultEnabled": false,
+      "runtimeObserved": false,
+      "dispatchOrder": 35,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\MotionBlur.cpp",
+          "src\\Features\\Modules\\Visual\\MotionBlur.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 106,
+        "constructsPresent": {
+          "sdkGetter": false,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": false
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "TargetHUD",
+      "file": "src\\Features\\Modules\\Visual\\TargetHUD.cpp",
+      "callback": "onRenderEvent",
+      "priority": "LAST",
+      "priority_num": 6,
+      "registrationSite": "constructor",
+      "constructed": true,
+      "registrationOrder": 97,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 36,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\TargetHUD.cpp",
+          "src\\Features\\Modules\\Visual\\TargetHUD.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 8830,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "Notifications",
+      "file": "src\\Features\\Modules\\Visual\\Notifications.hpp",
+      "callback": "onRenderEvent",
+      "priority": "VERY_LAST",
+      "priority_num": 7,
+      "registrationSite": "constructor",
+      "constructed": true,
+      "registrationOrder": 89,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 37,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\Notifications.hpp",
+          "src\\Features\\Modules\\Visual\\Notifications.cpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 3583,
+        "constructsPresent": {
+          "sdkGetter": false,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": false
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    },
+    {
+      "name": "UpdateForm",
+      "file": "src\\Features\\Modules\\Visual\\UpdateForm.cpp",
+      "callback": "onRenderEvent",
+      "priority": "ABSOLUTE_LAST",
+      "priority_num": 8,
+      "registrationSite": "onEnable",
+      "constructed": true,
+      "registrationOrder": 126,
+      "defaultEnabled": "verify",
+      "runtimeObserved": false,
+      "dispatchOrder": 38,
+      "configOverrideApplies": true,
+      "runtimeConfigObserved": false,
+      "callbackAudit": {
+        "sourceFilesScanned": [
+          "src\\Features\\Modules\\Visual\\UpdateForm.cpp",
+          "src\\Features\\Modules\\Visual\\UpdateForm.hpp"
+        ],
+        "bodyFound": true,
+        "bodyChars": 5576,
+        "constructsPresent": {
+          "sdkGetter": true,
+          "unverifiedMapping": false,
+          "fileIO": false,
+          "networkIO": false,
+          "sleepWait": false,
+          "mutex": false,
+          "glCalls": false,
+          "imguiBeginEnd": false,
+          "recursiveEvent": false,
+          "entityEnumeration": false,
+          "unboundedLoop": false,
+          "threadSync": false,
+          "nullDerefCandidate": true
+        },
+        "note": "Lexical keyword scan only. A hit is NOT a runtime observation and NOT a danger verdict; no ranking is derived from hit count or body length. Null-pointer / object-lifetime safety requires manual semantic review."
+      }
+    }
+  ],
+  "configOverrideMechanism": {
+    "startupAutoLoad": "src/Solstice.cpp:454-458",
+    "chain": [
+      "Solstice.cpp: if (!Prefs->mDefaultConfigName.empty() && ConfigManager::configExists(...)) ConfigManager::loadConfig(name)",
+      "ConfigManager::loadConfig -> gFeatureManager->mModuleManager->deserialize(j)  (src/Features/Configs/ConfigManager.cpp:25-38)",
+      "ModuleManager::deserialize: mod->mWantedState = enabled  (src/Features/Modules/ModuleManager.cpp:505-515)",
+      "ModuleManager::onClientTick: if (mWantedState != mEnabled) setEnabled(...) -> onEnable()  (ModuleManager.cpp:431-435)"
+    ],
+    "affectsRenderSubscription": true,
+    "reason": "Most RenderEvent listeners are registered inside onEnable(), not the constructor. The config-determined enabled set therefore decides which subscribers exist at all on the first frame, and hence the real dispatch order.",
+    "runtimeConfigLocation": "%APPDATA%\\Solstice\\Configs\\<DefaultConfigName>.json (on the game machine)",
+    "staticStatus": "RUNTIME_CONFIG_NOT_AVAILABLE",
+    "detail": "The runtime config is not in this repository. defaultEnabled in the inventory is the CONSTRUCTOR value only; whether it was overwritten must be read from the game machine's config or observed via the SOLSTICE_RENDER_DIAG log. It is never inferred here."
+  },
+  "auditMethod": {
+    "type": "STATIC_LEXICAL_SCAN",
+    "tool": "tools/batch3_6_2_f_audit.py",
+    "generatedFrom": "tools/batch3_6_2_f_gen.py",
+    "runtimeEvidence": false
+  }
+}

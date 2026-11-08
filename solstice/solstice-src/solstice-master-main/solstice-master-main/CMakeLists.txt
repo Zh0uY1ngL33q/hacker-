@@ -49,6 +49,17 @@ if (SOLSTICE_DISABLE_AURA_DIAGNOSTIC)
     add_compile_definitions(SOLSTICE_DISABLE_AURA_DIAGNOSTIC)
 endif ()
 
+# 3.6.2-F: subscriber-level RenderEvent fault localization. When ON, the GL HUD
+# dispatch is instrumented with per-subscriber BEGIN/END markers written to a
+# dedicated flush-on-write diagnostic file (solstice_render_diag.log). The
+# production dispatch path is compiled out entirely when this is OFF, so the
+# released binary is identical. Default OFF.
+option(SOLSTICE_RENDER_DIAG
+       "Instrument RenderEvent dispatch with per-subscriber BEGIN/END diagnostics (3.6.2-F fault localization)" OFF)
+if (SOLSTICE_RENDER_DIAG)
+    add_compile_definitions(SOLSTICE_RENDER_DIAG)
+endif ()
+
 find_program(LD_COMMAND ld)
 
 if (NOT LD_COMMAND)

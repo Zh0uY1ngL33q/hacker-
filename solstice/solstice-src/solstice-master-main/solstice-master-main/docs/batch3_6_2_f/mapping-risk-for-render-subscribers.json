@@ -1,0 +1,686 @@
+{
+  "event": "RenderEvent",
+  "scope": "Only mappings consumed by subscribers actually executed on the GL first frame. 73 mappings are unusable overall; this file isolates which are touched by RenderEvent subscribers and whether they are GL-path-decoupled.",
+  "unusableMappingSummary": {
+    "offsets": {
+      "OK": 26,
+      "MISSING": 24,
+      "AMBIGUOUS": 6,
+      "IMPLAUSIBLE": 1,
+      "total": 57
+    },
+    "signatures": {
+      "OK": 73,
+      "MISSING": 20,
+      "AMBIGUOUS": 21,
+      "OUT_OF_RANGE": 1,
+      "total": 115
+    },
+    "combinedUnusable": 73,
+    "trustworthiness": "NOT_TRUSTWORTHY"
+  },
+  "rules": [
+    "Status vocabulary: OK / MISSING / AMBIGUOUS / IMPLAUSIBLE / OUT_OF_RANGE / HARDCODED_UNVERIFIED.",
+    "Do NOT assume a module crashes just because a mapping is untrusted; confirm the specific consumer actually reads that mapping on the GL path.",
+    "GL path reconstructs the view matrix from camera rotation + camera pos, so the ESP-family projection is decoupled from the raw view-matrix offset; a bad matrix offset alone does not crash those modules here.",
+    "Entity-list enumeration remains the highest-risk mapping dependency for ESP-family subscribers on the first frame.",
+    "runtimeObserved is false; the SOLSTICE_RENDER_DIAG run + per-callback source read resolve per-consumer status."
+  ],
+  "getterFamilies": [
+    {
+      "family": "ClientInstance::get (singleton)",
+      "status": "RUNTIME_CACHED",
+      "note": "Cached pointer via InstanceLocator; not an OffsetProvider mapping. Some call sites deref without a null check (Interface::onRenderEvent:205 dereferences ClientInstance::get()->getLocalPlayer()).",
+      "consumers": [
+        "Interface",
+        "Watermark",
+        "Arraylist",
+        "LevelInfo",
+        "Notifications",
+        "SessionInfo",
+        "Keystrokes",
+        "TargetHUD",
+        "ClickGui",
+        "HudEditor",
+        "FullBright",
+        "AutoScale",
+        "UpdateForm",
+        "CustomChat",
+        "Regen",
+        "MotionBlur",
+        "DestroyProgress",
+        "Zoom",
+        "ESP",
+        "Tracers",
+        "Nametags",
+        "ChinaHat",
+        "ItemESP",
+        "JumpCircles",
+        "ItemPhysics",
+        "BoneEsp",
+        "BlockESP",
+        "Aura",
+        "AutoClicker",
+        "InfiniteAura",
+        "InventoryMove",
+        "TargetStrafe",
+        "Jesus",
+        "ChestStealer",
+        "Scaffold",
+        "Nuker",
+        "OreMiner",
+        "TestModule",
+        "AutoPath"
+      ]
+    },
+    {
+      "family": "ClientInstance::getLocalPlayer",
+      "offset": "ClientInstance_getLocalPlayer",
+      "status": "OK_AT_RUNTIME_FOR_INTERFACE",
+      "note": "Interface::onRenderEvent executed and returned this run, so the offset resolved to a usable pointer on the GL path. Not globally guaranteed; other threads/times may differ.",
+      "consumers": [
+        "Interface",
+        "ESP",
+        "Tracers",
+        "Nametags",
+        "ChinaHat",
+        "ItemESP",
+        "Watermark",
+        "Arraylist",
+        "LevelInfo",
+        "TargetHUD",
+        "ClickGui",
+        "SessionInfo",
+        "Keystrokes",
+        "AutoScale",
+        "Aura",
+        "AutoClicker",
+        "InfiniteAura",
+        "InventoryMove",
+        "TargetStrafe",
+        "Jesus",
+        "ChestStealer",
+        "Scaffold",
+        "Nuker",
+        "OreMiner",
+        "AutoPath"
+      ]
+    },
+    {
+      "family": "ClientInstance::getViewMatrix / ClientInstance+0x358",
+      "status": "HARDCODED_UNVERIFIED",
+      "note": "OpenGLGui reads ClientInstance+0x358 directly (hardcoded offset) and only uses it when it is a true camera basis; otherwise it falls back to a rotation-derived matrix. This DECOUPLES the ESP-family projection from the raw view-matrix offset on the GL path, so a bad/unverified matrix offset does not by itself crash ESP/Nametags/Tracers here.",
+      "consumers": [
+        "ESP",
+        "Tracers",
+        "Nametags",
+        "ChinaHat",
+        "ItemESP",
+        "JumpCircles"
+      ]
+    },
+    {
+      "family": "ClientInstance::getFov",
+      "status": "VERIFY",
+      "note": "Used to fill RenderUtils::transform.mFov on the GL path. Verify the fov offset resolves; the path tolerates a zero fov (uses rotation matrix).",
+      "consumers": [
+        "ESP",
+        "Tracers",
+        "Nametags",
+        "ChinaHat",
+        "ItemESP",
+        "JumpCircles",
+        "Watermark",
+        "Arraylist",
+        "LevelInfo",
+        "Keystrokes"
+      ]
+    },
+    {
+      "family": "LevelRenderer::getRendererPlayer / getCameraPos",
+      "status": "VERIFY",
+      "note": "Camera origin for world-to-screen. Null-guarded on the GL path (OpenGLGui:425-515).",
+      "consumers": [
+        "ESP",
+        "Tracers",
+        "Nametags",
+        "ChinaHat",
+        "ItemESP",
+        "JumpCircles"
+      ]
+    },
+    {
+      "family": "Actor / Entity enumeration (EntityList)",
+      "status": "HIGH_RISK_IF_OFFSET_BAD",
+      "note": "ESP, Nametags, Tracers, ChinaHat, ItemESP iterate the entity list. A bad iteration offset can crash or infinite-loop. This is the highest-risk mapping dependency for the Visual combat/ESP family on the first frame.",
+      "consumers": [
+        "ESP",
+        "Tracers",
+        "Nametags",
+        "ChinaHat",
+        "ItemESP",
+        "ItemPhysics",
+        "BoneEsp"
+      ]
+    },
+    {
+      "family": "Block enumeration (BlockSource / Level)",
+      "status": "VERIFY",
+      "note": "BlockESP iterates blocks; null/offset issues can crash.",
+      "consumers": [
+        "BlockESP"
+      ]
+    },
+    {
+      "family": "OffsetProvider::ResourcePackManager_composeFullStackBp",
+      "status": "MISSING_SIGNATURE_BENIGN",
+      "note": "Interface::patchFullStack target; signature unresolved (addr==0) -> safe early return. Unrelated to the hang (see patchfullstack-callchain.md).",
+      "consumers": [
+        "Interface"
+      ]
+    }
+  ],
+  "subscribers": [
+    {
+      "name": "BlockESP",
+      "priority": "VERY_FIRST",
+      "dispatchOrder": 0,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "Block enumeration (BlockSource / Level)",
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "HudEditor",
+      "priority": "FIRST",
+      "dispatchOrder": 1,
+      "registrationSite": "constructor",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "Aura",
+      "priority": "NORMAL",
+      "dispatchOrder": 2,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "AutoClicker",
+      "priority": "NORMAL",
+      "dispatchOrder": 3,
+      "registrationSite": "onEnable",
+      "defaultEnabled": false,
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "InfiniteAura",
+      "priority": "NORMAL",
+      "dispatchOrder": 4,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "InventoryMove",
+      "priority": "NORMAL",
+      "dispatchOrder": 5,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "TargetStrafe",
+      "priority": "NORMAL",
+      "dispatchOrder": 6,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "Jesus",
+      "priority": "NORMAL",
+      "dispatchOrder": 7,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "ChestStealer",
+      "priority": "NORMAL",
+      "dispatchOrder": 8,
+      "registrationSite": "onEnable",
+      "defaultEnabled": false,
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "Scaffold",
+      "priority": "NORMAL",
+      "dispatchOrder": 9,
+      "registrationSite": "constructor",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "Nuker",
+      "priority": "NORMAL",
+      "dispatchOrder": 10,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "OreMiner",
+      "priority": "NORMAL",
+      "dispatchOrder": 11,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "TestModule",
+      "priority": "NORMAL",
+      "dispatchOrder": 12,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "Watermark",
+      "priority": "NORMAL",
+      "dispatchOrder": 13,
+      "registrationSite": "constructor",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "AutoScale",
+      "priority": "NORMAL",
+      "dispatchOrder": 14,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "Interface",
+      "priority": "NORMAL",
+      "dispatchOrder": 15,
+      "registrationSite": "constructor",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "Arraylist",
+      "priority": "NORMAL",
+      "dispatchOrder": 16,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "LevelInfo",
+      "priority": "NORMAL",
+      "dispatchOrder": 17,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "DestroyProgress",
+      "priority": "NORMAL",
+      "dispatchOrder": 18,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "ESP",
+      "priority": "NORMAL",
+      "dispatchOrder": 19,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "Actor / Entity enumeration (EntityList)",
+        "ClientInstance::getViewMatrix / ClientInstance+0x358",
+        "ClientInstance::getFov",
+        "LevelRenderer::getRendererPlayer / getCameraPos",
+        "ClientInstance::getLocalPlayer",
+        "ClientInstance::get (singleton)"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "ItemESP",
+      "priority": "NORMAL",
+      "dispatchOrder": 20,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "Actor / Entity enumeration (EntityList)",
+        "ClientInstance::getViewMatrix / ClientInstance+0x358",
+        "ClientInstance::getFov",
+        "LevelRenderer::getRendererPlayer / getCameraPos",
+        "ClientInstance::getLocalPlayer",
+        "ClientInstance::get (singleton)"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "Nametags",
+      "priority": "NORMAL",
+      "dispatchOrder": 21,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "Actor / Entity enumeration (EntityList)",
+        "ClientInstance::getViewMatrix / ClientInstance+0x358",
+        "ClientInstance::getFov",
+        "LevelRenderer::getRendererPlayer / getCameraPos",
+        "ClientInstance::getLocalPlayer",
+        "ClientInstance::get (singleton)"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "FullBright",
+      "priority": "NORMAL",
+      "dispatchOrder": 22,
+      "registrationSite": "constructor",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "Keystrokes",
+      "priority": "NORMAL",
+      "dispatchOrder": 23,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "SessionInfo",
+      "priority": "NORMAL",
+      "dispatchOrder": 24,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "Tracers",
+      "priority": "NORMAL",
+      "dispatchOrder": 25,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "Actor / Entity enumeration (EntityList)",
+        "ClientInstance::getViewMatrix / ClientInstance+0x358",
+        "ClientInstance::getFov",
+        "LevelRenderer::getRendererPlayer / getCameraPos",
+        "ClientInstance::getLocalPlayer",
+        "ClientInstance::get (singleton)"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "ChinaHat",
+      "priority": "NORMAL",
+      "dispatchOrder": 26,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "Actor / Entity enumeration (EntityList)",
+        "ClientInstance::getViewMatrix / ClientInstance+0x358",
+        "ClientInstance::getFov",
+        "LevelRenderer::getRendererPlayer / getCameraPos",
+        "ClientInstance::getLocalPlayer",
+        "ClientInstance::get (singleton)"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "Zoom",
+      "priority": "NORMAL",
+      "dispatchOrder": 27,
+      "registrationSite": "onEnable",
+      "defaultEnabled": false,
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "JumpCircles",
+      "priority": "NORMAL",
+      "dispatchOrder": 28,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "Actor / Entity enumeration (EntityList)",
+        "ClientInstance::getViewMatrix / ClientInstance+0x358",
+        "ClientInstance::getFov",
+        "LevelRenderer::getRendererPlayer / getCameraPos",
+        "ClientInstance::getLocalPlayer",
+        "ClientInstance::get (singleton)"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "AutoPath",
+      "priority": "NORMAL",
+      "dispatchOrder": 29,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "ItemPhysics",
+      "priority": "NORMAL",
+      "dispatchOrder": 30,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "Actor / Entity enumeration (EntityList)",
+        "ClientInstance::getViewMatrix / ClientInstance+0x358",
+        "ClientInstance::getFov",
+        "LevelRenderer::getRendererPlayer / getCameraPos",
+        "ClientInstance::getLocalPlayer",
+        "ClientInstance::get (singleton)"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "BoneEsp",
+      "priority": "NORMAL",
+      "dispatchOrder": 31,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "Actor / Entity enumeration (EntityList)",
+        "ClientInstance::getViewMatrix / ClientInstance+0x358",
+        "ClientInstance::getFov",
+        "LevelRenderer::getRendererPlayer / getCameraPos",
+        "ClientInstance::getLocalPlayer",
+        "ClientInstance::get (singleton)"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "CustomChat",
+      "priority": "NORMAL",
+      "dispatchOrder": 32,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "Regen",
+      "priority": "LAST",
+      "dispatchOrder": 33,
+      "registrationSite": "constructor",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "ClickGui",
+      "priority": "LAST",
+      "dispatchOrder": 34,
+      "registrationSite": "constructor",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "MotionBlur",
+      "priority": "LAST",
+      "dispatchOrder": 35,
+      "registrationSite": "onEnable",
+      "defaultEnabled": false,
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "TargetHUD",
+      "priority": "LAST",
+      "dispatchOrder": 36,
+      "registrationSite": "constructor",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "Notifications",
+      "priority": "VERY_LAST",
+      "dispatchOrder": 37,
+      "registrationSite": "constructor",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    },
+    {
+      "name": "UpdateForm",
+      "priority": "ABSOLUTE_LAST",
+      "dispatchOrder": 38,
+      "registrationSite": "onEnable",
+      "defaultEnabled": "verify",
+      "getterFamilies": [
+        "ClientInstance::get (singleton)",
+        "ClientInstance::getLocalPlayer"
+      ],
+      "runtimeObserved": false
+    }
+  ]
+}

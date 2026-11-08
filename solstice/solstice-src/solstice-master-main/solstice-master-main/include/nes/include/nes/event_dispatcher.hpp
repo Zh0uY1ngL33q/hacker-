@@ -202,6 +202,32 @@ namespace nes {
             }
         }
 
+#ifdef SOLSTICE_RENDER_DIAG
+        // 3.6.2-F subscriber-level fault localization. Mirrors trigger() exactly
+        // (same shared_lock(mMutex) and the same per-list listener_list shared_lock
+        // acquired by the range-for iterators) but invokes caller-supplied nameFn /
+        // logFn around each listener so the call site can attribute callbacks to
+        // modules and record BEGIN/END without altering registration, ordering, or
+        // callback arguments. Passing the type-erased listener.mInstance (void*)
+        // through nameFn is the only way to attribute a callback to a module name;
+        // this header stays decoupled from Module and never dereferences the pointer
+        // itself -- the call site resolves it via an address lookup table.
+        template <typename NameFn, typename LogFn>
+        void diagnostic_trigger(holder_t& holder, NameFn nameFn, LogFn logFn) {
+            std::shared_lock lock(mMutex);
+            unsigned index = 0;
+            for (auto& [priority, listeners] : mListeners) {
+                for (const auto& listener : listeners) {
+                    const char* name = listener.mInstance ? nameFn(listener.mInstance) : "(free-function)";
+                    logFn(index, name, 0);        // BEGIN
+                    listener.invoke(holder);
+                    logFn(index, name, 1);        // END
+                    ++index;
+                }
+            }
+        }
+#endif
+
     private:
         std::map<event_priority, listener_list<listener_t>> mListeners;
         mutable std::shared_mutex mMutex;

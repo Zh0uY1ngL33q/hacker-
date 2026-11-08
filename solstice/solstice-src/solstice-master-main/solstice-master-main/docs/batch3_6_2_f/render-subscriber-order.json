@@ -1,0 +1,368 @@
+{
+  "event": "RenderEvent",
+  "note": "Static dispatch order derived from the EventPriorities enum tiers (src/pch.hpp) and ModuleManager::init() construction order. runtimeObserved is false; the authoritative per-run sequence is produced by the SOLSTICE_RENDER_DIAG instrumentation (subscriber-instrumentation.md).",
+  "priorityTiers": {
+    "0": "ABSOLUTE_FIRST",
+    "1": "VERY_FIRST",
+    "2": "FIRST",
+    "3": "KINDA_FIRST",
+    "4": "NORMAL",
+    "5": "KINDA_LAST",
+    "6": "LAST",
+    "7": "VERY_LAST",
+    "8": "ABSOLUTE_LAST"
+  },
+  "subscribers": [
+    {
+      "name": "BlockESP",
+      "registrationOrder": 92,
+      "dispatchOrder": 0,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "HudEditor",
+      "registrationOrder": 0,
+      "dispatchOrder": 1,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "Aura",
+      "registrationOrder": 1,
+      "dispatchOrder": 2,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "AutoClicker",
+      "registrationOrder": 3,
+      "dispatchOrder": 3,
+      "constructed": true,
+      "enabled": false,
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "InfiniteAura",
+      "registrationOrder": 7,
+      "dispatchOrder": 4,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "InventoryMove",
+      "registrationOrder": 14,
+      "dispatchOrder": 5,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "TargetStrafe",
+      "registrationOrder": 25,
+      "dispatchOrder": 6,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "Jesus",
+      "registrationOrder": 26,
+      "dispatchOrder": 7,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "ChestStealer",
+      "registrationOrder": 33,
+      "dispatchOrder": 8,
+      "constructed": true,
+      "enabled": false,
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "Scaffold",
+      "registrationOrder": 37,
+      "dispatchOrder": 9,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "Nuker",
+      "registrationOrder": 38,
+      "dispatchOrder": 10,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "OreMiner",
+      "registrationOrder": 39,
+      "dispatchOrder": 11,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "TestModule",
+      "registrationOrder": 82,
+      "dispatchOrder": 12,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "Watermark",
+      "registrationOrder": 83,
+      "dispatchOrder": 13,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "AutoScale",
+      "registrationOrder": 85,
+      "dispatchOrder": 14,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "Interface",
+      "registrationOrder": 86,
+      "dispatchOrder": 15,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "Arraylist",
+      "registrationOrder": 87,
+      "dispatchOrder": 16,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "LevelInfo",
+      "registrationOrder": 88,
+      "dispatchOrder": 17,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "DestroyProgress",
+      "registrationOrder": 90,
+      "dispatchOrder": 18,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "ESP",
+      "registrationOrder": 91,
+      "dispatchOrder": 19,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "ItemESP",
+      "registrationOrder": 98,
+      "dispatchOrder": 20,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "Nametags",
+      "registrationOrder": 99,
+      "dispatchOrder": 21,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "FullBright",
+      "registrationOrder": 101,
+      "dispatchOrder": 22,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "Keystrokes",
+      "registrationOrder": 102,
+      "dispatchOrder": 23,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "SessionInfo",
+      "registrationOrder": 104,
+      "dispatchOrder": 24,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "Tracers",
+      "registrationOrder": 105,
+      "dispatchOrder": 25,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "ChinaHat",
+      "registrationOrder": 106,
+      "dispatchOrder": 26,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "Zoom",
+      "registrationOrder": 108,
+      "dispatchOrder": 27,
+      "constructed": true,
+      "enabled": false,
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "JumpCircles",
+      "registrationOrder": 111,
+      "dispatchOrder": 28,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "AutoPath",
+      "registrationOrder": 119,
+      "dispatchOrder": 29,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "ItemPhysics",
+      "registrationOrder": 121,
+      "dispatchOrder": 30,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "BoneEsp",
+      "registrationOrder": 123,
+      "dispatchOrder": 31,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "CustomChat",
+      "registrationOrder": 124,
+      "dispatchOrder": 32,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "Regen",
+      "registrationOrder": 35,
+      "dispatchOrder": 33,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "ClickGui",
+      "registrationOrder": 84,
+      "dispatchOrder": 34,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "MotionBlur",
+      "registrationOrder": 93,
+      "dispatchOrder": 35,
+      "constructed": true,
+      "enabled": false,
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "TargetHUD",
+      "registrationOrder": 97,
+      "dispatchOrder": 36,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "Notifications",
+      "registrationOrder": 89,
+      "dispatchOrder": 37,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    },
+    {
+      "name": "UpdateForm",
+      "registrationOrder": 126,
+      "dispatchOrder": 38,
+      "constructed": true,
+      "enabled": "verify",
+      "callback": "onRenderEvent",
+      "runtimeObserved": false
+    }
+  ]
+}
