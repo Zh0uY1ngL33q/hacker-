@@ -137,6 +137,22 @@ namespace {
     }
     std::atomic<bool> glGuiStop{false};
     std::atomic<unsigned> glGuiWindowCalls{0};
+    // Batch 3.6.2-C GL-hang localization: a monotonically increasing frame id
+    // and one-shot structured stage markers. The markers are throttled so they
+    // never spam every frame, but a hang is always bracketed by the last stage
+    // that started, which narrows the freeze to HUD_DISPATCH / IMGUI_RENDER /
+    // GL_SUBMIT without needing a full process dump first.
+    unsigned glGuiFrameCounter = 0;
+    void glHangMarker(int stage, const char* phase, uintptr_t ctx, DWORD tid)
+    {
+        // First ~120 frames: full per-boundary trace. After that: one marker
+        // every 30 frames so a late hang is still bracketed but we do not log
+        // on every present.
+        if (glGuiFrameCounter < 120 || (glGuiFrameCounter % 30 == 0)) {
+            spdlog::info("[GL-HANG] stage={} phase={} tid={:#x} frame={} ctx={:#x}",
+                stage, phase, static_cast<unsigned long>(tid), glGuiFrameCounter, ctx);
+        }
+    }
     ImGuiContext* glGuiContext = nullptr;
     HGLRC glGuiOwner = nullptr;
     HWND glGuiWindow = nullptr;
@@ -271,6 +287,7 @@ bool OpenGLGui::capturesInput() {
 void OpenGLGui::render(HDC dc) try
 {
     std::lock_guard<std::recursive_mutex> lock(glGuiMutex);
+    ++glGuiFrameCounter;
     const HGLRC current = wglGetCurrentContext();
     const HWND window = WindowFromDC(dc);
     // One-shot proof of which presentation path is live. Without this the log
@@ -524,12 +541,15 @@ void OpenGLGui::render(HDC dc) try
         // TargetHUD subscribes too (TargetHUD.cpp), so nothing is called by hand
         // here any more -- doing that would draw it twice.
         if (ClientInstance::get()) {
+            glHangMarker(1, "HUD_DISPATCH_BEGIN", reinterpret_cast<uintptr_t>(current), GetCurrentThreadId());
             auto holder = nes::make_holder<RenderEvent>();
             gFeatureManager->mDispatcher->trigger(holder);
+            glHangMarker(1, "HUD_DISPATCH_END", reinterpret_cast<uintptr_t>(current), GetCurrentThreadId());
         }
         ImGui::End();
         ImGui::PopStyleVar();
     }
+    glHangMarker(2, "IMGUI_RENDER_BEGIN", reinterpret_cast<uintptr_t>(current), GetCurrentThreadId());
     ImGui::Render();
     // SwapBuffers may arrive with an offscreen draw FBO still bound. Draw on
     // the window's default framebuffer, then restore the game's FBO selection.
@@ -542,8 +562,12 @@ void OpenGLGui::render(HDC dc) try
     glGetBooleanv(GL_COLOR_WRITEMASK, previousColorMask);
     glDrawBuffer(glGuiDrawBuffer);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glHangMarker(2, "IMGUI_RENDER_END", reinterpret_cast<uintptr_t>(current), GetCurrentThreadId());
     ImDrawData* drawData = ImGui::GetDrawData();
-    ImGui_ImplOpenGL3_RenderDrawData(drawData);
+    glHangMarker(3, "GL_SUBMIT_BEGIN", reinterpret_cast<uintptr_t>(current), GetCurrentThreadId());
+    if (drawData && drawData->CmdListsCount > 0) {
+        ImGui_ImplOpenGL3_RenderDrawData(drawData);
+    }
     if (capturing && drawData && drawData->TotalVtxCount > 0) {
         glGuiLastDrawMs.store(glNowMs());
         glGuiCapture.store(true);
@@ -563,6 +587,7 @@ void OpenGLGui::render(HDC dc) try
     glColorMask(previousColorMask[0], previousColorMask[1], previousColorMask[2], previousColorMask[3]);
     glDrawBuffer(static_cast<GLenum>(previousDrawBuffer));
     glGuiBindFramebuffer(0x8CA9, static_cast<GLuint>(previousFramebuffer));
+    glHangMarker(3, "GL_SUBMIT_END", reinterpret_cast<uintptr_t>(current), GetCurrentThreadId());
 }
 catch (const std::exception& ex)
 {
