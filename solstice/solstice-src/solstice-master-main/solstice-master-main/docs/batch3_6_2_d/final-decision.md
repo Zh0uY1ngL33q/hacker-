@@ -54,3 +54,12 @@ ROOT_CAUSE_CONFIRMED_NEEDS_BUILD
 运行期 AV 根因被收敛为「对象合理但虚表落点不可信」这一类，已由 `isValidVirtualCall` 防御 +
 故障上下文诊断覆盖；slot 164 推导正确不改，根因精确分类留给下一次构建的捕获数据，
 现状判定为 `ROOT_CAUSE_CONFIRMED_NEEDS_BUILD`。
+
+## 7. E.1.1 补充校正（ABI）
+
+本目录早期文档的 ABI 表述存在错误，已于 3.6.2-E.1.1 订正（与 `../batch3_6_2_e/` 结论一致）：
+
+- `playui-callchain.md` 原写 `float volume=R8 / pitch=R9` —— **错误**：浮点参数不进整数寄存器 `R8/R9`。
+- `slot164-runtime-analysis.md` 同错。
+- 正确 ABI（MS x64）：`this=RCX`、`soundName=RDX`（引用=指针）、`volume=XMM0`（第 1 个浮点）、`pitch=XMM1`（第 2 个浮点）。
+- 三层交叉核验（声明推导 / 编译器生成 / 游戏二进制 thunk）均收敛到 XMM0/XMM1，详见 `../batch3_6_2_e/playui-callsite-and-abi.md` §4.2。

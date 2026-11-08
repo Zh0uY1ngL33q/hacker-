@@ -39,9 +39,9 @@ return reinterpret_cast<Fn>(vtable[index])(_this, args...);
 
 ## 4. 第四层：调用 ABI 层
 
-- `__thiscall`：`this` 在 `RCX`，其余参数按 `RDX / R8 / R9` 入栈（前三个整型/指针类参数走寄存器）。
-- 参数：`this=RCX`、`const std::string& soundName=RDX`、`float volume=R8`、`float pitch=R9`，返回 `void`。
-- 与 `playUi(const std::string&, float, float)` 一致；ABI 层无错位。
+- `__thiscall`：`this` 在 `RCX`（指针）；`const std::string&` 引用=指针走 `RDX`；浮点参数走 `XMM0..XMM3`（整数/浮点两套寄存器独立计数，浮点不进 `R8/R9`）。
+- 参数：`this=RCX`、`const std::string& soundName=RDX`、`float volume=XMM0`（第 1 个浮点）、`float pitch=XMM1`（第 2 个浮点），返回 `void`。
+- 与 `playUi(const std::string&, float, float)` 一致；ABI 层无错位。E.1.1 已订正原 D 文档误写的 `volume=R8/pitch=R9`。
 
 ## 5. 关键告诫：四层都是「静态」验证
 

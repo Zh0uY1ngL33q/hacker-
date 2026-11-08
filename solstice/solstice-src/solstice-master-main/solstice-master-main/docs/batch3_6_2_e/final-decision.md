@@ -147,4 +147,56 @@ solstice/.../src/Utils/SysUtils/ExceptionHandler.cpp // ExceptionCode/ContextRec
 
 E.1 未改变 E 的最终验收主状态：**NEEDS_RUNTIME_EXCEPTION_CONTEXT** 叠加 `BUILD_PROVENANCE_CONFIRMED` + `⚠️ RUNTIME_IMAGE_MISMATCH`。ABI 校正不触发任何代码层 slot/OpenGL/ESP 改动。
 
-> 详细交付（完整 Git Diff、ABI 前后对照、构建依赖验证、守卫拒绝原因设计、未解决事项）见 `corrections-E1.md`。
+## 9. Batch 3.6.2-E.1.1 审查纠错补遗（2026-11-08，基线 `2429e6e`）
+
+E.1.1 是针对 E.1 的小范围审查纠错，**不重新实施 E.1**；不回退 `2429e6e`、不改动 slot 164 / playUi / InstanceLocator / OpenGLGui / ESP / 全局映射判据。
+
+### 9.1 ABI 三层交叉核验（P0-1）—— 维持 XMM0/XMM1，不保留矛盾结论
+
+E.1.1 审查意见在 bullet 中写「`volume→XMM2` / `pitch→XMM3`」并要求据此修订 7 份文档。但按任务自身「三者必须交叉核验」的要求，对三层逐一核验后**唯一一致结论是 `volume=XMM0 / pitch=XMM1`**：
+
+| 层 | 证据 | volume | pitch |
+|---|---|---|---|
+| ① C++ 声明推导 | `callVirtualFunc<void,const std::string&,float,float>` → `Fn=void(__thiscall*)(void*,const std::string&,float,float)`，实参 `(_this, soundName, volume, pitch)` | XMM0 | XMM1 |
+| ② 编译器生成 | MSVC 据 MS x64 ABI；整数/指针走 RCX,RDX,R8,R9、浮点走 XMM0–XMM3，两类**按类型独立计数** | XMM0 | XMM1 |
+| ③ 游戏二进制 | slot-164 thunk `0x1CBC3E4` 自身**不装载任何 XMM 寄存器**，volume/pitch 由调用方经 XMM0/XMM1 透传 | XMM0 | XMM1 |
+
+`XMM2/XMM3` 是把浮点寄存器按「整体参数位置（第 3、4 个参数）」编号的错误结论（positional counting）；其同段注释「浮点参数……重新从 XMM0 开始编号」反而描述的是正确规则。本批据此让全部 7 份文档**统一收敛到 XMM0/XMM1**，未保留任何矛盾 ABI 表述。D 目录早期文档误写的 `volume=R8/pitch=R9`（浮点进整数寄存器）也一并订正。
+
+### 9.2 异常处理器最终检查（P0-2）—— 全部项通过，无新增代码缺陷
+
+| 检查项 | 结果 |
+|---|---|
+| `pExceptionInfo` 空指针 | ✅ `if (pExceptionInfo && pExceptionInfo->ExceptionRecord)` 守卫（L29, L39） |
+| `ExceptionRecord` 空指针 | ✅ 同上 |
+| `ContextRecord` 空指针 | ✅ `if (const auto* ctx = pExceptionInfo->ContextRecord)`（L59）与 `faultCtx` null 安全（L75） |
+| `ExceptionCode` 是否为 AV | ✅ 仅在 `ExceptionRecord` 非空时读取（L29-31），且 `faultContext` 内按 `ExceptionInformation[0]` 区分 read/write/execute |
+| `NumberParameters ≥ 2` | ✅ `AccessType` 要求 `>=1`（L42），`FaultAddress` 要求 `>=2`（L50）后才读取 `[0]/[1]` |
+| `AccessType`/`FaultAddress` 仅在有效范围读取 | ✅ 如上 |
+| 寄存器来自故障 ContextRecord | ✅ RIP/RSP/RBP/RCX/RDX/R8/R9/RAX 全部取自 `pExceptionInfo->ContextRecord`（L59-64），非处理器自身栈帧 |
+| 递归/阻塞风险 | ⚠️ 观察项（非本批缺陷）：`spdlog::error` 在异常过滤器中仍可能死锁/递归；`MessageBoxA(RETRY)` 返回 `EXCEPTION_CONTINUE_EXECUTION` 会在同一坏指令上重试致循环。属既有设计，E.1 已给出零分配 `WriteFile` 兜底方案作为建议项，本批不擅自重写 |
+
+结论：**无明确证据指向的新缺陷，未改 `ExceptionHandler.cpp` 逻辑**。
+
+### 9.3 构建身份与依赖（P1-1）—— 验证通过
+
+- `add_dependencies(Solstice generate_build_info)`：本批把 `CMakeLists.txt:315` 从 `${PROJECT_NAME}` 显式写为 `Solstice`（`project(Solstice)` 使其等价，显式化以对齐审查要求）。`generate_build_info` 是 `ALL` 自定义目标，每次构建重算 `build_info.h`；此依赖保证 `Solstice` 翻译单元（即 `#include <build_info.h>` 者）必在其后编译，Ninja 构建图中表现为 `Solstice` → `generate_build_info` 边，顺序正确。
+- 两诊断选项始终输出 ON/OFF：`GenerateBuildInfo.cmake` 改为 `if (SOLSTICE_OPT_ALLOW_UNVERIFIED) ... 1 else ... 0` 与同理 AURA，OFF 与 undefined 都落 `0`，崩溃日志可区分。
+- `WORKTREE_DIRTY` 实际定义：`GenerateBuildInfo.cmake:202-206` 由 `git status --porcelain` 非空 → `1` 否则 `0`；`ExceptionHandler.cpp` 以 `#ifndef SOLSTICE_WORKTREE_DIRTY #define 0` 兜底。
+
+### 9.4 playUi 运行时防御复查（P1-2）—— 无缺陷，维持
+
+| 检查项 | 结果 |
+|---|---|
+| 是否对不可读对象再次解引用 | ✅ 每次读 `obj/vtable/slot/target` 前均经 `isReadableRange(...)`（L44, L50, L58, L64） |
+| `VirtualQuery` 与读取间 TOCTOU | ⚠️ 理论存在（探针式诊断的固有窗口）；用于崩溃后事后日志、非安全边界，可接受，未改 |
+| 是否区分不同拒绝原因 | ✅ 5 类消息：object null / object 不可读 / vtable 不可读 / slot 不可读 / target 不可执行 + 未分类兜底 |
+| 是否静默跳过必需操作 | ✅ `playUi` 是可选音效；`Solstice::init` 在调用前已完成初始化并打印 `Initialized!`，拒绝不会虚报初始化成功 |
+| 线程 ID 记录 | ✅ `GetCurrentThreadId()` 在每条拒绝日志中记录 |
+| 可执行地址验证 ≠ 函数语义验证 | ✅ 守卫仅证 target 可执行，不证 target==playUi；文档与注释已明确此边界 |
+
+### 9.5 主状态维持
+
+E.1.1 不触发任何代码层 slot/OpenGL/ESP 改动，主状态仍为 **NEEDS_RUNTIME_EXCEPTION_CONTEXT**（叠加 `BUILD_PROVENANCE_CONFIRMED` + `⚠️ RUNTIME_IMAGE_MISMATCH`）。ABI 统一为 XMM0/XMM1 属文档一致性校正，不影响运行期行为。
+
+> 详细交付（完整 Git Diff、ABI 前后对照、构建图验证、处理器/防御审查、未解决问题清单）见 `corrections-E1.1.md`。

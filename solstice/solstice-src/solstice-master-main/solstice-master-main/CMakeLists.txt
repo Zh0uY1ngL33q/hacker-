@@ -312,7 +312,7 @@ endforeach()
 add_resources(resource_files ${resource_files})
 
 add_library(Solstice SHARED ${sourceFiles} ${resource_files})
-add_dependencies(${PROJECT_NAME} generate_build_info SolsticeShaders)
+add_dependencies(Solstice generate_build_info SolsticeShaders)
 # 3.6.2-E.1 (P1-1): make the build-info ordering explicit and target-scoped.
 # `Solstice` is the translation unit that `#include <build_info.h>`, so it must
 # never compile before `generate_build_info` has (re)written that header. The

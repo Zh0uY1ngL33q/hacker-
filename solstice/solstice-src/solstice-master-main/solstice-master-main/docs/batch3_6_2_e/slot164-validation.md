@@ -51,6 +51,7 @@ disp32=0x520 (1312)   1312 % 8 == 0   -> slot = 164
 - x64：`RCX=this`、`RDX=std::string&`、`XMM0=volume`、`XMM1=pitch`（**非 XMM2/XMM3**）。
 - `__thiscall`：`vtable[index](_this, args...)`，`this` 在 `RCX`。与声明一致。
 - **E.1 校正（P0-1）**：E.1 审查主张 `volume=XMM2 / pitch=XMM3`，但经核对 `MinecraftGame::playUi → MemUtils::callVirtualFunc<void, const std::string&, float, float>`（`MinecraftGame.cpp:81`）的真实调用点源码，两个 `float` 作为第 1、第 2 个浮点实参传入，编译后落在 XMM0/XMM1。MS x64 ABI 对整数/指针寄存器（RCX,RDX,R8,R9）与 XMM 浮点寄存器（XMM0–XMM3）按类型**独立计数**，position 法把浮点排到 XMM2/XMM3 是错误结论。slot 164 本身的四层推导不受 ABI 槽位影响；ABI 仅决定实参落点，不影响虚表索引。详见 `playui-callsite-and-abi.md` §4.1。
+- **E.1.1 三层交叉核验（P0-1）**：已对「声明推导 / 编译器生成 / 游戏二进制目标」三层做交叉核验，均收敛到 `volume=XMM0 / pitch=XMM1`（游戏 slot-164 thunk @ `0x1CBC3E4` 自身不装载任何 XMM，volume/pitch 由调用方经 XMM0/XMM1 透传）。详见 `playui-callsite-and-abi.md` §4.2。
 
 ## 结论
 

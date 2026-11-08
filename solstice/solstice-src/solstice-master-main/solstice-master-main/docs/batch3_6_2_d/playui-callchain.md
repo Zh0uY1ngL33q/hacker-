@@ -49,8 +49,8 @@ if (auto* game = ci->getMinecraftGame(); InstanceLocator::isPlausibleGame(game))
 - **线程**：崩溃栈显示为 `initThread`（见第六工作组，与 GL 渲染线程 `tid=0x1c20` 不同线程）。
 - **ABI**：`__thiscall`。`callVirtualFunc` 中
   `Fn = Ret(__thiscall*)(void*, Args...)`，`vtable[index](_this, args...)`。
-  参数布局：`this=RCX`、`const std::string& soundName=RDX`、`float volume=R8`、`float pitch=R9`，返回 `void`。
-  与游戏侧 `playUi(const std::string&, float, float)` 形参顺序一致。
+  参数布局：`this=RCX`、`const std::string& soundName=RDX`、`float volume=XMM0`（第 1 个浮点参数）、`float pitch=XMM1`（第 2 个浮点参数），返回 `void`。
+  与游戏侧 `playUi(const std::string&, float, float)` 形参顺序一致。详见 `../batch3_6_2_e/playui-callsite-and-abi.md` §4 三层交叉核验（E.1.1 已订正：原 D 文档误写 `volume=R8/pitch=R9`，浮点不进整数寄存器）。
 
 ## 6. 小结
 

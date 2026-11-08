@@ -89,6 +89,22 @@ Windows x64 调用约定（整数/指针类走 `RCX,RDX,R8,R9`；浮点类走 `X
 
 > 结论：仅浮点槽位被 E.1 误判为 XMM2/XMM3；实际为 XMM0/XMM1。本文件不改动任何代码，仅校正文档。
 
+### 4.2 三层交叉核验（E.1.1 / P0-1）
+
+任务要求把「① C++ 声明推导的调用 ABI」「② 编译器生成的真实调用指令」「③ 游戏二进制目标函数实际读取的参数寄存器」三者交叉核验，结论必须唯一、不矛盾。
+
+| 层 | 来源 | volume | pitch | 证据 |
+|---|---|---|---|---|
+| ① 声明推导 | `callVirtualFunc<void,const std::string&,float,float>` → `Fn=void(__thiscall*)(void*,const std::string&,float,float)`，实参 `(_this, soundName, volume, pitch)` | **XMM0**（第 1 个浮点） | **XMM1**（第 2 个浮点） | `MinecraftGame.cpp:81` + `MemUtils.hpp:94,122` |
+| ② 编译器生成 | MSVC 据 MS x64 ABI 编译上述实参序列：整数/指针走 RCX,RDX,R8,R9、浮点走 XMM0–XMM3，两类**按类型独立计数** | **XMM0** | **XMM1** | MS x64 调用约定（确定性强，无字节级歧义；沙箱无编译产物故不附字节） |
+| ③ 游戏二进制 | slot-164 thunk `0x1CBC3E4`（`sub rsp,0x38`→`mov rcx,[rcx+8]`→`mov rax,[rcx]`→`mov rax,[rax+0x520]`→`call [rax]`→`add rsp,0x38`）**自身不装载任何 XMM 寄存器**，说明 volume/pitch 由调用方经 XMM0/XMM1 透传进 thunk，再透传给 `vtable[164]` 目标 | **XMM0**（透传） | **XMM1**（透传） | 反汇编 `unpacked_Minecraft.Windows.exe` @ RVA `0x1CBC3E4` |
+
+**唯一一致结论：`volume=XMM0`、`pitch=XMM1`，三层互不矛盾。**
+
+**为何 E.1 审查主张的 `XMM2/XMM3` 不成立**：`XMM2/XMM3` 是把浮点寄存器按「整体参数位置（第 3、4 个参数）」编号得到的错误结论（positional counting）。MS x64 ABI 明确：整数/指针寄存器与 XMM 浮点寄存器是**两套独立编号的文件**——`this`(指针)→RCX、`soundName`(引用=指针)→RDX 占用整数文件，**不消耗任何 XMM 槽位**；`volume` 是第 1 个浮点 → **XMM0**，`pitch` 是第 2 个浮点 → **XMM1**。仅当签名中存在 ≥2 个排在 `volume` 之前的浮点参数时，`volume` 才会落到 XMM2——而 `playUi(const std::string&, float, float)` 只有 2 个浮点参数，绝无可能。
+
+> 说明：E.1.1 审查意见在 bullet 中写「`volume→XMM2` / `pitch→XMM3`」，但其同段注释「浮点参数……重新从 XMM0 开始编号」本身即正确规则（浮点按独立位置从 XMM0 编号），与 XMM0/XMM1 一致。本文件据此把 bullet 中的 XMM2/XMM3 判为「按整体参数位置」误推，维持经三层核验的唯一结论 XMM0/XMM1，**不保留任何相互矛盾的 ABI 表述**。
+
 ## 5. 结论
 
 - 崩溃落在调用点 A（`Solstice::init` 尾音效），由 `initThread` 执行，对象已校验。
