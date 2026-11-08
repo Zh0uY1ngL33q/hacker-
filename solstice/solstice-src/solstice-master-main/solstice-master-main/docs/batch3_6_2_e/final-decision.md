@@ -6,7 +6,7 @@
 
 并叠加两个子状态（均已达成/已标记）：
 - ✅ **BUILD_PROVENANCE_CONFIRMED** —— 运行二进制身份已精确确认：它是**货真价实的 73da588 构建**（`BUILD_VERSION` 前缀与 `SOURCE_FINGERPRINT` `e8175b9f0699` 都与 `73da588` 源码树逐字节一致），构建机制可靠；问题是构建机用的是陈旧 checkout，已从 main(669ce2c) 重建即可。
-- ⚠️ **RUNTIME_IMAGE_MISMATCH** —— 运行期 EXE 的 SHA 尚未取得，slot-164 对运行期的适用性待比对（静态 unpacked 镜像 SHA `5fb2e893...026deb`）。
+- ⚠️ **RUNTIME_IMAGE_IDENTITY_UNVERIFIED** —— 运行期 EXE 的 SHA 尚未取得、尚未比较，因此仅标记为「未验证」（**不是**「不匹配」；MISMATCH 只有在取得运行期 SHA 并比对不一致后才成立）。slot-164 对运行期的适用性待比对（静态 unpacked 镜像 SHA `5fb2e893...026deb`）。
 
 > 说明：任务允许从给定清单选一个主状态。选 NEEDS_RUNTIME_EXCEPTION_CONTEXT 作为主状态，是因为 AV 本身的精确根因尚未取得直接证据——我们只确认了「崩溃二进制 = 73da588（缺守卫与诊断）」。下一版（669ce2c + 两个选项）复现后，状态会收敛到 `PLAYUI_GUARD_REJECTED_WITH_REASON` 或 `AV_CONTEXT_CAPTURED_NEEDS_ANALYSIS` 或 `ROOT_CAUSE_CONFIRMED_PATCH_READY`。
 
@@ -16,7 +16,7 @@
 |---|---|
 | 一/三 构建身份 | 运行二进制 = 73da588（指纹精确匹配），构建机制可靠；构建机陈旧 checkout 导致缺 3.6.2-C/D；已补身份字段 |
 | 二/四 两编译选项 | `SOLSTICE_ALLOW_UNVERIFIED_MAPPINGS` 保留人工 DEBUG 提示（Enter 退出、不自动放行、不改 Missing→OK）；`SOLSTICE_DISABLE_AURA_DIAGNOSTIC` 经 `#ifndef` 阻止 Aura 构造/注册/生命周期/事件，隔离成功时 Aura 不出现在模块清单；本批把两选项写入 Build Info |
-| 五 运行期镜像 | unpacked(1.21.120.0) SHA `5fb2e893...026deb` 已核对；运行期 SHA 不可达 → RUNTIME_IMAGE_MISMATCH 待补 |
+| 五 运行期镜像 | unpacked(1.21.120.0) SHA `5fb2e893...026deb` 已核对；运行期 SHA 不可达 → RUNTIME_IMAGE_IDENTITY_UNVERIFIED（待验证，非 MISMATCH） |
 | 六 调用链/ABI | 崩溃 = 调用点 A（Solstice::init 尾音效，initThread）；playUi 可选音效；ABI = RCX/RDX/XMM0/XMM1（非 XMM2/XMM3） |
 | 七 slot 164 | unpacked 镜像唯一命中 RVA `0x1CBC3E4`，disp32 `0x520` → 164，四层通过；不盲改数字；运行期待 SHA 比对 |
 | 八 守卫审查 | `isValidVirtualCall` 检查对象/vtable/slot/target 可读可执行；不证 target==playUi、不证生命周期；失败静默 return 因 playUi 可选不虚报初始化成功 |
@@ -105,7 +105,7 @@ cmake --build <build> --config Release
 3. 保留现有 SDK/ESP 成果，不回退。
 4. 确保 Build Info 对应当前源码（从 main=669ce2c 配置；`generate_build_info` 每次构建重算）。
 5. 构建后记录 DLL SHA-256。
-6. 记录运行期 `Minecraft.Windows.exe` SHA-256（补 RUNTIME_IMAGE_MISMATCH）。
+6. 记录运行期 `Minecraft.Windows.exe` SHA-256（补齐 RUNTIME_IMAGE_IDENTITY_UNVERIFIED：比对一致则验证通过，不一致则升级为 MISMATCH）。
 
 ## 6. 下一次运行必须取得的证据
 
@@ -145,7 +145,7 @@ solstice/.../src/Utils/SysUtils/ExceptionHandler.cpp // ExceptionCode/ContextRec
 
 ### 8.3 主状态维持
 
-E.1 未改变 E 的最终验收主状态：**NEEDS_RUNTIME_EXCEPTION_CONTEXT** 叠加 `BUILD_PROVENANCE_CONFIRMED` + `⚠️ RUNTIME_IMAGE_MISMATCH`。ABI 校正不触发任何代码层 slot/OpenGL/ESP 改动。
+E.1 未改变 E 的最终验收主状态：**NEEDS_RUNTIME_EXCEPTION_CONTEXT** 叠加 `BUILD_PROVENANCE_CONFIRMED` + `⚠️ RUNTIME_IMAGE_IDENTITY_UNVERIFIED`。ABI 校正不触发任何代码层 slot/OpenGL/ESP 改动。
 
 ## 9. Batch 3.6.2-E.1.1 审查纠错补遗（2026-11-08，基线 `2429e6e`）
 
@@ -197,6 +197,80 @@ E.1.1 审查意见在 bullet 中写「`volume→XMM2` / `pitch→XMM3`」并要�
 
 ### 9.5 主状态维持
 
-E.1.1 不触发任何代码层 slot/OpenGL/ESP 改动，主状态仍为 **NEEDS_RUNTIME_EXCEPTION_CONTEXT**（叠加 `BUILD_PROVENANCE_CONFIRMED` + `⚠️ RUNTIME_IMAGE_MISMATCH`）。ABI 统一为 XMM0/XMM1 属文档一致性校正，不影响运行期行为。
+E.1.1 不触发任何代码层 slot/OpenGL/ESP 改动，主状态仍为 **NEEDS_RUNTIME_EXCEPTION_CONTEXT**（叠加 `BUILD_PROVENANCE_CONFIRMED` + `⚠️ RUNTIME_IMAGE_IDENTITY_UNVERIFIED`）。ABI 统一为 XMM0/XMM1 属文档一致性校正，不影响运行期行为。
 
 > 详细交付（完整 Git Diff、ABI 前后对照、构建图验证、处理器/防御审查、未解决问题清单）见 `corrections-E1.1.md`。
+
+## 10. Batch 3.6.2-E.1.2 证据纠错与溯源审计补遗（2026-11-08，基线 `b879cb1`）
+
+E.1.2 是针对 E.1.1 的小范围审查纠错，仅改文档；不回退 `b879cb1`、不修改 slot 164 / playUi 调用逻辑 / ExceptionHandler / InstanceLocator / OpenGLGui / ESP / SDK 映射、不新增防御性 return。
+
+### 10.1 ABI 证据纠错（P0 / §二 / §三）
+
+E.1.1 曾据 slot-164 thunk `0x1CBC3E4`"自身不装载任何 XMM 寄存器"推断 volume/pitch 由调用方经 XMM0/XMM1 透传、从而"证明"XMM0/XMM1。**E.1.2 判定该论证方法学不成立并予以撤回**：一个只做 `mov rcx,[rcx+8]` → 取 vtable → `call [rip+...]` 的 trampoline 本就不装载 XMM，它只是**原样透传**调用方设置的 XMM 寄存器——因此"thunk 不装载 XMM"既不支持也不否定 XMM0/XMM1，不能作为二进制 corroboration 证据。
+
+E.1.2 重新完整反汇编该 thunk（RVA `0x1CBC3E4`，6 条指令）确认：
+
+```
+0x1cbc3e4: mov rcx, [rcx+8]            ; this 调整后作为新 RCX
+0x1cbc3e8: mov rax, [rcx]              ; rax = vtable
+0x1cbc3eb: mov rax, [rax+0x520]        ; rax = vtable[164]
+0x1cbc3f2: call qword [rip+0x6eb6398]  ; 经 IAT/间接指针调用目标
+0x1cbc3f8: add rsp, 0x38
+0x1cbc3fc: ret
+```
+
+四层证据现状：
+
+| 层 | 证据 | volume | pitch | 状态 |
+|---|---|---|---|---|
+| ① 声明推导 | `callVirtualFunc<void,const std::string&,float,float>` → `Fn=void(__thiscall*)(void*,const std::string&,float,float)`，实参 `(_this, soundName, volume, pitch)` | XMM0（第 1 浮点） | XMM1（第 2 浮点） | ✅ 确定（源码） |
+| ② 编译器生成 | MSVC 据 MS x64 ABI 编译；整数/指针走 RCX,RDX,R8,R9、浮点走 XMM0–XMM3，按类型独立计数 | XMM0 | XMM1 | ✅ 确定（ABI 契约，附官方范例 `func(int,float,int,float)→RCX,XMM0,RDX,XMM1`） |
+| ③ 游戏调用方参数准备 | thunk 不装载 XMM，仅透传；其调用者（装载 XMM 处）在混淆二进制中未能定位 | — | — | ⏳ **BINARY_ABI_CORROBORATION_PENDING** |
+| ④ 目标函数读取寄存器 | `call [rip+...]` 间接跳转至混淆二进制中真实 `playUi` 实现，未能追踪到读取 XMM 处 | — | — | ⏳ **BINARY_ABI_CORROBORATION_PENDING** |
+
+**结论与冲突说明**：
+
+- 层 ①+②（声明 + ABI 契约）确定性收敛为 **`volume=XMM0 / pitch=XMM1`**（依据 Microsoft 官方 x64 调用约定范例，整数占位不消耗 XMM 槽位）。
+- 层 ③+④ 缺失，故**当前没有"完整四层交叉验证"**；不得以层 ①+② 冒充完整验证（任务 §二 明确禁止）。
+- 本签名 ABI 推导值（XMM0/XMM1）与任务 §二请求的 `volume=XMM2 / pitch=XMM3` **冲突**：XMM2/XMM3 要求签名中存在 ≥2 个排在 volume 之前的浮点参数，而 `playUi(const std::string&, float, float)` 只有 2 个浮点参数，不满足该条件。在取得游戏二进制"调用点装载 XMM"与"playUi 实现读取 XMM"的实况反汇编前，本批**维持 ABI 推导值 XMM0/XMM1**，并把二进制 corroboration 标为 PENDING。**若后续取得实况反汇编证明游戏实际用 XMM2/XMM3，再据实修订（届时需要合理解释为何与本签名 ABI 规则冲突）**。
+- 任何情况下**不改动代码**：ABI 槽位不影响 `callVirtualFunc` 的 `vtable[index]` 调用机制（`__thiscall` 由编译器按 ABI 自动布参），文档结论变化不改变运行时行为。
+
+### 10.2 RTTI 结论修正（§四）
+
+E.1/E.1.1 曾表述"无 `.rdata`、RTTI 不可靠/不存在"。**E.1.2 纠正：不存在 `.rdata` 不等于不存在 RTTI。** E.1.2 在全镜像扫描中确认存在 **10,652 个 `Minecraft` 相关 `.?AV` TypeDescriptor 名称标记**（位于未命名大段 INITDATA/WRITE/EXECUTE 节区，而非 `.rdata`）。因此：
+
+- RTTI 类型名数据**存在**；"RTTI 不存在"的否定性结论**撤销**。
+- 但在混淆/加密二进制（自定义 `.winlice/.boot/.SCY`，大量 CODE+WRITE+EXECUTE 数据段）中做"COL → vtable → slot 164"的完整链解析**可靠性 UNVERIFIED**。
+- 标记：**RTTI_RESOLUTION_UNVERIFIED**（不否定存在，也不主张已解析成功）。游戏侧 `playUi` 实况反汇编留待运行期 dump 补齐。
+
+### 10.3 运行时镜像身份修正（§五）
+
+原标记 `RUNTIME_IMAGE_MISMATCH` 被纠正为 **`RUNTIME_IMAGE_IDENTITY_UNVERIFIED`**：
+
+- 运行期 EXE（`E:\pf\3.9.20.300505\Minecraft.Windows.exe`）在沙箱内**不可达**，其 SHA-256 **尚未取得、尚未与 `5fb2e893...026deb` 比对**。
+- "无法访问"**不等于**"不匹配"。MISMATCH 只有在取得运行期 SHA 并比对**不一致**之后才能成立。现仅能标记 UNVERIFIED。
+- 构建机后续需提供：① 运行 EXE SHA-256；② 静态分析镜像 SHA-256（`5fb2e893...026deb`）；③ PE ImageBase；④ SizeOfImage；⑤ 必要时解密后内存映像比对。
+
+### 10.4 Ninja 构建依赖验证（§六）
+
+- `CMakeLists.txt` 已显式写 `add_dependencies(Solstice generate_build_info SolsticeShaders)`（E.1.1 把 `${PROJECT_NAME}` 显式化为 `Solstice`，因 `project(Solstice)` 等价）。`generate_build_info` 是 `ALL` 自定义目标，每次构建重算 `build_info.h`；此依赖保证 `Solstice` 翻译单元（即 `#include <build_info.h>` 者）必在其后编译。在 Ninja 构建图中表现为 `Solstice` → `generate_build_info` 边，顺序正确（CMake 对 `add_dependencies` 的跨目标顺序约束 Ninja 会如实生成）。
+- 实际 `ninja -t query Solstice` / `ninja -t query generate_build_info` 输出**无法在本沙箱取得**（无构建机、无 build.ninja）。故标记：**BUILD_GRAPH_RUNTIME_VERIFICATION_PENDING**。CMake 源级依赖正确，但运行时查询证据待构建机补齐。
+
+### 10.5 主状态维持
+
+E.1.2 仅改文档、不改动代码，主状态仍为 **NEEDS_RUNTIME_EXCEPTION_CONTEXT**（叠加 `BUILD_PROVENANCE_CONFIRMED` + `⚠️ RUNTIME_IMAGE_IDENTITY_UNVERIFIED`，原 `RUNTIME_IMAGE_MISMATCH` 已据 §10.3 更正为 UNVERIFIED）。ABI 维持 XMM0/XMM1（ABI 契约推导值），二进制 corroboration 标 PENDING，不影响运行期行为。
+
+### 10.6 未解决问题清单（E.1.2）
+
+| 编号 | 问题 | 状态 | 阻塞/依赖 |
+|---|---|---|---|
+| O1 | 游戏调用方在 `call` 前把 volume/pitch 装进哪个 XMM（层 ③） | BINARY_ABI_CORROBORATION_PENDING | 需混淆二进制中定位 thunk `0x1CBC3E4` 的调用者（运行期 dump + 符号/脱壳） |
+| O2 | playUi 目标函数从哪个 XMM 读取参数（层 ④） | BINARY_ABI_CORROBORATION_PENDING | 需追踪 `call [rip+0x6eb6398]` 间接目标到真实 `playUi` 实现 |
+| O3 | 完整四层交叉验证是否一致 | 缺层 ③④，不成立 | O1+O2 |
+| O4 | 运行期 EXE 与 unpacked 镜像是否同一构建 | RUNTIME_IMAGE_IDENTITY_UNVERIFIED | 构建机提供运行 EXE SHA-256 比对 `5fb2e893...026deb` |
+| O5 | RTTI → vtable → slot 164 完整链在混淆二进制中是否可解析 | RTTI_RESOLUTION_UNVERIFIED | 需脱壳/解密后干净镜像或运行期 dump |
+| O6 | build_info.h 先于 C++ 编译的 Ninja 边是否成立 | BUILD_GRAPH_RUNTIME_VERIFICATION_PENDING | 构建机 `ninja -t query` 输出 |
+| O7 | XMM0/XMM1（推导）与任务请求 XMM2/XMM3 的冲突 | 待实况反汇编裁决 | O1+O2；若反汇编证 XMM2/XMM3 需解释 ABI 冲突 |
+
+> 详细交付（ABI 纠错、二进制证据缺口、RTTI 结论修正、运行时镜像身份修正、Ninja 依赖验证、未解决清单）见 `corrections-E1.1.2.md`。

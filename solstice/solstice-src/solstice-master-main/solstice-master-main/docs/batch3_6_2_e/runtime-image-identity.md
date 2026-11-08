@@ -9,7 +9,7 @@ Minecraft version: 1.21.120.0
 
 该路径**在本沙箱内不可达**（沙箱只有 `G:/hacker`），因此无法在此计算其 SHA-256 / 大小 / PE ImageBase / SizeOfImage。
 
-> 标记为 **RUNTIME_IMAGE_MISMATCH / NEEDS_RUNTIME**：运行期 EXE 的身份必须由构建机补齐，不得用「版本号都是 1.21.120.0」就假定与静态镜像同一构建（任务明确警告过）。
+> 标记为 **RUNTIME_IMAGE_IDENTITY_UNVERIFIED / NEEDS_RUNTIME**：运行期 EXE 的身份**尚未取得、尚未比较**，因此只能标记为「未验证」，而**不能**把「沙箱无法访问」误报为「不匹配」。真正的 MISMATCH 只有在取得运行期 SHA 并与 `5fb2e893…026deb` 比对**不一致**之后才能成立。运行期 EXE 的身份必须由构建机补齐，不得用「版本号都是 1.21.120.0」就假定与静态镜像同一构建（任务明确警告过）。
 
 ## 2. 本沙箱内可用的静态镜像
 
@@ -27,7 +27,7 @@ Minecraft version: 1.21.120.0
 - 对 `unpacked`（1.21.120.0）镜像：slot 164 已在本批 `slot164-validation.md` 中**重新验证为唯一命中**（RVA `0x1CBC3E4`，disp32 `0x520`，`/8=164`，8 字节对齐）。
 - 但这是**静态分析镜像**，不是运行期 EXE。运行期 `1.21.120.0` 与 `unpacked` 1.21.120.0 是否字节一致，**必须等运行期 SHA 比对**才能确认。
 - 若运行期 SHA == `5fb2e893...026deb`：slot 164 对运行期同样成立。
-- 若不同（RUNTIME_IMAGE_MISMATCH）：**必须在实际目标镜像上重新验证 slot 164**，不得沿用不匹配镜像的静态结论。
+- 若不同（身份不符 / MISMATCH）：**必须在实际目标镜像上重新验证 slot 164**，不得沿用不匹配镜像的静态结论。
 
 ## 4. 构建机下一步（补齐 RUNTIME_IMAGE_MISMATCH）
 
@@ -48,4 +48,4 @@ certutil -hashfile "E:\pf\3.9.20.300505\Minecraft.Windows.exe" SHA256
 
 - **严禁仅凭版本号 `1.21.120.0` 复用 slot 164**：版本号相同只说明游戏大版本一致，不代表该具体构建的 vtable 布局/代码偏移一致。slot 164 的 RVA `0x1CBC3E4`/disp32 `0x520` 是**针对 `unpacked` 这个具体镜像**推导的；只有在运行期镜像（磁盘 SHA 或解密后内存 SHA）被证明与之一致时，才能直接套用。否则**必须在目标镜像上重新扫描验证**，不得沿用。
 
-- E.1 另确认：本次为在 `unpacked` 镜像上用 RTTI → vtable → slot 164 反汇编游戏 `playUi` 实况失败（无 `.rdata`、RTTI 不可靠），因此 P0-3 的"真实调用点反汇编"改以**本仓库 `callVirtualFunc` 源码**作为真实调用点证据（见 `playui-callsite-and-abi.md` §4），游戏侧 `playUi` 的实况反汇编留待运行期 dump 补齐。
+- E.1/E.1.1 曾表述"无 `.rdata`、RTTI 不可靠" —— **该否定性结论已被 E.1.2 纠正**：不存在 `.rdata` **不等于**不存在 RTTI。E.1.2 在全镜像扫描中确认存在 **10,652 个 `Minecraft` 相关 `.?AV` TypeDescriptor 名称标记**（位于未命名的大段 INITDATA/WRITE/EXECUTE 节区，而非 `.rdata`）。因此：RTTI 类型名数据是**存在**的；但本二进制的节区被改写（自定义 `.winlice`/`.boot`/`.SCY`，大量 CODE+WRITE+EXECUTE 数据段），在混淆/加密二进制中做"COL → vtable → slot 164"的完整链解析**可靠性 UNVERIFIED**，不得据此做否定性断言"RTTI 不存在"。游戏侧 `playUi` 的实况反汇编留待运行期 dump 补齐。

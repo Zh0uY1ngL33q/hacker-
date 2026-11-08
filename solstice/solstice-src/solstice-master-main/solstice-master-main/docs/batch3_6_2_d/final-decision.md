@@ -62,4 +62,4 @@ ROOT_CAUSE_CONFIRMED_NEEDS_BUILD
 - `playui-callchain.md` 原写 `float volume=R8 / pitch=R9` —— **错误**：浮点参数不进整数寄存器 `R8/R9`。
 - `slot164-runtime-analysis.md` 同错。
 - 正确 ABI（MS x64）：`this=RCX`、`soundName=RDX`（引用=指针）、`volume=XMM0`（第 1 个浮点）、`pitch=XMM1`（第 2 个浮点）。
-- 三层交叉核验（声明推导 / 编译器生成 / 游戏二进制 thunk）均收敛到 XMM0/XMM1，详见 `../batch3_6_2_e/playui-callsite-and-abi.md` §4.2。
+- ABI 推导值（MS x64，声明推导 + 编译器生成两层确定性）：`this=RCX`、`soundName=RDX`、`volume=XMM0`（第 1 浮点）、`pitch=XMM1`（第 2 浮点）。游戏二进制层（调用方装载 XMM / 目标函数读取 XMM）在混淆二进制中未能定位，标 **BINARY_ABI_CORROBORATION_PENDING**；完整四层交叉验证不成立，不得以两层冒充。详见 `../batch3_6_2_e/playui-callsite-and-abi.md` §4.2 与 `corrections-E1.1.2.md`。
