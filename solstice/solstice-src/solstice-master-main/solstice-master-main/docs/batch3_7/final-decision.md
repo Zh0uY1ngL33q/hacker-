@@ -167,8 +167,19 @@ git log --oneline b32d185..HEAD
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release
 ```
-先以 S0（撤销 S2 或 `git checkout b32d185^` 之外的方式：临时以 `b32d185` 树构建）
-确认稳定，再以当前 HEAD（含 S2）构建并对照。
+分两次构建，使用**同一** CMake 配置与 `staged-validation-matrix.md` §1 的测试条件：
+
+```bat
+rem S0：纯 b32d185 树（不含任何 3.7 提交）
+git worktree add ..\s0-baseline b32d185
+cd ..\s0-baseline && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release
+
+rem S2：当前 HEAD（含 5f7909b）
+git switch recovery/b32d185-sdk-integration
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release
+```
+
+先用 S0 确认稳定状态可复现，再用 S2 构建对照；两次结果不得在测试条件不同的情况下比较。
 
 **回传什么**：每阶段的构建日志、DLL SHA-256、游戏 EXE SHA-256、
 `CMakeCache.txt` 的 `SOLSTICE_*`、`solstice.log` / `crash.log` / `sigreport.json` /
