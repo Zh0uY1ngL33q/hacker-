@@ -14,35 +14,98 @@
 #define SOLSTICE_BUILD_TIMESTAMP "unknown"
 #endif
 #include <Windows.h>
+#include <cstdint>
 #include <string>
+#include <vector>
 #include <spdlog/spdlog.h>
 
 #include "StackWalker.hpp"
 
 LONG WINAPI TopLevelExceptionHandler(const PEXCEPTION_POINTERS pExceptionInfo)
 {
-    // Get the exception code
-    auto exceptionCode = pExceptionInfo->ExceptionRecord->ExceptionCode;
+    // Full Integration / Safe SDK Compatibility (from 3.6.2-D + 3.6.2-E.1 P1-2):
+    // this is a top-level filter. Windows normally hands us a fully populated
+    // PEXCEPTION_POINTERS, but a null or partially populated one must not turn
+    // the crash reporter into a second crash. Guard every dereference below.
+    // On the normal path behaviour is unchanged apart from the added fault
+    // context block, which only enriches crash.log / spdlog output.
+    DWORD exceptionCode = 0;
+    const EXCEPTION_RECORD* rec = (pExceptionInfo && pExceptionInfo->ExceptionRecord)
+        ? pExceptionInfo->ExceptionRecord : nullptr;
+    if (rec)
+        exceptionCode = rec->ExceptionCode;
 
-    std::string text = "An unhandled exception occurred. (0x" + fmt::format("{:X}", exceptionCode) + ")\nStack Trace:\n";
-
-    // Get the stack trace using stackwalker
-    StackWalker sw;
-    std::vector<std::string> stackTrace = sw.ShowCallstack(GetCurrentThread(), pExceptionInfo->ContextRecord);
-    for (const auto& line : stackTrace)
+    // 3.6.2-D: capture the RAW fault context. A bare 0xC0000005 says nothing
+    // about whether the fault was a read, a write or an execute, nor which
+    // address/register set was involved. The handler's own frames (StackWalker,
+    // spdlog) are NOT the fault site and must not be mistaken for it, so this
+    // is read straight from ExceptionRecord / ContextRecord.
+    std::string faultContext;
+    if (rec)
     {
-        text += line + "\n";
+        const char* accessType = "unknown";
+        if (rec->NumberParameters >= 1)
+        {
+            switch (rec->ExceptionInformation[0])
+            {
+            case 0: accessType = "read"; break;
+            case 1: accessType = "write"; break;
+            case 8: accessType = "execute"; break;
+            default: accessType = "unknown"; break;
+            }
+        }
+        const uintptr_t faultAddress = (rec->NumberParameters >= 2)
+            ? static_cast<uintptr_t>(rec->ExceptionInformation[1]) : 0;
+        faultContext = fmt::format(
+            "ExceptionAddress: 0x{:X}\n"
+            "AccessType: {}\n"
+            "FaultAddress: 0x{:X}\n"
+            "NumberParameters: {}\n",
+            reinterpret_cast<uintptr_t>(rec->ExceptionAddress),
+            accessType, faultAddress, rec->NumberParameters);
+        if (const auto* ctx = pExceptionInfo->ContextRecord)
+        {
+            faultContext += fmt::format(
+                "RIP=0x{:X} RSP=0x{:X} RBP=0x{:X}\n"
+                "RCX=0x{:X} RDX=0x{:X} R8=0x{:X} R9=0x{:X} RAX=0x{:X}\n",
+                ctx->Rip, ctx->Rsp, ctx->Rbp,
+                ctx->Rcx, ctx->Rdx, ctx->R8, ctx->R9, ctx->Rax);
+        }
+    }
+
+    std::string text = "An unhandled exception occurred. (0x" + fmt::format("{:X}", exceptionCode) + ")\n"
+        + faultContext + "Stack Trace:\n";
+
+    // StackWalker::ShowCallstack() dereferences pContext->Rip / Rbp / Rsp
+    // unconditionally (StackWalker.cpp:77-82). The upstream 3.6.2-E.1 guard
+    // passed nullptr here and claimed StackWalker would walk the current
+    // thread instead -- it would in fact fault AGAIN inside the crash reporter.
+    // Reviewed fix: skip the walk when there is no ContextRecord and say so,
+    // keeping the raw fault context above as the diagnostic record.
+    const PCONTEXT faultCtx = (pExceptionInfo && pExceptionInfo->ContextRecord)
+        ? pExceptionInfo->ContextRecord : nullptr;
+    if (faultCtx)
+    {
+        // Scoped on purpose: b32d185 called sw.~StackWalker() explicitly and
+        // then let the automatic destructor run a second time. That destructor
+        // calls UnloadModuleSymbols(), so the double destruction is removed
+        // here without changing normal-path output.
+        StackWalker sw;
+        const std::vector<std::string> stackTrace = sw.ShowCallstack(GetCurrentThread(), faultCtx);
+        for (const auto& line : stackTrace)
+        {
+            text += line + "\n";
+        }
+    }
+    else
+    {
+        text += "(unavailable: no ContextRecord in exception pointers)\n";
     }
     spdlog::error(text);
 
     ExceptionHandler::makeCrashLog(text, exceptionCode);
 
-    auto result = MessageBoxA(nullptr, LPCSTR(text.c_str()), "Unhandled Exception", MB_ABORTRETRYIGNORE | MB_ICONERROR);
-
-    // deconstruct stack trace
-    stackTrace.clear();
-    sw.~StackWalker();
-
+    const auto result = MessageBoxA(nullptr, LPCSTR(text.c_str()), "Unhandled Exception", MB_ABORTRETRYIGNORE | MB_ICONERROR);
 
     switch (result)
     {
