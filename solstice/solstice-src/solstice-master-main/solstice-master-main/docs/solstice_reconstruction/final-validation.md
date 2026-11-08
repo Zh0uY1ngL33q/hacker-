@@ -10,6 +10,8 @@ cmake -P solstice/solstice-src/solstice-master-main/solstice-master-main/tools/v
 
 脚本只读，不编译 DLL、不启动游戏、不伪造运行期证据。30 项检查结果如下（推送前复跑应与本表一致）。[STATICALLY_CONFIRMED]
 
+> 版本说明：六个功能组提交之后追加了一个**纯文档勘误提交**，只修正本组文档里的统计数字（代码 diff 行数、运行时文件枚举数）并把 GIT-04 改为「六个功能组齐全」的语义化断言；不含任何 `src/` / `cmake/` 代码改动。[STATICALLY_CONFIRMED]
+
 ## 2. 30 项检查
 
 | ID | 检查项 | 结果 | 等级 |
@@ -17,10 +19,10 @@ cmake -P solstice/solstice-src/solstice-master-main/solstice-master-main/tools/v
 | GIT-01 | HEAD 由 `b32d185` 派生 | PASS | `STATICALLY_CONFIRMED` |
 | GIT-02 | 未合入 `origin/main` | PASS | `STATICALLY_CONFIRMED` |
 | GIT-03 | `main` / `origin/main` 保持 `e875543` | PASS | `STATICALLY_CONFIRMED` |
-| GIT-04 | 恰好 6 个功能组提交 | PASS | `STATICALLY_CONFIRMED` |
+| GIT-04 | 六个功能组提交全部存在（另有 1 个纯文档勘误提交） | PASS | `STATICALLY_CONFIRMED` |
 | GIT-05 | 全部改动落在 SDK/build/tools/docs 允许集 | PASS | `STATICALLY_CONFIRMED` |
 | RT-01 | 非 SDK 运行时目录零差异 | PASS | `STATICALLY_CONFIRMED` |
-| RT-02 | 25 类命名运行时模块均为 b32d185 blob | PASS | `STATICALLY_CONFIRMED` |
+| RT-02 | 26 类名称模式枚举出的 85 个运行时文件均为 b32d185 blob | PASS | `STATICALLY_CONFIRMED` |
 | RT-03 | `MH_EnableHook(MH_ALL_HOOKS)` 统一启用保留 | PASS | `STATICALLY_CONFIRMED` |
 | RT-04 | 提前 `mDetour->enable()` 为继承而非新增 | PASS | `STATICALLY_CONFIRMED` |
 | SDK-01 | `ResolveStatus` 六状态齐全 | PASS | `STATICALLY_CONFIRMED` |
@@ -68,7 +70,7 @@ cmake version 4.4.4
 $ cl / ld / ninja / g++   ->  全部 MISSING
 ```
 
-`git diff --numstat b32d185..HEAD`（代码/工具，18 文件）：+2228 / −285（含 vendored CPM 1161 行）；其中 `docs/solstice_reconstruction/` 9 份文档与 `tools/verify_full_integration.py` 由 Commit 6 追加。[STATICALLY_CONFIRMED]
+`git diff --numstat b32d185..HEAD`（仅 `src/` + `cmake/` + `tools/verify_cpm_bootstrap.cmake`，18 文件）：**+2306 / −300**（含 vendored CPM 1161 行）；全量 `git diff --shortstat b32d185..HEAD` = 28 文件 / +3459 / −300，其中 `docs/solstice_reconstruction/` 9 份文档与 `tools/verify_full_integration.py` 由 Commit 6 追加。[STATICALLY_CONFIRMED]
 
 ## 4. 综合判定
 

@@ -10,7 +10,7 @@ git diff --name-only b32d185..HEAD -- \
 # -> 空输出
 ```
 
-补充核查：按名称枚举 `OpenGLGui` / `D3DHook` / `SwapBuffers` / `ImGui` / `ClickGui` / `event_dispatcher` / `ModuleManager` / `FeatureManager` / `ModuleBase` / `ESP` / `Tracers` / `Nametags` / `Watermark` / `Arraylist` / `Notifications` / `Interface` / `Keystrokes` / `ChinaHat` / `TargetHUD` / `MathUtils` / `FrameTransform` / `OWorldToScreen` / `FOV` / `HookManager` / `Detour` / `Aura` 等 25 类运行时文件，与 `b32d185..HEAD` 改动集合取交集为空。[STATICALLY_CONFIRMED]
+补充核查：用 26 类名称模式（`OpenGLGui` / `D3DHook` / `SwapBuffers` / `ImGui` / `ClickGui` / `event_dispatcher` / `ModuleManager` / `FeatureManager` / `ModuleBase` / `ESP` / `Tracers` / `Nametags` / `Watermark` / `Arraylist` / `Notifications` / `Interface` / `Keystrokes` / `ChinaHat` / `TargetHUD` / `MathUtils` / `FrameTransform` / `OWorldToScreen` / `FOV` / `HookManager` / `Detour` / `Aura`）枚举出 85 个运行时文件，与 `b32d185..HEAD` 改动集合取交集为空。[STATICALLY_CONFIRMED]
 
 `git diff --name-only b32d185..HEAD` 的全部 18 个代码/工具文件均落在 `cmake/`、`src/SDK/`、`src/Solstice.cpp`、`src/Utils/MemUtils.*`、`src/Utils/SysUtils/ExceptionHandler.*`、`tools/` 允许集内；加入本组交付文档后新增路径全部在 `docs/solstice_reconstruction/` 与 `tools/`。[STATICALLY_CONFIRMED]
 

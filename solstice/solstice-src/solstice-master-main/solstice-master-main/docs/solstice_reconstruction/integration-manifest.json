@@ -19,6 +19,8 @@
     "main_ref": "e8755437d5adf91e7ba952791d39d72d87741348",
     "recovery_sdk_branch_untouched": true,
     "force_push_used": false,
+    "functional_group_commits": 6,
+    "documentation_correction_commits": 1,
     "grade": "STATICALLY_CONFIRMED"
   },
   "baseline_decision": {
@@ -88,7 +90,7 @@
     {
       "index": 6,
       "name": "Stable Runtime Integration",
-      "hash": "HEAD_AT_PUSH",
+      "hash": "e57b96c1701083dfe4dc5052f836918b4224bf72",
       "subject": "Zero-diff runtime verification, 9 deliverables, reproducible acceptance gate",
       "files": [
         "docs/solstice_reconstruction/reconstruction-summary.md",
@@ -128,7 +130,8 @@
   "runtime_zero_diff": {
     "command": "git diff --name-only b32d185..HEAD -- src/Hook src/Client src/Features src/Utils/Render include resources",
     "result": "empty",
-    "named_runtime_files_enumerated": 25,
+    "named_runtime_name_patterns": 26,
+    "named_runtime_files_enumerated": 85,
     "grade": "STATICALLY_CONFIRMED"
   },
   "ported": [

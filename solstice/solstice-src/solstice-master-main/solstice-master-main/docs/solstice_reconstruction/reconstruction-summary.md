@@ -10,7 +10,7 @@
 | `merge-base(HEAD, origin/main)` | `b32d185` | `STATICALLY_CONFIRMED` |
 | `origin/main` 是否被合入 | 否 | `STATICALLY_CONFIRMED` |
 | `main` / `origin/main` | 均保持 `e875543`，未改动 | `STATICALLY_CONFIRMED` |
-| 功能组提交数 | 6 | `STATICALLY_CONFIRMED` |
+| 功能组提交数 | 6（另 1 个纯文档勘误提交，无代码改动） | `STATICALLY_CONFIRMED` |
 | 改动文件数（b32d185..HEAD，代码/工具） | 18 + 9 份交付文档 + 1 份验收脚本 | `STATICALLY_CONFIRMED` |
 | 非 SDK 运行时代码 diff | 0 文件 | `STATICALLY_CONFIRMED` |
 | 完整 configure / MSVC Release x64 / DLL link | 本机不可执行 | `DEFERRED` |
