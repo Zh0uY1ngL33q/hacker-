@@ -65,10 +65,45 @@ void MinecraftGame::setMouseGrabbed(bool grabbed)
 
 void MinecraftGame::playUi(const std::string& soundName, float volume, float pitch)
 {
-    // SUSPECT in 1.21.120 (3238145): a vtable slot that far out is a jump into
-    // unmapped memory. A sound is not worth a crash.
-    int index = OffsetProvider::MinecraftGame_playUi;
+    // Solstice Full Integration -- MAPPING SEMANTICS vs CALL SAFETY.
+    //
+    // Batch-1 (517646e) proved the STATIC mapping for Minecraft 1.21.120.0:
+    //   pattern hit 0x1CBC3E4 -> disp32 0x520 -> /8 -> vtable slot 164.
+    // OffsetProvider.hpp therefore carries operand 10 and resolves to 164.
+    // That is a MAPPING fact and is preserved as an evidence-backed SDK result.
+    // It is NOT a statement that calling through slot 164 is safe.
+    //
+    // Still UNVERIFIED at runtime: the identity of the function behind slot
+    // 164, the MinecraftGame object's lifetime and starting address, the playUi
+    // thread constraint, and the running image's identity. 3.6.2-D/E observed
+    // an unreadable vtable on a *located* MinecraftGame object
+    // (this=0x13134090, vtable=0x3573F2CD48F1B9AF), so a bare virtual call
+    // here is a known access-violation site, not a hypothetical one.
+    //
+    // b32d185 kept playUi inert (operand 3 -> 3238145 -> index >= 4096 ->
+    // early return). Correcting the mapping must NOT silently turn that inert
+    // call into an activated, unverified virtual call. Keep the call REFUSED by
+    // default, matching the stable baseline's observable behaviour (playUi is
+    // an optional sound effect; nothing in startup depends on it).
+    //
+    // Enabling it requires BOTH (a) runtime semantic validation of slot 164 on
+    // the exact running image AND (b) the explicit opt-in below. Even then,
+    // isValidVirtualCall must confirm the object, vtable, slot and executable
+    // target are readable. No build target in this integration defines the
+    // opt-in macro, so the released binary can never take the call path.
+    const int index = OffsetProvider::MinecraftGame_playUi;
     if (index < 2 || index >= 4096)
         return;
+
+#if defined(SOLSTICE_PLAYUI_SEMANTIC_VERIFIED)
+    // Opt-in ONLY after runtime semantic validation has been recorded.
+    if (!MemUtils::isValidVirtualCall(this, index))
+        return;
     MemUtils::callVirtualFunc<void, const std::string&, float, float>(index, this, soundName, volume, pitch);
+#else
+    (void)soundName;
+    (void)volume;
+    (void)pitch;
+    return; // PLAYUI_SEMANTIC_VALIDATION: UNVERIFIED UNTIL PROVEN
+#endif
 }
