@@ -193,8 +193,14 @@ find_package(OpenMP)
 # ALL: this must run on every build, not only when it is requested explicitly.
 # Without it a build directory that was configured earlier keeps the commit hash
 # from that moment, and the log then reports a version the binary is not.
+# 3.6.2-E: also forward the build configuration and the two diagnostic CMake
+# options so a crash log can show exactly how the binary was built.
 add_custom_target(generate_build_info ALL
-        COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/GenerateBuildInfo.cmake
+        COMMAND ${CMAKE_COMMAND}
+            -DSOLSTICE_CMAKE_BUILD_TYPE=$<CONFIG>
+            -DSOLSTICE_OPT_ALLOW_UNVERIFIED=${SOLSTICE_ALLOW_UNVERIFIED_MAPPINGS}
+            -DSOLSTICE_OPT_DISABLE_AURA=${SOLSTICE_DISABLE_AURA_DIAGNOSTIC}
+            -P ${CMAKE_SOURCE_DIR}/GenerateBuildInfo.cmake
         COMMENT "Generating build info [${CMAKE_BINARY_DIR}/build_info.h]"
 )
 

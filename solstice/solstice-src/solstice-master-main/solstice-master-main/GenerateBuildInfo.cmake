@@ -156,6 +156,32 @@ endif()
 
 file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_INTENDED_VERSION \"${SOLSTICE_INTENDED_VERSION}\"\n")
 
+# --- Build identity completeness (3.6.2-E) ---------------------------------
+# These fields let a crash log show exactly how the binary was built, without
+# re-deriving it from the running process. They do NOT change
+# SOLSTICE_SOURCE_FINGERPRINT (that only hashes src/*.cpp/*.hpp/*.h); they only
+# record the build's configuration. All are backward-compatible: if GenerateBuildInfo.cmake
+# is run directly (no -D forwards) the option variables are undefined and skipped.
+if (DEFINED SOLSTICE_CMAKE_BUILD_TYPE AND NOT SOLSTICE_CMAKE_BUILD_TYPE STREQUAL "")
+    file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_BUILD_CONFIG \"${SOLSTICE_CMAKE_BUILD_TYPE}\"\n")
+else()
+    file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_BUILD_CONFIG \"unknown\"\n")
+endif()
+if (SOLSTICE_OPT_ALLOW_UNVERIFIED)
+    file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_BUILD_ALLOW_UNVERIFIED_MAPPINGS 1\n")
+endif()
+if (SOLSTICE_OPT_DISABLE_AURA)
+    file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_BUILD_DISABLE_AURA_DIAGNOSTIC 1\n")
+endif()
+execute_process(COMMAND ${GIT_EXECUTABLE} status --porcelain
+        WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
+        OUTPUT_VARIABLE _solstice_git_status OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+if (NOT _solstice_git_status STREQUAL "")
+    file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_SOURCE_DIRTY 1\n")
+else()
+    file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_SOURCE_DIRTY 0\n")
+endif()
+
 execute_process(
         COMMAND ${CMAKE_COMMAND} -E compare_files "${TEMP_BUILD_INFO_PATH}" "${BUILD_INFO_PATH}"
         RESULT_VARIABLE FILES_DIFFER

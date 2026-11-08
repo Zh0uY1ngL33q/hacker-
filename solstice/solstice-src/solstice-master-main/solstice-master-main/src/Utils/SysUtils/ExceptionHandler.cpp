@@ -149,6 +149,20 @@ void ExceptionHandler::makeCrashLog(const std::string& text, DWORD exceptionCode
         excFile << xorstr_("Solstice branch: ") << SOLSTICE_BUILD_BRANCH << xorstr_("\n");
         excFile << xorstr_("Solstice commit msg: ") << SOLSTICE_BUILD_COMMIT_MESSAGE << xorstr_("\n");
         excFile << xorstr_("Minecraft version: ") << ProcUtils::getVersion() << xorstr_("\n");
+#ifndef SOLSTICE_BUILD_CONFIG
+#define SOLSTICE_BUILD_CONFIG "unknown"
+#endif
+        excFile << xorstr_("Build config: ") << SOLSTICE_BUILD_CONFIG << xorstr_("\n");
+#ifdef SOLSTICE_BUILD_ALLOW_UNVERIFIED_MAPPINGS
+        excFile << xorstr_("Build opt: ALLOW_UNVERIFIED_MAPPINGS=ON\n");
+#endif
+#ifdef SOLSTICE_BUILD_DISABLE_AURA_DIAGNOSTIC
+        excFile << xorstr_("Build opt: DISABLE_AURA_DIAGNOSTIC=ON\n");
+#endif
+#ifndef SOLSTICE_SOURCE_DIRTY
+#define SOLSTICE_SOURCE_DIRTY 0
+#endif
+        excFile << xorstr_("Source dirty: ") << (SOLSTICE_SOURCE_DIRTY ? xorstr_("yes") : xorstr_("no")) << xorstr_("\n");
         excFile << xorstr_("----------------------------------------\n");
         excFile.flush();
         excFile.close();
