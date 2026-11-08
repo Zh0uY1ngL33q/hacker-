@@ -24,7 +24,42 @@ LONG WINAPI TopLevelExceptionHandler(const PEXCEPTION_POINTERS pExceptionInfo)
     // Get the exception code
     auto exceptionCode = pExceptionInfo->ExceptionRecord->ExceptionCode;
 
-    std::string text = "An unhandled exception occurred. (0x" + fmt::format("{:X}", exceptionCode) + ")\nStack Trace:\n";
+    // Capture the raw fault context. This turns a bare "0xC0000005" into a
+    // read/write/execute classification plus the faulting address and the
+    // register set at the moment of the fault -- without a debugger. The
+    // handler's own stack frames (StackWalker, memcpy, spdlog) are NOT the
+    // fault site and must not be mistaken for it.
+    std::string faultContext;
+    if (const auto* rec = pExceptionInfo->ExceptionRecord) {
+        const char* accessType = "unknown";
+        if (rec->NumberParameters >= 1) {
+            switch (rec->ExceptionInformation[0]) {
+                case 0: accessType = "read"; break;
+                case 1: accessType = "write"; break;
+                case 8: accessType = "execute"; break;
+                default: accessType = "unknown"; break;
+            }
+        }
+        const uintptr_t faultAddress = (rec->NumberParameters >= 2)
+            ? static_cast<uintptr_t>(rec->ExceptionInformation[1]) : 0;
+        faultContext = fmt::format(
+            "ExceptionAddress: 0x{:X}\n"
+            "AccessType: {}\n"
+            "FaultAddress: 0x{:X}\n"
+            "NumberParameters: {}\n",
+            reinterpret_cast<uintptr_t>(rec->ExceptionAddress),
+            accessType, faultAddress, rec->NumberParameters);
+        if (const auto* ctx = pExceptionInfo->ContextRecord) {
+            faultContext += fmt::format(
+                "RIP=0x{:X} RSP=0x{:X} RBP=0x{:X}\n"
+                "RCX=0x{:X} RDX=0x{:X} R8=0x{:X} R9=0x{:X} RAX=0x{:X}\n",
+                ctx->Rip, ctx->Rsp, ctx->Rbp,
+                ctx->Rcx, ctx->Rdx, ctx->R8, ctx->R9, ctx->Rax);
+        }
+    }
+
+    std::string text = "An unhandled exception occurred. (0x" + fmt::format("{:X}", exceptionCode) + ")\n"
+        + faultContext + "Stack Trace:\n";
 
     // Get the stack trace using stackwalker
     StackWalker sw;

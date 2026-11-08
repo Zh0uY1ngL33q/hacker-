@@ -70,5 +70,13 @@ void MinecraftGame::playUi(const std::string& soundName, float volume, float pit
     int index = OffsetProvider::MinecraftGame_playUi;
     if (index < 2 || index >= 4096)
         return;
+    // The slot was derived from a disp32 scan and divided by 8, so it is a
+    // vtable index, not a byte offset. Before jumping through it, confirm the
+    // object, its vtable, and the slot target are all real executable code.
+    // This rejects a slot that resolved to the wrong function for the running
+    // game version, or a stale/readable-but-detached MinecraftGame, instead of
+    // taking an access violation inside callVirtualFunc.
+    if (!MemUtils::isValidVirtualCall(this, index))
+        return;
     MemUtils::callVirtualFunc<void, const std::string&, float, float>(index, this, soundName, volume, pitch);
 }
