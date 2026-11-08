@@ -9,6 +9,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include <Utils/MemUtils.hpp>
+
 namespace {
 
 constexpr uint32_t kCsExecutable = IMAGE_SCN_MEM_EXECUTE;
@@ -126,8 +128,11 @@ std::vector<std::span<std::byte>> csReadableChunks(const CodeSection::Range& r) 
         if (chunk > r.size - off) chunk = r.size - off;
         if (chunk == 0) break;
 
+        // PAGE_EXECUTE alone does not grant read access. Use the same base
+        // protection predicate as MemUtils::isReadableRange() so the runtime
+        // scan and the validation entry agree on what "readable" means.
         const bool readable =
-            mbi.State == MEM_COMMIT && !(mbi.Protect & (PAGE_GUARD | PAGE_NOACCESS));
+            mbi.State == MEM_COMMIT && MemUtils::isReadableProtect(mbi.Protect);
 
         if (readable) {
             const size_t start = static_cast<size_t>(r.rva) + off;
@@ -221,31 +226,27 @@ hat::scan_result CodeSection::find(const hat::signature_view& sig) {
 int CodeSection::countMatches(const hat::signature_view& sig, int cap) {
     if (cap <= 0) return 0;
 
-    // Counted in the primary (largest) range only. The packer stub is not game
-    // code, so a hit there does not make the signature ambiguous for our use.
-    const auto& rs = ranges();
-    if (rs.empty()) return 0;
-
+    // Exactly the same ranges, order and readable-chunk splitting as find().
+    // Counting only the largest range used to disagree with find() (which walks
+    // all of them), so the ambiguity verdict and the offline scanner were made
+    // over different byte sets -- an offline "unique" signature could be
+    // ambiguous at runtime and still be published.
     int total = 0;
-    for (const auto& chunk : csReadableChunks(rs.front())) {
-        if (total >= cap) break;
-        if (chunk.empty()) continue;
+    // libhat's 5-argument find_all_pattern() writes hat::scan_result objects,
+    // not raw pointers; a std::byte*[8] buffer collapses the overload set.
+    std::array<hat::scan_result, 8> hits{};
+    for (const auto& r : ranges()) {
+        for (const auto& chunk : csReadableChunks(r)) {
+            if (total >= cap) return total;
+            if (chunk.empty()) continue;
 
-        // libhat's 5-argument find_all_pattern() writes hat::scan_result
-        // objects, not raw pointers: its constraint is
-        // std::output_iterator<Out, result_type_for<In>>, so a std::byte*[8]
-        // buffer makes the overload set collapse and every candidate fails
-        // ("no matching overload" / "cannot convert scan_result_base<std::byte*>
-        // to std::byte*"). A scan_result buffer satisfies the concept; only the
-        // distance between the returned begin/end iterators is used anyway.
-        std::array<hat::scan_result, 8> hits{};
-        const size_t limit =
-            std::min<size_t>(static_cast<size_t>(cap - total), hits.size());
-
-        auto [inIt, outIt] = hat::find_all_pattern(chunk.begin(), chunk.end(),
-                                                   hits.begin(), hits.begin() + limit, sig);
-        (void)inIt;
-        total += static_cast<int>(std::distance(hits.begin(), outIt));
+            const size_t limit =
+                std::min<size_t>(static_cast<size_t>(cap - total), hits.size());
+            auto [inIt, outIt] = hat::find_all_pattern(chunk.begin(), chunk.end(),
+                                                       hits.begin(), hits.begin() + limit, sig);
+            (void)inIt;
+            total += static_cast<int>(std::distance(hits.begin(), outIt));
+        }
     }
     return total;
 }
@@ -422,6 +423,9 @@ int CodeSection::waitUntilDecrypted(int timeoutMs, int intervalMs) {
         waited += intervalMs;
     }
 
-    spdlog::warn("[codesection] code did not look decrypted after {}ms; continuing anyway", timeoutMs);
-    return waited;
+    // A negative return is the caller's cue to STOP before any signature scan.
+    // Continuing here produced a complete table of addresses read out of still
+    // encrypted bytes, which then looked like a legitimate set of failures.
+    spdlog::error("[codesection] code did not look decrypted after {}ms; refusing to scan", timeoutMs);
+    return -1;
 }

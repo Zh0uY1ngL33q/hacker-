@@ -85,6 +85,7 @@ public:
     static bool looksDecrypted(double* entropyOut = nullptr, double* densityOut = nullptr);
 
     /// Polls looksDecrypted() until it succeeds or `timeoutMs` elapses.
-    /// Returns the number of milliseconds waited.
+    /// Returns the milliseconds waited on success, or -1 on timeout. A negative
+    /// result means the image is not ready and NO signature scan may follow.
     static int waitUntilDecrypted(int timeoutMs = 30000, int intervalMs = 100);
 };

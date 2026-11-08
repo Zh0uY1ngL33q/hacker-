@@ -409,6 +409,45 @@ bool MemUtils::isValidPtr(uintptr_t address)
     return false;
 }
 
+bool MemUtils::isReadableProtect(DWORD protect)
+{
+    // Modifier bits (PAGE_GUARD 0x100, PAGE_NOCACHE 0x200,
+    // PAGE_WRITECOMBINE 0x400) are not part of the base protection type.
+    switch (protect & 0xFF) {
+        case PAGE_READONLY:
+        case PAGE_READWRITE:
+        case PAGE_WRITECOPY:
+        case PAGE_EXECUTE_READ:
+        case PAGE_EXECUTE_READWRITE:
+        case PAGE_EXECUTE_WRITECOPY:
+            // A guard page raises STATUS_GUARD_PAGE_VIOLATION on the first
+            // read even though its base type is readable.
+            return (protect & PAGE_GUARD) == 0;
+        default:
+            // PAGE_NOACCESS (0x01) and PAGE_EXECUTE (0x10) grant no read.
+            return false;
+    }
+}
+
+bool MemUtils::isReadableRange(uintptr_t address, size_t size)
+{
+    if (address < 0x10000 || size == 0) return false;
+
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (!VirtualQuery(reinterpret_cast<void*>(address), &mbi, sizeof(mbi))) return false;
+    if (mbi.State != MEM_COMMIT) return false;
+    // MEM_COMMIT alone is not enough: PAGE_EXECUTE grants execution only, and
+    // PAGE_NOACCESS / PAGE_GUARD pages are committed but still fault on read.
+    if (!isReadableProtect(mbi.Protect)) return false;
+
+    const uintptr_t begin = reinterpret_cast<uintptr_t>(mbi.BaseAddress);
+    if (address < begin) return false;
+    // The whole requested range has to be inside this one region; otherwise a
+    // following page with different protection would not have been checked.
+    if (address - begin + size > mbi.RegionSize) return false;
+    return true;
+}
+
 bool MemUtils::isInHostModule(uintptr_t address, size_t size)
 {
     if (address < 0x10000 || size == 0) return false;

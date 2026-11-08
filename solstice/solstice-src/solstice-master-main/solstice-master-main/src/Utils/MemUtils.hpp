@@ -99,7 +99,11 @@ public:
         // signature fails or resolves to an implausible value. Calling through
         // slot 0 would destroy the object while the caller is still using it, so
         // a rejected index has to become a no-op rather than a different crash.
-        if (_this == nullptr || index <= 0) {
+        // Zero-cost guards only. isValidVirtualCall() below is the full check,
+        // but it issues VirtualQuery calls and must not run on every per-tick
+        // virtual call. 4096 is the same ceiling plausibleOffset() applies to
+        // vtable indices, so an implausible index cannot read past the table.
+        if (_this == nullptr || index <= 0 || index >= 4096) {
             if constexpr (std::is_void_v<Ret>) {
                 return;
             } else if constexpr (std::is_reference_v<Ret>) {
@@ -116,6 +120,44 @@ public:
         }
         auto vtable = *reinterpret_cast<uintptr_t**>(_this);
         return reinterpret_cast<Fn>(vtable[index])(_this, args...);
+    }
+
+    /// Unified validation entry for the two raw-access patterns in this SDK.
+    /// Deliberately NOT wired into every existing call site: isValidPtr() issues
+    /// a VirtualQuery, and doing that on each per-tick virtual call stalls the
+    /// main thread. Use these from newly written getters and from diagnostics;
+    /// callVirtualFunc keeps its zero-cost index guard above.
+    static bool isValidVirtualCall(void* object, int index)
+    {
+        if (!object || index <= 0 || index >= 4096) return false;
+        const uintptr_t obj = reinterpret_cast<uintptr_t>(object);
+        if (!isReadableRange(obj, sizeof(uintptr_t))) return false;
+        const uintptr_t vtable = *reinterpret_cast<uintptr_t*>(object);
+        if (!isReadableRange(vtable, sizeof(uintptr_t))) return false;
+        const uintptr_t slot = vtable + static_cast<size_t>(index) * sizeof(uintptr_t);
+        if (!isReadableRange(slot, sizeof(uintptr_t))) return false;
+        const uintptr_t target = *reinterpret_cast<uintptr_t*>(slot);
+        // A vtable slot must point at executable code. isValidPtr() only asked
+        // for MEM_COMMIT, which also accepts ordinary read/write data pages and
+        // PAGE_NOACCESS / PAGE_GUARD regions.
+        return isPatchableCode(target, 1);
+    }
+
+    template <typename T>
+    static bool readMemberChecked(void* object, int offset, T& out)
+    {
+        // POLYMORPHIC objects only: the first eight bytes are the vtable
+        // pointer, so offset < 8 is never a member here. This is NOT the same
+        // predicate as OffsetProvider::plausibleOffset(), which is a static
+        // gate over all field kinds and deliberately accepts offset 0 (e.g. the
+        // first member of a non-polymorphic struct). Do not assume the two
+        // accept the same offsets. 0x8000 is the shared exclusive upper bound,
+        // so offset == 0x8000 is refused just as plausibleOffset() refuses it.
+        if (!object || offset < 8 || offset >= 0x8000) return false;
+        const uintptr_t addr = reinterpret_cast<uintptr_t>(object) + offset;
+        if (!isReadableRange(addr, sizeof(T))) return false;
+        out = *reinterpret_cast<T*>(addr);
+        return true;
     }
 
     template<typename T>
@@ -250,6 +292,19 @@ public:
     static std::vector<uintptr_t> findReferences(uintptr_t address);
     static uintptr_t getTopOfFunction(uintptr_t address);
     static bool isValidPtr(uintptr_t address);
+
+    /// True when a committed page's base protection actually grants READ.
+    /// PAGE_EXECUTE alone does not, and PAGE_GUARD / PAGE_NOACCESS fault on read.
+    /// Shared by isReadableRange() and CodeSection::csReadableChunks() so the
+    /// runtime-readable and validation-readable verdicts cannot drift apart.
+    static bool isReadableProtect(DWORD protect);
+
+    /// Committed AND readable for the whole address .. address+size range,
+    /// which must lie inside one region. isValidPtr() only checks
+    /// State == MEM_COMMIT, so it accepts PAGE_EXECUTE / PAGE_NOACCESS /
+    /// PAGE_GUARD pages that would still fault when read. Not for per-tick hot
+    /// paths - it issues a VirtualQuery.
+    static bool isReadableRange(uintptr_t address, size_t size);
 
     /// True if `address` is code inside the host module and safe to overwrite.
     ///
