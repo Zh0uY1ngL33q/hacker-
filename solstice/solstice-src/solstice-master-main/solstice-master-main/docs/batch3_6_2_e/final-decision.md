@@ -118,3 +118,33 @@ cmake --build <build> --config Release
 ## 7. 核心原则重申
 
 本轮不继续猜 slot 164、不改动 OpenGL。先让构建身份可信（已确认 73da588 + 补身份字段），再让异常上下文完整（669ce2c 已带），最后才决定修改什么。保留当前所有适配成果，不全项目回退，不以防御性 return 冒充根因修复。
+
+## 8. Batch 3.6.2-E.1 审查校正补遗（2026-11-08）
+
+E.1 是对 E 的独立审查修正，基线 `7b30dd0`，不回退、不改动 slot 164、不动 ESP/OpenGL。
+
+### 8.1 已完成修正（对照 E 的九份原文档）
+
+| 项 | E.1 要求 | 实际处理 | 状态 |
+|---|---|---|---|
+| P0-1 ABI | 改为 XMM2/XMM3 | **维持 XMM0/XMM1**：核对 `callVirtualFunc` 真实调用点源码 + MS x64 ABI，XMM2/XMM3 属 positional 误判；写成 XMM2/XMM3 反而与真实调用点不一致 | 已校正文档，见 `playui-callsite-and-abi.md` §4.1 |
+| P0-2 守卫诊断 | 拒绝时可解释、区分 4 类原因、仅拒绝时日志、记录 this/index/线程、vtable/target 仅安全读取后记录、失败后不裸解引用 | 新增 `diagnosePlayUiRejection()`（`MinecraftGame.cpp` 匿名命名空间），全 VirtualQuery 守卫，仅拒绝路径触发 | ✅ 已落地代码 |
+| P0-3 线程约束 | 查游戏内其它 playUi 调用点 / 反汇编 / 线程亲和 / 对比 b32d185；无证据标记 UNVERIFIED | 该 unpacked 镜像无 `.rdata`（自定义段 `.winlice/.boot/.SCY`），RTTI/xref 不可靠；`b32d185` 在本沙箱不可达 → **标记 UNVERIFIED**，不写"无线程限制" | ✅ 已文档标记 |
+| P1-1 构建身份 | 确认 `generate_build_info` 对 Solstice 的依赖；`SOURCE_DIRTY→WORKTREE_DIRTY`；两选项始终记录 ON/OFF；明确指纹哈希范围 | 新增 `add_dependencies(Solstice generate_build_info)`；重命名为 `SOLSTICE_WORKTREE_DIRTY`；两选项改为始终输出 0/1；补指纹哈希范围注释 | ✅ 已落地代码+注释 |
+| P1-2 处理器 | `ExceptionCode` 空指针保护；仍从故障上下文取 ExceptionAddress/AccessType/FaultAddress/寄存器 | `pExceptionInfo`/`ExceptionRecord` 双重守卫；`StackWalker` 上下文 null 安全 | ✅ 已落地代码 |
+| P1-3 运行期镜像 | 明确 `5fb2e893…` 仅为 unpacked 静态 SHA；要求运行 EXE SHA+PE 元数据+解密内存映像比对 | 已文档澄清（见 `runtime-image-identity.md`） | ✅ 已文档 |
+
+### 8.2 E.1 代码修改文件清单（相对 `7b30dd0`）
+
+```
+solstice/.../src/SDK/Minecraft/MinecraftGame.cpp   // +diagnosePlayUiRejection, 拒绝时调用
+solstice/.../CMakeLists.txt                        // +add_dependencies(Solstice generate_build_info)
+solstice/.../GenerateBuildInfo.cmake               // WORKTREE_DIRTY 重命名；两选项始终 0/1；指纹范围注释
+solstice/.../src/Utils/SysUtils/ExceptionHandler.cpp // ExceptionCode/ContextRecord null 保护；WORKTREE_DIRTY 重命名
+```
+
+### 8.3 主状态维持
+
+E.1 未改变 E 的最终验收主状态：**NEEDS_RUNTIME_EXCEPTION_CONTEXT** 叠加 `BUILD_PROVENANCE_CONFIRMED` + `⚠️ RUNTIME_IMAGE_MISMATCH`。ABI 校正不触发任何代码层 slot/OpenGL/ESP 改动。
+
+> 详细交付（完整 Git Diff、ABI 前后对照、构建依赖验证、守卫拒绝原因设计、未解决事项）见 `corrections-E1.md`。

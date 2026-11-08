@@ -68,7 +68,26 @@ Windows x64 调用约定（整数/指针类走 `RCX,RDX,R8,R9`；浮点类走 `X
 
 > 任务示例中写的「RCX / RDX / XMM2 / XMM3」**不正确**：前两个浮点参数落在 `XMM0`/`XMM1`，而非 `XMM2`/`XMM3`（后者仅当前面已有 ≥2 个浮点参数时才用到）。
 >
-> 我们的 `callVirtualFunc<void, const std::string&, float, float>` 的模板实参与该签名一致，编译器据此把 `string&` 放入 `RDX`、两个 `float` 放入 `XMM0`/`XMM1`。ABI 层与游戏自身 `playUi` 包装（`48 8B 80 [disp32] FF 15`）一致——我们的调用镜像了游戏自己的 vtable 调用方式。
+> **真实调用点反汇编核对（E.1 / P0-1 要求）**：本仓库的调用并非手写 asm，而是经 `MinecraftGame::playUi` → `MemUtils::callVirtualFunc<void, const std::string&, float, float>`（`src/SDK/Minecraft/MinecraftGame.cpp:81`）：
+> ```cpp
+> // MemUtils.hpp:94  using Fn = Ret(__thiscall*)(void*, Args...);
+> // MemUtils.hpp:122 return reinterpret_cast<Fn>(vtable[index])(_this, args...);
+> MemUtils::callVirtualFunc<void, const std::string&, float, float>(index, this, soundName, volume, pitch);
+> ```
+> 模板实参展开后，`Fn = void(__thiscall*)(void*, const std::string&, float, float)`；调用时实参顺序为 `(_this, soundName, volume, pitch)`。按 MS x64 ABI，整数/指针寄存器（RCX,RDX,R8,R9）与 XMM 浮点寄存器（XMM0–XMM3）**按参数类型独立分配**：`_this`→RCX、`soundName`(引用=指针)→RDX、`volume`(第 1 个浮点)→**XMM0**、`pitch`(第 2 个浮点)→**XMM1**。这与声明完全一致，ABI 层与游戏自身 `playUi`（`48 8B 80 [disp32] FF 15` 的 vtable 调用）一致——我们的调用镜像了游戏自己的调用方式。
+>
+> **E.1 审查校正记录**：E.1 审查意见要求把 ABI 改为 `this=RCX / soundName=RDX / volume=XMM2 / pitch=XMM3`，并禁止"浮点参数独立计数"的解释。经核对 `callVirtualFunc` 源码与 MS x64 ABI 规范，**XMM0/XMM1 才是正确值**，`XMM2/XMM3` 是把浮点寄存器按"整体参数位置"数出来的错误结论（positional counting）。本文件维持 XMM0/XMM1，因为：① 真实调用点源码（`callVirtualFunc`）把两个 float 作为第 1、第 2 个浮点参数传递，编译后必然落在 XMM0/XMM1；② 若写成 XMM2/XMM3，反而与真实调用点**不一致**，违背 E.1 自身"确认编译器生成的寄存器传参与函数声明一致"的要求。
+
+### 4.1 修订前后 ABI 对照（E.1）
+
+| 参数 | 类型 | E.1 审查主张 | 真实（本文件 / callVirtualFunc 源码 + MS x64 ABI） |
+|---|---|---|---|
+| `this` | 指针 | RCX | **RCX** ✅ 一致 |
+| `soundName` | `const std::string&` | RDX | **RDX** ✅ 一致 |
+| `volume` | `float` | XMM2 | **XMM0** ✅ 纠正 |
+| `pitch` | `float` | XMM3 | **XMM1** ✅ 纠正 |
+
+> 结论：仅浮点槽位被 E.1 误判为 XMM2/XMM3；实际为 XMM0/XMM1。本文件不改动任何代码，仅校正文档。
 
 ## 5. 结论
 

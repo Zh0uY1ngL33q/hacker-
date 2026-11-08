@@ -21,8 +21,14 @@
 
 LONG WINAPI TopLevelExceptionHandler(const PEXCEPTION_POINTERS pExceptionInfo)
 {
-    // Get the exception code
-    auto exceptionCode = pExceptionInfo->ExceptionRecord->ExceptionCode;
+    // 3.6.2-E.1 (P1-2): the handler is installed as a top-level filter and can
+    // theoretically be invoked with a null or partially-populated
+    // PEXCEPTION_POINTERS. Reading ExceptionRecord/ExceptionCode through a null
+    // pointer would turn a crash report into a second crash. Guard both.
+    DWORD exceptionCode = 0;
+    if (pExceptionInfo && pExceptionInfo->ExceptionRecord) {
+        exceptionCode = pExceptionInfo->ExceptionRecord->ExceptionCode;
+    }
 
     // Capture the raw fault context. This turns a bare "0xC0000005" into a
     // read/write/execute classification plus the faulting address and the
@@ -30,7 +36,8 @@ LONG WINAPI TopLevelExceptionHandler(const PEXCEPTION_POINTERS pExceptionInfo)
     // handler's own stack frames (StackWalker, memcpy, spdlog) are NOT the
     // fault site and must not be mistaken for it.
     std::string faultContext;
-    if (const auto* rec = pExceptionInfo->ExceptionRecord) {
+    if (pExceptionInfo && pExceptionInfo->ExceptionRecord) {
+        const auto* rec = pExceptionInfo->ExceptionRecord;
         const char* accessType = "unknown";
         if (rec->NumberParameters >= 1) {
             switch (rec->ExceptionInformation[0]) {
@@ -61,9 +68,13 @@ LONG WINAPI TopLevelExceptionHandler(const PEXCEPTION_POINTERS pExceptionInfo)
     std::string text = "An unhandled exception occurred. (0x" + fmt::format("{:X}", exceptionCode) + ")\n"
         + faultContext + "Stack Trace:\n";
 
-    // Get the stack trace using stackwalker
+    // Get the stack trace using stackwalker. Pass nullptr for the context when
+    // the filter was invoked without a valid PEXCEPTION_POINTERS; StackWalker
+    // then walks the current thread instead of dereferencing a null context.
     StackWalker sw;
-    std::vector<std::string> stackTrace = sw.ShowCallstack(GetCurrentThread(), pExceptionInfo->ContextRecord);
+    const PCONTEXT faultCtx = (pExceptionInfo && pExceptionInfo->ContextRecord)
+        ? pExceptionInfo->ContextRecord : nullptr;
+    std::vector<std::string> stackTrace = sw.ShowCallstack(GetCurrentThread(), faultCtx);
     for (const auto& line : stackTrace)
     {
         text += line + "\n";
@@ -159,10 +170,10 @@ void ExceptionHandler::makeCrashLog(const std::string& text, DWORD exceptionCode
 #ifdef SOLSTICE_BUILD_DISABLE_AURA_DIAGNOSTIC
         excFile << xorstr_("Build opt: DISABLE_AURA_DIAGNOSTIC=ON\n");
 #endif
-#ifndef SOLSTICE_SOURCE_DIRTY
-#define SOLSTICE_SOURCE_DIRTY 0
+#ifndef SOLSTICE_WORKTREE_DIRTY
+#define SOLSTICE_WORKTREE_DIRTY 0
 #endif
-        excFile << xorstr_("Source dirty: ") << (SOLSTICE_SOURCE_DIRTY ? xorstr_("yes") : xorstr_("no")) << xorstr_("\n");
+        excFile << xorstr_("Worktree dirty: ") << (SOLSTICE_WORKTREE_DIRTY ? xorstr_("yes") : xorstr_("no")) << xorstr_("\n");
         excFile << xorstr_("----------------------------------------\n");
         excFile.flush();
         excFile.close();

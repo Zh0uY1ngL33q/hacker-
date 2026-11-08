@@ -35,3 +35,17 @@ Minecraft version: 1.21.120.0
 certutil -hashfile "E:\pf\3.9.20.300505\Minecraft.Windows.exe" SHA256
 ```
 并将结果与 `5fb2e893f724b1d644561161b8a5c2180a333e8d7f181b44b856a05f89026deb` 比对；同时记录大小、ImageBase、SizeOfImage。只有 SHA 一致时，本批 slot-164 静态结论才能直接套用到运行期崩溃。
+
+## 5. E.1 校正（P1-3）：`5fb2e893…026deb` 仅是可静态分析的 unpacked 镜像 SHA
+
+> **关键澄清**：`5fb2e893f724b1d644561161b8a5c2180a333e8d7f181b44b856a05f89026deb` 是 **`unpacked/unpacked_Minecraft.Windows.exe` 这一个被 dump/解包后的静态文件的 SHA-256**，它**不是**运行期 `E:\pf\3.9.20.300505\Minecraft.Windows.exe` 的身份。**两者不能画等号。**
+
+- 本沙箱里的 `unpacked` 镜像**没有标准 `.rdata` 段**（段名为空的自定义段 + `.winlice`/`.boot`/`.SCY`），说明它不是一次干净的构建产物，而是被解包/转储、段结构被改写过的镜像。因此它**既不代表磁盘上的运行 EXE，也不代表运行期解密后的内存映像**。
+- 运行期身份必须由构建机从**真实运行的进程**取得三项，缺一不可：
+  1. **磁盘 EXE SHA-256**（`certutil -hashfile` 或运行时 `GetFileInformationByHandle`+哈希）—— 与 `5fb2e893…` 比对；
+  2. **PE 元数据**：ImageBase、SizeOfImage、段表（尤其确认是否存在打包/加密段，如本沙箱见到的 `.winlice`/`.boot`/`.SCY`）；
+  3. **解密后的内存映像 SHA**（若游戏在加载时解密代码段）。磁盘 SHA 一致 ≠ 内存映像一致；若代码段运行期才解密，`unpacked` 静态镜像的 slot-164 落点**对内存映像可能根本不成立**。
+
+- **严禁仅凭版本号 `1.21.120.0` 复用 slot 164**：版本号相同只说明游戏大版本一致，不代表该具体构建的 vtable 布局/代码偏移一致。slot 164 的 RVA `0x1CBC3E4`/disp32 `0x520` 是**针对 `unpacked` 这个具体镜像**推导的；只有在运行期镜像（磁盘 SHA 或解密后内存 SHA）被证明与之一致时，才能直接套用。否则**必须在目标镜像上重新扫描验证**，不得沿用。
+
+- E.1 另确认：本次为在 `unpacked` 镜像上用 RTTI → vtable → slot 164 反汇编游戏 `playUi` 实况失败（无 `.rdata`、RTTI 不可靠），因此 P0-3 的"真实调用点反汇编"改以**本仓库 `callVirtualFunc` 源码**作为真实调用点证据（见 `playui-callsite-and-abi.md` §4），游戏侧 `playUi` 的实况反汇编留待运行期 dump 补齐。

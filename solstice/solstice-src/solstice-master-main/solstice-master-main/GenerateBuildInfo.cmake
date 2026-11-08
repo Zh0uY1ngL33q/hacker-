@@ -72,6 +72,18 @@ message(STATUS "Build branch: ${SOLSTICE_BUILD_BRANCH}")
 string(TIMESTAMP SOLSTICE_BUILD_TIMESTAMP "%Y-%m-%dT%H:%M:%SZ" UTC)
 file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_BUILD_TIMESTAMP \"${SOLSTICE_BUILD_TIMESTAMP}\"\n")
 
+# 3.6.2-E.1 (P1-1): SOURCE FINGERPRINT HASH SCOPE -- explicit.
+# The fingerprint is derived ONLY from the C++ source tree under src/:
+#   src/*.cpp, src/*.hpp, src/*.h   (GLOB_RECURSE, case-sensitive, sorted)
+# Algorithm:
+#   1. for every matched file: SHA256(file) -> keep first 16 hex chars
+#   2. concatenate those 16-char digests in sorted file order -> one string
+#   3. SHA256(that string) -> keep first 12 hex chars = SOLSTICE_SOURCE_FINGERPRINT
+# It does NOT include: CMake files, generated build_info.h, assets, headers
+# outside src/, or any runtime/working-tree state. So a matching fingerprint
+# pins the *compiled source content* regardless of git commit, branch, or
+# whether the tree was dirty -- which is exactly why it survived the 73da588
+# provenance check even though that build's commit/branch metadata lagged.
 file(GLOB_RECURSE SOLSTICE_SOURCE_FILES
         "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/src/*.hpp"
@@ -167,19 +179,30 @@ if (DEFINED SOLSTICE_CMAKE_BUILD_TYPE AND NOT SOLSTICE_CMAKE_BUILD_TYPE STREQUAL
 else()
     file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_BUILD_CONFIG \"unknown\"\n")
 endif()
+# 3.6.2-E.1 (P1-1): record BOTH diagnostic options on every build, explicitly
+# as 0 or 1. Previously only the enabled state was emitted via #ifdef, so a
+# crash log could not tell "option was OFF" apart from "build_info.h predates
+# this field". Now OFF and undefined both land as 0, which is accurate.
 if (SOLSTICE_OPT_ALLOW_UNVERIFIED)
     file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_BUILD_ALLOW_UNVERIFIED_MAPPINGS 1\n")
+else()
+    file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_BUILD_ALLOW_UNVERIFIED_MAPPINGS 0\n")
 endif()
 if (SOLSTICE_OPT_DISABLE_AURA)
     file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_BUILD_DISABLE_AURA_DIAGNOSTIC 1\n")
+else()
+    file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_BUILD_DISABLE_AURA_DIAGNOSTIC 0\n")
 endif()
 execute_process(COMMAND ${GIT_EXECUTABLE} status --porcelain
         WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
         OUTPUT_VARIABLE _solstice_git_status OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+# 3.6.2-E.1 (P1-1): renamed SOURCE_DIRTY -> WORKTREE_DIRTY to avoid implying the
+# fingerprint (which is content-derived) can be dirty. This only reflects
+# `git status --porcelain` on the working tree, i.e. uncommitted edits.
 if (NOT _solstice_git_status STREQUAL "")
-    file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_SOURCE_DIRTY 1\n")
+    file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_WORKTREE_DIRTY 1\n")
 else()
-    file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_SOURCE_DIRTY 0\n")
+    file(APPEND "${TEMP_BUILD_INFO_PATH}" "#define SOLSTICE_WORKTREE_DIRTY 0\n")
 endif()
 
 execute_process(

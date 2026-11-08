@@ -313,6 +313,14 @@ add_resources(resource_files ${resource_files})
 
 add_library(Solstice SHARED ${sourceFiles} ${resource_files})
 add_dependencies(${PROJECT_NAME} generate_build_info SolsticeShaders)
+# 3.6.2-E.1 (P1-1): make the build-info ordering explicit and target-scoped.
+# `Solstice` is the translation unit that `#include <build_info.h>`, so it must
+# never compile before `generate_build_info` has (re)written that header. The
+# custom target runs on EVERY build (it is ALL), but without this edge CMake is
+# free to schedule the Solstice compile first on a clean tree, leaving the
+# compiler staring at a stale or missing build_info.h. This edge forces the
+# generator to finish before any Solstice object is compiled.
+add_dependencies(Solstice generate_build_info)
 
 set(RESOURCE_HEADER_FILE "${CMAKE_CURRENT_SOURCE_DIR}/src/Utils/Resources.hpp")
 set(RESOURCE_SOURCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/src/Utils/Resources.cpp")
