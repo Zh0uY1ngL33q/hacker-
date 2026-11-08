@@ -48,7 +48,22 @@ constexpr int kDumpLast = 0x100;
 // MinecraftSim object.
 std::atomic<int> sGameSimOffset{ -2 };
 std::atomic<int> sRenderSimOffset{ -2 };
+std::atomic<unsigned long long> sLastProbeTick{ 0 };
+bool sLayoutDumped = false;
 std::mutex sProbeMutex;
+
+// A failed probe used to be final. The first caller is whichever module reads the
+// simulation clock first -- LevelInfo and Nametags both call getSimTimer() from
+// their RenderEvent, i.e. on the very first rendered frame -- and at that point
+// the world does not exist yet, so the paired Simulation pointers are not there.
+// The failure was cached as -1 for the rest of the session, and every later
+// setSimTimer() returned before writing anything. Timer, Speed, Fly, LongJump and
+// the animation swing rate were therefore inert with a probe that was working
+// correctly; it simply was not allowed to look again.
+//
+// Retry on a backoff instead of pinning a negative result. A success stays cached
+// forever, because a located offset cannot become wrong while the object lives.
+constexpr unsigned long long kProbeRetryMs = 2000;
 
 void dumpLayout(const void* self, size_t available)
 {
@@ -74,7 +89,17 @@ int resolveGameSimOffset(const void* self)
 {
     std::lock_guard<std::mutex> lock(sProbeMutex);
     const int cached = sGameSimOffset.load(std::memory_order_relaxed);
-    if (cached != -2) return cached;
+    // A located offset is permanent.
+    if (cached >= 0) return cached;
+    // A previous failure is only final for the backoff window: the Simulation
+    // pair appears once the world is created, which is later than the first
+    // caller. See kProbeRetryMs.
+    if (cached == -1)
+    {
+        const unsigned long long last = sLastProbeTick.load(std::memory_order_relaxed);
+        if (last != 0 && GetTickCount64() - last < kProbeRetryMs) return -1;
+    }
+    sLastProbeTick.store(GetTickCount64(), std::memory_order_relaxed);
 
     const auto base = reinterpret_cast<uintptr_t>(self);
     MEMORY_BASIC_INFORMATION mbi{};
@@ -110,9 +135,15 @@ int resolveGameSimOffset(const void* self)
         // the layout describes or the Simulation layout moved. Dump the fields
         // around the two offsets that are known independently (GameSession at
         // 0xD8 via its own signature, another object pointer at 0xF0 via the
-        // getter at 0x1A25A30) so the next round starts from data.
-        spdlog::warn("[sim] no Simulation pair in the first 0x{:X} bytes; known pointers:", kScanBytes);
-        dumpLayout(self, available);
+        // getter at 0x1A25A30) so the next round starts from data. Dump once:
+        // the probe now retries every kProbeRetryMs and would otherwise repeat
+        // this block for the whole session.
+        if (!sLayoutDumped)
+        {
+            sLayoutDumped = true;
+            spdlog::warn("[sim] no Simulation pair in the first 0x{:X} bytes; known pointers:", kScanBytes);
+            dumpLayout(self, available);
+        }
         sGameSimOffset.store(-1, std::memory_order_relaxed);
         sRenderSimOffset.store(-1, std::memory_order_relaxed);
         return -1;
