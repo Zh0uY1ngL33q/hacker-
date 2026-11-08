@@ -1,0 +1,244 @@
+{
+  "batch": "3.7",
+  "title": "Stable Baseline SDK Selective Integration - port manifest",
+  "base": "b32d185",
+  "baseCommit": "b32d1856702ef8f1d3e4f92bb17b5a286736932f",
+  "tip": "origin/main",
+  "tipCommit": "e8755437d5adf91e7ba952791d39d72d87741348",
+  "branch": "recovery/b32d185-sdk-integration",
+  "targetVersion": "1.21.120.0",
+  "method": "STATIC git archaeology only. No build, no injection, no runtime test on the analysis machine (no MSVC/ninja/g++, EXE and CMakeCache not local).",
+  "policy": {
+    "primaryStandard": "b32d185 stable runtime behaviour",
+    "portRule": "Only SDK changes with explicit 1.21.120.0 evidence, clear value, and independent verifiability.",
+    "neverPortWithoutConsumerProof": "ClientInstance::getBlockSource nullptr-return behaviour",
+    "neverBlindlyChange": "vtable slot 164 / MinecraftGame_playUi",
+    "separateEvaluation": "MinecraftGame virtual-call guard vs ExceptionHandler context capture must never be grouped",
+    "noWholesaleCherryPick": "Mixed SDK+non-SDK commits: only reviewed hunks are eligible",
+    "mergeToMain": "FORBIDDEN this round; integration branch only"
+  },
+  "baselineFacts": {
+    "resolveStateHeaderPresent": false,
+    "offsetProviderResolveStatusMachinePresent": false,
+    "rejectOffsetPresent": false,
+    "usableOffsetGlobalPresent": false,
+    "note": "b32d185 has only a file-local usableOffset(int) in MinecraftGame.cpp (returns offset>0 && offset<0x8000). Its DEFINE_INDEX_FIELD macro writes the raw scan result straight into a static int with no plausibility gate.",
+    "isValidVirtualCallPresent": false,
+    "isPlausibleObjectPresent": true,
+    "playUiState": "INERT: MinecraftGame_playUi uses operand 3 producing 3238145; playUi() rejects it with 'index < 2 || index >= 4096', so no virtual call is made.",
+    "getBlockSourceConsumers": {
+      "callSites": 57,
+      "files": 21,
+      "historicalStatisticFromSpec": {"callSites": 55, "missingNullGuard": 49},
+      "thisRoundHeuristic": {
+        "withGuardEvidence": 28,
+        "withoutGuardEvidence": 29,
+        "caveat": "Loose lexical heuristic (nearby if / nullptr / && pattern). Some direct chained dereferences such as 'getBlockSource()->getBlock(...)' were counted as guarded because an unrelated check appeared in the window. It is an UPPER BOUND on guarded sites, NOT a proof of safety."
+      },
+      "conclusion": "No proof that all actually-reachable consumers handle nullptr. Porting the nullptr-return behaviour is forbidden by the 3.7 spec."
+    }
+  },
+  "dependencyRoot": {
+    "commits": ["4b93323", "84e8160", "9b8f7d8", "47284b7"],
+    "introduces": [
+      "src/SDK/ResolveState.hpp (new)",
+      "OffsetProvider.cpp/.hpp resolution state machine (ResolveStatus::Ok/Missing/Implausible/Ambiguous/OutOfRange)",
+      "rejectOffset() / entryStatus() / usableOffset() as global gates",
+      "SigManager.cpp/.hpp refit",
+      "CodeSection.cpp/.hpp, SigFuzz.cpp",
+      "src/Solstice.cpp startup + DEBUG manual-allow changes",
+      "src/Utils/SysUtils/ExceptionHandler.cpp/.hpp changes",
+      "CMakeLists.txt build options",
+      "tools/verify_sigs.py, tools/scan_sigs.py, tools/re/scan_sigs.py"
+    ],
+    "relationship": "All four are ANCESTORS of 517646e (verified with git merge-base --is-ancestor). 517646e^:OffsetProvider.hpp already contains ResolveStatus::Missing, rejectOffset and #include <SDK/ResolveState.hpp>; b32d185 contains none of them.",
+    "consequence": "Batch-1/2/3 mapping hunks are NOT independently portable to b32d185. Porting them alone either fails to apply (context mismatch) or silently degrades 'UNVERIFIED stays rejected' into 'raw garbage value used as a live offset', which is exactly the 'do not disguise UNVERIFIED as OK' failure mode."
+  },
+  "candidates": [
+    {
+      "id": "S1-B1-playUi",
+      "stage": "S1",
+      "commit": "517646e",
+      "name": "Batch-1 MinecraftGame_playUi operand 3 -> 10 (slot 164)",
+      "files": ["src/SDK/OffsetProvider.hpp"],
+      "hasTargetVersionEvidence": true,
+      "evidence": "1.21.120 hit 0x1CBC3E4 -> disp32 0x520 -> slot 164; 1.21.44 hit 0x003DF624 -> 0x4C0 -> slot 152. Unique, 8-byte aligned, in range.",
+      "runtimeVerified": false,
+      "verdict": "EXCLUDE",
+      "reason": "b32d185 keeps playUi inert via the index>=4096 guard. Applying this hunk would ACTIVATE a real slot-164 virtual call on a baseline that has NO MemUtils::isValidVirtualCall guard. This is precisely the playUi AV investigated in 3.6.2-D/E and is explicitly forbidden by 'slot 164 must not be blindly changed'.",
+      "dependencies": ["ResolveState.hpp", "rejectOffset", "MemUtils::isValidVirtualCall", "669ce2c guard"],
+      "regressionRisk": "CRITICAL"
+    },
+    {
+      "id": "S1-B1-five-unverified",
+      "stage": "S1",
+      "commit": "517646e",
+      "name": "Batch-1 five IMPLAUSIBLE offsets retired as UNVERIFIED",
+      "files": ["src/SDK/OffsetProvider.hpp"],
+      "hasTargetVersionEvidence": true,
+      "evidence": "Each hunk documents the 1.21.120 hit address and why the old operand read garbage; signatures are re-anchored to produce zero hits (honest MISSING).",
+      "runtimeVerified": false,
+      "verdict": "EXCLUDE",
+      "reason": "The 'stay rejected / consumers gate on usableOffset()' semantics require ResolveStatus + rejectOffset. On b32d185's raw macro these become either scan failures or live garbage offsets. Porting would DISGUISE UNVERIFIED as usable, which the spec forbids.",
+      "dependencies": ["ResolveState.hpp", "rejectOffset", "usableOffset()", "callVirtualFunc index guard"],
+      "regressionRisk": "HIGH"
+    },
+    {
+      "id": "S1-B2-evidence",
+      "stage": "S1",
+      "commit": "61ec623",
+      "name": "Batch-2 complete candidate evidence (docs + analyzer)",
+      "files": ["docs/batch2/ambiguous-candidates.json", "docs/batch2/reference-1.21.44-candidates.json", "tools/batch2_analyze.py", "0ece302", "b28e1d2"],
+      "hasTargetVersionEvidence": true,
+      "evidence": "Full candidate lists with instruction context for 1.21.120 and reference 1.21.44.",
+      "runtimeVerified": false,
+      "verdict": "REFERENCE_ONLY",
+      "reason": "Evidence documents are non-runtime assets. They are valuable as the evidence base for any future S1 attempt, but are not SDK behaviour and must not be counted as ported functionality.",
+      "dependencies": [],
+      "regressionRisk": "NONE (non-runtime)"
+    },
+    {
+      "id": "S1-B2-resolved",
+      "stage": "S1",
+      "commit": "1d2c493",
+      "name": "Batch-2 five ambiguous offsets (3 STATIC VERIFIED, 2 UNVERIFIED)",
+      "files": ["src/SDK/OffsetProvider.hpp", "docs/batch2/batch2-assessment.json", "docs/batch2/batch2-report.md", "docs/batch2/post-fix-scan.json", "docs/batch2/post-fix-verify.json"],
+      "hasTargetVersionEvidence": true,
+      "evidence": "ClientInstance_getBlockSource slot 318 wrapper, GameSession_mEventCallback 0x50, Actor_mDestroying, BlockSource_setBlock slot 34; two declarations explicitly kept UNVERIFIED.",
+      "runtimeVerified": false,
+      "verdict": "EXCLUDE",
+      "reason": "Same state-machine dependency as Batch-1. In particular ClientInstance_getBlockSource's new slot-318 pattern is coupled to 9229523's plausibility gate; porting the mapping without the gate changes which object consumers receive. The two UNVERIFIED declarations would lose their rejection semantics.",
+      "dependencies": ["ResolveState.hpp", "rejectOffset", "usableOffset()", "9229523"],
+      "regressionRisk": "HIGH"
+    },
+    {
+      "id": "S3-B3-buildHeight",
+      "stage": "S3",
+      "commit": "1ec0571",
+      "name": "Batch-3 BlockSource_mBuildHeight from 1.21.120 vtable getter",
+      "files": ["src/SDK/OffsetProvider.hpp"],
+      "hasTargetVersionEvidence": true,
+      "evidence": "BlockSource RTTI .?AVBlockSource@@ -> vtable RVA 0x921B490 (66 slots); slot 38 is 'movzx eax,word ptr [rcx+0x38]; ret'; unique hit 0x5D3B130 -> 0x38; 1.21.44 corroboration only.",
+      "runtimeVerified": false,
+      "verdict": "DEFER",
+      "reason": "The single hunk is a pure signature replacement and technically compiles on b32d185's old macro, but its own comment declares 'New status OK; STATIC VERIFIED', which is state-machine terminology. Its only consumer value is BlockESP, and the spec says BlockESP capability must not be built/validated until S3 consumer null-safety is complete. Net value without the state machine is low while risk is non-zero.",
+      "dependencies": ["ResolveState.hpp (semantic)", "9229523 consumer proof (for BlockESP)"],
+      "regressionRisk": "MEDIUM"
+    },
+    {
+      "id": "S3-getBlockSource-gate",
+      "stage": "S3",
+      "commit": "9229523",
+      "name": "ClientInstance::getBlockSource plausibility gate -> nullptr",
+      "files": ["src/SDK/Minecraft/ClientInstance.cpp"],
+      "hasTargetVersionEvidence": true,
+      "evidence": "Offline 3.9.20.300505 analysis: ClientInstance initialiser 0x1945160 nulls 0xF0/0x108/0x110/0x118; 541 qword stores to [reg+0x118], zero fed by BlockSource vtable installer; 73 constructor calls build BlockSource on the stack, never as a heap member.",
+      "runtimeVerified": false,
+      "verdict": "DEFER_BLOCKED",
+      "reason": "Spec explicitly forbids porting the nullptr-return behaviour until all actually-reachable consumers are proven null-safe. b32d185 has 57 call sites in 21 files with direct chained dereferences such as 'getBlockSource()->getBlock(...)'. Returning nullptr would convert a wild vtable jump into an immediate null dereference across many modules (Regen, BlockUtils, BlockESP, Nuker, OreMiner, ...).",
+      "dependencies": ["consumer null-guard audit of all 57 call sites", "or runtime proof those paths are unreachable under the test config"],
+      "regressionRisk": "CRITICAL",
+      "unblockCondition": "A per-callsite null-guard patch for all reachable consumers, reviewed and built as its own batch, OR a runtime config proof that no consumer executes."
+    },
+    {
+      "id": "S2-minecraftSim-retry",
+      "stage": "S2",
+      "commit": "411fa4e",
+      "name": "MinecraftSim probe retry after a failed attempt",
+      "files": ["src/SDK/Minecraft/MinecraftSim.cpp"],
+      "hasTargetVersionEvidence": true,
+      "evidence": "Behavioural, not an offset: the Simulation pointer pair appears only after the world is created, later than the first getSimTimer() caller (LevelInfo / Nametags on the first rendered frame).",
+      "runtimeVerified": false,
+      "verdict": "PORT (APPLIED as its own stage commit)",
+      "reason": "b32d185:MinecraftSim.cpp is byte-identical to 411fa4e^:MinecraftSim.cpp (verified with git diff --quiet), so the hunk applies cleanly with zero context drift. It touches only one SDK file, has no dependency on ResolveState/MemUtils/GUI/GL/ESP/Aura, and the spec explicitly authorises it as an independent batch.",
+      "dependencies": [],
+      "regressionRisk": "LOW",
+      "concurrencyReview": {
+        "lock": "std::mutex sProbeMutex held for the whole resolveGameSimOffset body; all shared state is accessed under it",
+        "backoff": "kProbeRetryMs = 2000 via GetTickCount64(); sLastProbeTick is std::atomic<unsigned long long> with relaxed ordering",
+        "failureHandling": "cached -1 is final ONLY inside the backoff window; after 2000 ms the probe runs again -> satisfies 'must not cache -1 permanently after first failure'",
+        "successHandling": "cached >= 0 is returned permanently (a located offset cannot become wrong while the object lives)",
+        "logFloodGuard": "sLayoutDumped (plain bool, only touched under sProbeMutex) makes the layout dump one-shot",
+        "initialisationTiming": "first caller may be the first rendered frame before the world exists; deferred retry is the intended fix",
+        "renderSim": "sRenderSimOffset is stored alongside sGameSimOffset on both success and failure, so resolveRenderSimOffset follows the same retry window"
+      }
+    },
+    {
+      "id": "S4-virtual-call-guard",
+      "stage": "S4",
+      "commit": "669ce2c",
+      "name": "MinecraftGame::playUi MemUtils::isValidVirtualCall guard",
+      "files": ["src/SDK/Minecraft/MinecraftGame.cpp"],
+      "hasTargetVersionEvidence": false,
+      "evidence": "Defensive check against a wrong-version/stale object; no 1.21.120-specific mapping evidence.",
+      "runtimeVerified": false,
+      "verdict": "DEFER",
+      "reason": "b32d185 has no MemUtils::isValidVirtualCall (nor isReadableRange/isPatchableCode in the required form); porting requires dragging in MemUtils.cpp/.hpp from the state-machine batch. More importantly b32d185's playUi is already INERT (rejected by index>=4096), so the guard adds zero value on this baseline. It would only become relevant if the Batch-1 playUi mapping were also ported, which is excluded.",
+      "dependencies": ["MemUtils::isValidVirtualCall (84e8160)", "517646e playUi mapping (excluded)"],
+      "regressionRisk": "LOW (but zero benefit)"
+    },
+    {
+      "id": "S4-exception-context",
+      "stage": "S4",
+      "commit": "669ce2c",
+      "name": "ExceptionHandler raw fault-context capture",
+      "files": ["src/Utils/SysUtils/ExceptionHandler.cpp"],
+      "hasTargetVersionEvidence": false,
+      "evidence": "Pure crash diagnostics (ExceptionAddress / AccessType / FaultAddress / registers).",
+      "runtimeVerified": false,
+      "verdict": "EXCLUDE",
+      "reason": "Diagnostics, NOT SDK functionality. Spec requires the virtual-call guard and ExceptionHandler context capture to be evaluated separately, and 3.7 explicitly says not to auto-port extra diagnostics onto the stable baseline. Adding crash-report formatting changes no game behaviour but re-introduces the 'continuously patching' pattern this round is meant to stop.",
+      "dependencies": [],
+      "regressionRisk": "LOW (but out of scope)"
+    },
+    {
+      "id": "S4-E1-diagnostics",
+      "stage": "S4",
+      "commit": "2429e6e",
+      "name": "3.6.2-E.1 diagnosePlayUiRejection + ExceptionHandler null guard + build provenance",
+      "files": ["src/SDK/Minecraft/MinecraftGame.cpp", "src/Utils/SysUtils/ExceptionHandler.cpp", "CMakeLists.txt", "GenerateBuildInfo.cmake", "docs/batch3_6_2_e/*"],
+      "hasTargetVersionEvidence": false,
+      "evidence": "Rejection-reason logging and build-identity instrumentation; no new SDK mapping.",
+      "runtimeVerified": false,
+      "verdict": "EXCLUDE",
+      "reason": "Diagnostics/build-provenance only. diagnosePlayUiRejection exists to explain a rejection produced by isValidVirtualCall, which is not ported. Spec forbids mixing diagnostics with SDK functional changes.",
+      "dependencies": ["S4-virtual-call-guard (not ported)"],
+      "regressionRisk": "LOW (but out of scope)"
+    },
+    {
+      "id": "S1-state-machine",
+      "stage": "S1",
+      "commit": "4b93323 + 84e8160 + 9b8f7d8 + 47284b7",
+      "name": "Full mapping trust state machine (the dependency root)",
+      "files": ["src/SDK/ResolveState.hpp", "src/SDK/OffsetProvider.cpp", "src/SDK/OffsetProvider.hpp", "src/SDK/SigManager.cpp", "src/SDK/SigManager.hpp", "src/SDK/CodeSection.cpp", "src/SDK/SigFuzz.cpp", "src/Solstice.cpp", "src/Utils/MemUtils.cpp", "src/Utils/MemUtils.hpp", "src/Utils/SysUtils/ExceptionHandler.cpp", "CMakeLists.txt"],
+      "hasTargetVersionEvidence": true,
+      "evidence": "Large refit with offline scanner parity and PE range rules.",
+      "runtimeVerified": false,
+      "verdict": "DEFER_PENDING_USER_DECISION",
+      "reason": "This is the ONLY way to make Batch-1/2/3 mapping hunks behave as designed, but it is a 10+ file change that also rewrites src/Solstice.cpp startup/DEBUG manual-allow and ExceptionHandler, i.e. exactly the broad non-SDK surface 3.7 forbids auto-porting. It also changes the mapping judgement rules ('do not modify mapping criteria' was a standing constraint). Presented as an explicit decision, never applied silently.",
+      "dependencies": [],
+      "regressionRisk": "HIGH - would effectively recreate the post-b32d185 change surface",
+      "optionsForUser": [
+        "A: keep S1 deferred; accept b32d185's original mappings and ship only S2 (lowest risk, recommended for STABLE_BASELINE_RESTORED)",
+        "B: authorise a separate, isolated state-machine batch with its own S-stage and validation, explicitly accepting the Solstice.cpp/ExceptionHandler changes"
+      ]
+    }
+  ],
+  "appliedPorts": [
+    {
+      "stage": "S2",
+      "commitSource": "411fa4e",
+      "file": "src/SDK/Minecraft/MinecraftSim.cpp",
+      "baseIdenticalToParent": true,
+      "state": "APPLIED_IN_THIS_BRANCH_PENDING_BUILD_VALIDATION"
+    }
+  ],
+  "deferredOrExcludedSummary": {
+    "totalCandidates": 11,
+    "port": 1,
+    "defer": 4,
+    "exclude": 4,
+    "referenceOnly": 1,
+    "pendingUserDecision": 1
+  }
+}

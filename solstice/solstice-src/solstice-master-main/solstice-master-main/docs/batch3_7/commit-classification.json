@@ -1,0 +1,1019 @@
+{
+  "batch": "3.7",
+  "base": "b32d185",
+  "tip": "origin/main",
+  "tipCommit": "e8755437d5adf91e7ba952791d39d72d87741348",
+  "baseCommit": "b32d1856702ef8f1d3e4f92bb17b5a286736932f",
+  "commitCount": 31,
+  "categories": {
+    "A": "SDK / Mapping",
+    "B": "Object Lifetime / InstanceLocator",
+    "C": "MinecraftSim",
+    "D": "GUI / OpenGL / D3D",
+    "E": "ImGui / ClickGUI",
+    "F": "RenderEvent / Dispatcher",
+    "G": "ESP / Projection / FrameTransform",
+    "H": "Aura / Combat",
+    "I": "ExceptionHandler / Diagnostics",
+    "J": "Build System",
+    "Z": "Documentation / audit data / offline tooling (non-runtime)"
+  },
+  "method": "git log/diff static archaeology; no build or runtime execution",
+  "commits": [
+    {
+      "commit": "5ecf4586ef26cd4a6c5289d82a101440dc66c4d2",
+      "short": "5ecf458",
+      "date": "2026-11-06 00:12:32 +0800",
+      "subject": "fix(gui): contain first-frame RenderEvent faults and add stage markers",
+      "fileCount": 1,
+      "files": [
+        "src/Hook/Hooks/RenderHooks/OpenGLGui.cpp"
+      ],
+      "categories": [
+        "D"
+      ],
+      "categoryNames": [
+        "GUI / OpenGL / D3D"
+      ],
+      "mixedCommit": false,
+      "runtimeSourceFiles": [
+        "src/Hook/Hooks/RenderHooks/OpenGLGui.cpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "REVIEW_AS_UNIT",
+      "note": "Single-category commit; still review the file range before porting."
+    },
+    {
+      "commit": "d2dd463429c8083817e72ff526a31a9fab59bd15",
+      "short": "d2dd463",
+      "date": "2026-11-06 00:24:05 +0800",
+      "subject": "fix(diag): flush stage markers and pending log on crash",
+      "fileCount": 2,
+      "files": [
+        "src/Hook/Hooks/RenderHooks/OpenGLGui.cpp",
+        "src/Utils/SysUtils/ExceptionHandler.cpp"
+      ],
+      "categories": [
+        "D",
+        "I"
+      ],
+      "categoryNames": [
+        "GUI / OpenGL / D3D",
+        "ExceptionHandler / Diagnostics"
+      ],
+      "mixedCommit": true,
+      "runtimeSourceFiles": [
+        "src/Hook/Hooks/RenderHooks/OpenGLGui.cpp",
+        "src/Utils/SysUtils/ExceptionHandler.cpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "SELECT_HUNKS_ONLY",
+      "note": "Mixed SDK + non-SDK commit: only reviewed relevant hunks may be ported. Never cherry-pick this commit wholesale."
+    },
+    {
+      "commit": "e58ed3e22829ef4785846ce528fe15cd0f1da11f",
+      "short": "e58ed3e",
+      "date": "2026-11-06 00:33:13 +0800",
+      "subject": "fix(hooks): drop the unused per-frame detour that froze startup",
+      "fileCount": 3,
+      "files": [
+        "src/Hook/Detour.cpp",
+        "src/Hook/HookManager.cpp",
+        "src/Hook/Hooks/RenderHooks/RenderItemInHandHook.cpp"
+      ],
+      "categories": [
+        "A"
+      ],
+      "categoryNames": [
+        "SDK / Mapping"
+      ],
+      "mixedCommit": false,
+      "runtimeSourceFiles": [
+        "src/Hook/Detour.cpp",
+        "src/Hook/HookManager.cpp",
+        "src/Hook/Hooks/RenderHooks/RenderItemInHandHook.cpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "REVIEW_AS_UNIT",
+      "note": "Single-category commit; still review the file range before porting."
+    },
+    {
+      "commit": "c2bd7ad32825852a9fa8b51df2eafcede1f250e4",
+      "short": "c2bd7ad",
+      "date": "2026-11-06 00:34:28 +0800",
+      "subject": "fix(diag): flush the pre-enable hook marker before the thread freeze",
+      "fileCount": 1,
+      "files": [
+        "src/Hook/Detour.cpp"
+      ],
+      "categories": [
+        "A"
+      ],
+      "categoryNames": [
+        "SDK / Mapping"
+      ],
+      "mixedCommit": false,
+      "runtimeSourceFiles": [
+        "src/Hook/Detour.cpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "REVIEW_AS_UNIT",
+      "note": "Single-category commit; still review the file range before porting."
+    },
+    {
+      "commit": "1f95ebcba0221dec210cd6f125243b23436f881e",
+      "short": "1f95ebc",
+      "date": "2026-11-06 00:49:33 +0800",
+      "subject": "fix(gui): park the per-frame RenderEvent fan-out; enable Aura2 by default",
+      "fileCount": 2,
+      "files": [
+        "src/Features/Modules/Combat/Aura2.hpp",
+        "src/Hook/Hooks/RenderHooks/OpenGLGui.cpp"
+      ],
+      "categories": [
+        "D",
+        "H"
+      ],
+      "categoryNames": [
+        "GUI / OpenGL / D3D",
+        "Aura / Combat"
+      ],
+      "mixedCommit": true,
+      "runtimeSourceFiles": [
+        "src/Features/Modules/Combat/Aura2.hpp",
+        "src/Hook/Hooks/RenderHooks/OpenGLGui.cpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "SELECT_HUNKS_ONLY",
+      "note": "Mixed SDK + non-SDK commit: only reviewed relevant hunks may be ported. Never cherry-pick this commit wholesale."
+    },
+    {
+      "commit": "4141241f8436e8e1ff2dbd4d05611e28114c6731",
+      "short": "4141241",
+      "date": "2026-11-06 00:53:27 +0800",
+      "subject": "revert: restore last known playable build (f8c3541)",
+      "fileCount": 26,
+      "files": [
+        "src/Features/Modules/Combat/Aura.cpp",
+        "src/Features/Modules/Combat/Aura2.hpp",
+        "src/Features/Modules/Combat/AutoClicker.cpp",
+        "src/Features/Modules/ModuleManager.cpp",
+        "src/Features/Modules/Movement/InventoryMove.cpp",
+        "src/Features/Modules/Player/ChestAura.cpp",
+        "src/Features/Modules/Visual/ChinaHat.cpp",
+        "src/Features/Modules/Visual/DestroyProgress.cpp",
+        "src/Features/Modules/Visual/Keystrokes.cpp",
+        "src/Hook/Detour.cpp",
+        "src/Hook/HookManager.cpp",
+        "src/Hook/Hooks/ActorHooks/BaseTickHook.cpp",
+        "src/Hook/Hooks/RenderHooks/OpenGLGui.cpp",
+        "src/Hook/Hooks/RenderHooks/RenderItemInHandHook.cpp",
+        "src/SDK/Minecraft/Actor/Actor.cpp",
+        "src/SDK/Minecraft/Actor/Actor.hpp",
+        "src/SDK/Minecraft/Actor/Components/FlagComponent.hpp",
+        "src/SDK/Minecraft/Actor/Components/NameableComponent.hpp",
+        "src/SDK/Minecraft/ClientInstance.cpp",
+        "src/SDK/Minecraft/Network/LoopbackPacketSender.hpp",
+        "src/SDK/Minecraft/World/Level.cpp",
+        "src/SDK/SigManager.hpp",
+        "src/Utils/GameUtils/ActorUtils.cpp",
+        "src/Utils/GameUtils/ItemUtils.cpp",
+        "src/Utils/GameUtils/PacketUtils.cpp",
+        "src/Utils/SysUtils/ExceptionHandler.cpp"
+      ],
+      "categories": [
+        "A",
+        "B",
+        "D",
+        "H",
+        "I",
+        "Z"
+      ],
+      "categoryNames": [
+        "SDK / Mapping",
+        "Object Lifetime / InstanceLocator",
+        "GUI / OpenGL / D3D",
+        "Aura / Combat",
+        "ExceptionHandler / Diagnostics",
+        "Documentation / audit data / offline tooling (non-runtime)"
+      ],
+      "mixedCommit": true,
+      "runtimeSourceFiles": [
+        "src/Features/Modules/Combat/Aura.cpp",
+        "src/Features/Modules/Combat/Aura2.hpp",
+        "src/Features/Modules/Combat/AutoClicker.cpp",
+        "src/Features/Modules/ModuleManager.cpp",
+        "src/Features/Modules/Movement/InventoryMove.cpp",
+        "src/Features/Modules/Player/ChestAura.cpp",
+        "src/Features/Modules/Visual/ChinaHat.cpp",
+        "src/Features/Modules/Visual/DestroyProgress.cpp",
+        "src/Features/Modules/Visual/Keystrokes.cpp",
+        "src/Hook/Detour.cpp",
+        "src/Hook/HookManager.cpp",
+        "src/Hook/Hooks/ActorHooks/BaseTickHook.cpp",
+        "src/Hook/Hooks/RenderHooks/OpenGLGui.cpp",
+        "src/Hook/Hooks/RenderHooks/RenderItemInHandHook.cpp",
+        "src/SDK/Minecraft/Actor/Actor.cpp",
+        "src/SDK/Minecraft/Actor/Actor.hpp",
+        "src/SDK/Minecraft/Actor/Components/FlagComponent.hpp",
+        "src/SDK/Minecraft/Actor/Components/NameableComponent.hpp",
+        "src/SDK/Minecraft/ClientInstance.cpp",
+        "src/SDK/Minecraft/Network/LoopbackPacketSender.hpp",
+        "src/SDK/Minecraft/World/Level.cpp",
+        "src/SDK/SigManager.hpp",
+        "src/Utils/GameUtils/ActorUtils.cpp",
+        "src/Utils/GameUtils/ItemUtils.cpp",
+        "src/Utils/GameUtils/PacketUtils.cpp",
+        "src/Utils/SysUtils/ExceptionHandler.cpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "SELECT_HUNKS_ONLY",
+      "note": "Mixed SDK + non-SDK commit: only reviewed relevant hunks may be ported. Never cherry-pick this commit wholesale."
+    },
+    {
+      "commit": "4b9332370e78ce8ee1720a9e031a260dd6bfc570",
+      "short": "4b93323",
+      "date": "2026-11-06 01:31:47 +0800",
+      "subject": "fix(sdk): make mapping resolution states authoritative and refuse unusable results",
+      "fileCount": 10,
+      "files": [
+        "src/SDK/CodeSection.cpp",
+        "src/SDK/CodeSection.hpp",
+        "src/SDK/OffsetProvider.cpp",
+        "src/SDK/OffsetProvider.hpp",
+        "src/SDK/ResolveState.hpp",
+        "src/SDK/SigManager.cpp",
+        "src/SDK/SigManager.hpp",
+        "src/Solstice.cpp",
+        "src/Utils/MemUtils.hpp",
+        "tools/re/scan_sigs.py"
+      ],
+      "categories": [
+        "A",
+        "Z"
+      ],
+      "categoryNames": [
+        "SDK / Mapping",
+        "Documentation / audit data / offline tooling (non-runtime)"
+      ],
+      "mixedCommit": true,
+      "runtimeSourceFiles": [
+        "src/SDK/CodeSection.cpp",
+        "src/SDK/CodeSection.hpp",
+        "src/SDK/OffsetProvider.cpp",
+        "src/SDK/OffsetProvider.hpp",
+        "src/SDK/ResolveState.hpp",
+        "src/SDK/SigManager.cpp",
+        "src/SDK/SigManager.hpp",
+        "src/Solstice.cpp",
+        "src/Utils/MemUtils.hpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "SELECT_HUNKS_ONLY",
+      "note": "Mixed SDK + non-SDK commit: only reviewed relevant hunks may be ported. Never cherry-pick this commit wholesale."
+    },
+    {
+      "commit": "84e8160a774243ebb129ee17e1d612d659c7a657",
+      "short": "84e8160",
+      "date": "2026-11-06 02:00:24 +0800",
+      "subject": "fix(sdk): address review findings in the mapping trust state machine",
+      "fileCount": 15,
+      "files": [
+        "CMakeLists.txt",
+        "src/SDK/OffsetProvider.cpp",
+        "src/SDK/OffsetProvider.hpp",
+        "src/SDK/ResolveState.hpp",
+        "src/SDK/SigFuzz.cpp",
+        "src/SDK/SigManager.cpp",
+        "src/SDK/SigManager.hpp",
+        "src/Solstice.cpp",
+        "src/Utils/MemUtils.cpp",
+        "src/Utils/MemUtils.hpp",
+        "src/Utils/SysUtils/ExceptionHandler.cpp",
+        "src/Utils/SysUtils/ExceptionHandler.hpp",
+        "tools/test_verify_sigs.py",
+        "tools/verify_sigs.py",
+        "tools/re/scan_sigs.py"
+      ],
+      "categories": [
+        "A",
+        "I",
+        "J",
+        "Z"
+      ],
+      "categoryNames": [
+        "SDK / Mapping",
+        "ExceptionHandler / Diagnostics",
+        "Build System",
+        "Documentation / audit data / offline tooling (non-runtime)"
+      ],
+      "mixedCommit": true,
+      "runtimeSourceFiles": [
+        "src/SDK/OffsetProvider.cpp",
+        "src/SDK/OffsetProvider.hpp",
+        "src/SDK/ResolveState.hpp",
+        "src/SDK/SigFuzz.cpp",
+        "src/SDK/SigManager.cpp",
+        "src/SDK/SigManager.hpp",
+        "src/Solstice.cpp",
+        "src/Utils/MemUtils.cpp",
+        "src/Utils/MemUtils.hpp",
+        "src/Utils/SysUtils/ExceptionHandler.cpp",
+        "src/Utils/SysUtils/ExceptionHandler.hpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "SELECT_HUNKS_ONLY",
+      "note": "Mixed SDK + non-SDK commit: only reviewed relevant hunks may be ported. Never cherry-pick this commit wholesale."
+    },
+    {
+      "commit": "9b8f7d82464a94b60ee37f7c4a1fbacbbbb4a75a",
+      "short": "9b8f7d8",
+      "date": "2026-11-06 02:17:59 +0800",
+      "subject": "fix(sdk): align offline mapping verdicts with runtime plausibility and PE range rules",
+      "fileCount": 9,
+      "files": [
+        "src/SDK/CodeSection.cpp",
+        "src/SDK/OffsetProvider.cpp",
+        "src/SDK/SigManager.cpp",
+        "src/Utils/MemUtils.cpp",
+        "src/Utils/MemUtils.hpp",
+        "tools/scan_sigs.py",
+        "tools/test_verify_sigs.py",
+        "tools/verify_sigs.py",
+        "tools/re/scan_sigs.py"
+      ],
+      "categories": [
+        "A",
+        "Z"
+      ],
+      "categoryNames": [
+        "SDK / Mapping",
+        "Documentation / audit data / offline tooling (non-runtime)"
+      ],
+      "mixedCommit": true,
+      "runtimeSourceFiles": [
+        "src/SDK/CodeSection.cpp",
+        "src/SDK/OffsetProvider.cpp",
+        "src/SDK/SigManager.cpp",
+        "src/Utils/MemUtils.cpp",
+        "src/Utils/MemUtils.hpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "SELECT_HUNKS_ONLY",
+      "note": "Mixed SDK + non-SDK commit: only reviewed relevant hunks may be ported. Never cherry-pick this commit wholesale."
+    },
+    {
+      "commit": "47284b7d91183c2d5c5f89ce8a6657c1f58a7d01",
+      "short": "47284b7",
+      "date": "2026-11-06 13:15:07 +0800",
+      "subject": "Audit mapping resolution and offline scanner parity",
+      "fileCount": 21,
+      "files": [
+        "docs/mapping-audit/audit-validation.log",
+        "docs/mapping-audit/scan-sigs.json",
+        "docs/mapping-audit/scan-sigs.log",
+        "docs/mapping-audit/scan-sigs.timing.txt",
+        "docs/mapping-audit/unit-tests.log",
+        "docs/mapping-audit/unit-tests.timing.txt",
+        "docs/mapping-audit/verify-sigs.json",
+        "docs/mapping-audit/verify-sigs.log",
+        "docs/mapping-audit/verify-sigs.timing.txt",
+        "mapping-audit-report.md",
+        "mapping-audit.json",
+        "src/SDK/OffsetProvider.cpp",
+        "src/SDK/OffsetProvider.hpp",
+        "src/SDK/SigFuzz.cpp",
+        "src/SDK/SigManager.cpp",
+        "src/SDK/SigManager.hpp",
+        "tools/mapping_audit.py",
+        "tools/scan_sigs.py",
+        "tools/test_verify_sigs.py",
+        "tools/verify_sigs.py",
+        "tools/re/scan_sigs.py"
+      ],
+      "categories": [
+        "A",
+        "Z"
+      ],
+      "categoryNames": [
+        "SDK / Mapping",
+        "Documentation / audit data / offline tooling (non-runtime)"
+      ],
+      "mixedCommit": true,
+      "runtimeSourceFiles": [
+        "src/SDK/OffsetProvider.cpp",
+        "src/SDK/OffsetProvider.hpp",
+        "src/SDK/SigFuzz.cpp",
+        "src/SDK/SigManager.cpp",
+        "src/SDK/SigManager.hpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "SELECT_HUNKS_ONLY",
+      "note": "Mixed SDK + non-SDK commit: only reviewed relevant hunks may be ported. Never cherry-pick this commit wholesale."
+    },
+    {
+      "commit": "517646e7bc48633528b231a54110decef815af02",
+      "short": "517646e",
+      "date": "2026-11-06 22:14:41 +0800",
+      "subject": "fix(mapping): batch-1 six Implausible offsets - one confirmed fix, five retired as UNVERIFIED",
+      "fileCount": 1,
+      "files": [
+        "src/SDK/OffsetProvider.hpp"
+      ],
+      "categories": [
+        "A"
+      ],
+      "categoryNames": [
+        "SDK / Mapping"
+      ],
+      "mixedCommit": false,
+      "runtimeSourceFiles": [
+        "src/SDK/OffsetProvider.hpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "REVIEW_AS_UNIT",
+      "note": "Single-category commit; still review the file range before porting."
+    },
+    {
+      "commit": "61ec6232bdbfd26231d84d1b593dbdbe854a83ed",
+      "short": "61ec623",
+      "date": "2026-11-07 00:17:22 +0800",
+      "subject": "Add complete Batch 2 candidate evidence",
+      "fileCount": 3,
+      "files": [
+        "docs/batch2/ambiguous-candidates.json",
+        "docs/batch2/reference-1.21.44-candidates.json",
+        "tools/batch2_analyze.py"
+      ],
+      "categories": [
+        "A"
+      ],
+      "categoryNames": [
+        "SDK / Mapping"
+      ],
+      "mixedCommit": false,
+      "runtimeSourceFiles": [],
+      "hasRuntimeSource": false,
+      "recommendation": "DOCS_ONLY",
+      "note": "Documentation/audit-only commit; no runtime code."
+    },
+    {
+      "commit": "1d2c493e2d3fd2d62349beb92e7cb75840722384",
+      "short": "1d2c493",
+      "date": "2026-11-07 00:17:46 +0800",
+      "subject": "Resolve five Batch 2 ambiguous offsets",
+      "fileCount": 5,
+      "files": [
+        "docs/batch2/batch2-assessment.json",
+        "docs/batch2/batch2-report.md",
+        "docs/batch2/post-fix-scan.json",
+        "docs/batch2/post-fix-verify.json",
+        "src/SDK/OffsetProvider.hpp"
+      ],
+      "categories": [
+        "A"
+      ],
+      "categoryNames": [
+        "SDK / Mapping"
+      ],
+      "mixedCommit": false,
+      "runtimeSourceFiles": [
+        "src/SDK/OffsetProvider.hpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "REVIEW_AS_UNIT",
+      "note": "Single-category commit; still review the file range before porting."
+    },
+    {
+      "commit": "0ece30280170a3794a1cae860b769a659629addf",
+      "short": "0ece302",
+      "date": "2026-11-07 00:18:09 +0800",
+      "subject": "Clean Batch 2 report formatting",
+      "fileCount": 1,
+      "files": [
+        "docs/batch2/batch2-report.md"
+      ],
+      "categories": [
+        "A"
+      ],
+      "categoryNames": [
+        "SDK / Mapping"
+      ],
+      "mixedCommit": false,
+      "runtimeSourceFiles": [],
+      "hasRuntimeSource": false,
+      "recommendation": "DOCS_ONLY",
+      "note": "Documentation/audit-only commit; no runtime code."
+    },
+    {
+      "commit": "1ec0571c7157749fc0afc814ec8cf05a54ed3574",
+      "short": "1ec0571",
+      "date": "2026-11-07 11:14:21 +0800",
+      "subject": "fix(mapping): batch-3 resolve BlockSource_mBuildHeight from the 1.21.120 vtable getter",
+      "fileCount": 1,
+      "files": [
+        "src/SDK/OffsetProvider.hpp"
+      ],
+      "categories": [
+        "A"
+      ],
+      "categoryNames": [
+        "SDK / Mapping"
+      ],
+      "mixedCommit": false,
+      "runtimeSourceFiles": [
+        "src/SDK/OffsetProvider.hpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "REVIEW_AS_UNIT",
+      "note": "Single-category commit; still review the file range before porting."
+    },
+    {
+      "commit": "b28e1d293ab5bc91393fe5e2e0073869788422f1",
+      "short": "b28e1d2",
+      "date": "2026-11-07 11:14:25 +0800",
+      "subject": "docs(batch3): mapping evidence, consumer graph and module readiness",
+      "fileCount": 5,
+      "files": [
+        "docs/batch3/batch3-consumers.json",
+        "docs/batch3/batch3-mapping.json",
+        "docs/batch3/batch3-module-readiness.md",
+        "docs/batch3/batch3-report.md",
+        "docs/batch3/batch3-unresolved.md"
+      ],
+      "categories": [
+        "A"
+      ],
+      "categoryNames": [
+        "SDK / Mapping"
+      ],
+      "mixedCommit": false,
+      "runtimeSourceFiles": [],
+      "hasRuntimeSource": false,
+      "recommendation": "DOCS_ONLY",
+      "note": "Documentation/audit-only commit; no runtime code."
+    },
+    {
+      "commit": "922952364e93e7f02264321f3044ff84d40a647a",
+      "short": "9229523",
+      "date": "2026-11-07 19:52:51 +0800",
+      "subject": "fix(sdk): validate the object behind ClientInstance::getBlockSource",
+      "fileCount": 1,
+      "files": [
+        "src/SDK/Minecraft/ClientInstance.cpp"
+      ],
+      "categories": [
+        "B"
+      ],
+      "categoryNames": [
+        "Object Lifetime / InstanceLocator"
+      ],
+      "mixedCommit": false,
+      "runtimeSourceFiles": [
+        "src/SDK/Minecraft/ClientInstance.cpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "REVIEW_AS_UNIT",
+      "note": "Single-category commit; still review the file range before porting."
+    },
+    {
+      "commit": "411fa4e45d2665fbd07e7c52b46aaad8f491ae26",
+      "short": "411fa4e",
+      "date": "2026-11-07 19:52:58 +0800",
+      "subject": "fix(sdk): let the MinecraftSim probe retry after a failed attempt",
+      "fileCount": 1,
+      "files": [
+        "src/SDK/Minecraft/MinecraftSim.cpp"
+      ],
+      "categories": [
+        "C"
+      ],
+      "categoryNames": [
+        "MinecraftSim"
+      ],
+      "mixedCommit": false,
+      "runtimeSourceFiles": [
+        "src/SDK/Minecraft/MinecraftSim.cpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "REVIEW_AS_UNIT",
+      "note": "Single-category commit; still review the file range before porting."
+    },
+    {
+      "commit": "54f9188ef9f7db7bec32211ac0e79c45cb5de607",
+      "short": "54f9188",
+      "date": "2026-11-07 21:18:33 +0800",
+      "subject": "diag(esp): record the projection's provenance, row translation and raw fov once",
+      "fileCount": 5,
+      "files": [
+        "src/Features/Modules/Visual/ESP.cpp",
+        "src/Hook/Hooks/RenderHooks/OpenGLGui.cpp",
+        "src/SDK/Minecraft/ClientInstance.cpp",
+        "src/SDK/Minecraft/ClientInstance.hpp",
+        "src/Utils/Structs.hpp"
+      ],
+      "categories": [
+        "A",
+        "B",
+        "D",
+        "G"
+      ],
+      "categoryNames": [
+        "SDK / Mapping",
+        "Object Lifetime / InstanceLocator",
+        "GUI / OpenGL / D3D",
+        "ESP / Projection / FrameTransform"
+      ],
+      "mixedCommit": true,
+      "runtimeSourceFiles": [
+        "src/Features/Modules/Visual/ESP.cpp",
+        "src/Hook/Hooks/RenderHooks/OpenGLGui.cpp",
+        "src/SDK/Minecraft/ClientInstance.cpp",
+        "src/SDK/Minecraft/ClientInstance.hpp",
+        "src/Utils/Structs.hpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "SELECT_HUNKS_ONLY",
+      "note": "Mixed SDK + non-SDK commit: only reviewed relevant hunks may be ported. Never cherry-pick this commit wholesale."
+    },
+    {
+      "commit": "a7158d4a326a3d1b5028a50cfcdecbe7b7c64938",
+      "short": "a7158d4",
+      "date": "2026-11-07 21:35:40 +0800",
+      "subject": "diag(esp): make the projection probe capture a complete frame, once",
+      "fileCount": 1,
+      "files": [
+        "src/Features/Modules/Visual/ESP.cpp"
+      ],
+      "categories": [
+        "G"
+      ],
+      "categoryNames": [
+        "ESP / Projection / FrameTransform"
+      ],
+      "mixedCommit": false,
+      "runtimeSourceFiles": [
+        "src/Features/Modules/Visual/ESP.cpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "REVIEW_AS_UNIT",
+      "note": "Single-category commit; still review the file range before porting."
+    },
+    {
+      "commit": "11ff9654dc8022af74e47b045a594e72be28b668",
+      "short": "11ff965",
+      "date": "2026-11-07 22:03:58 +0800",
+      "subject": "diag(esp): project the point with the renderer's own parameters too",
+      "fileCount": 1,
+      "files": [
+        "src/Features/Modules/Visual/ESP.cpp"
+      ],
+      "categories": [
+        "G"
+      ],
+      "categoryNames": [
+        "ESP / Projection / FrameTransform"
+      ],
+      "mixedCommit": false,
+      "runtimeSourceFiles": [
+        "src/Features/Modules/Visual/ESP.cpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "REVIEW_AS_UNIT",
+      "note": "Single-category commit; still review the file range before porting."
+    },
+    {
+      "commit": "bf1522fa27bdf8d4f2268c254d3dc86b28a72f83",
+      "short": "bf1522f",
+      "date": "2026-11-07 23:25:32 +0800",
+      "subject": "diag(esp): 3.6.1c 探针同帧配对采样、八角点、灵敏度优选与搜索节流",
+      "fileCount": 11,
+      "files": [
+        "docs/batch3_6/diagnostic-probe.md",
+        "docs/batch3_6/final-decision.md",
+        "docs/batch3_6/minimal-fix-summary.md",
+        "docs/batch3_6/offset-0x358-writers.json",
+        "docs/batch3_6/projection-contract.json",
+        "docs/batch3_6/projection-root-cause.md",
+        "docs/batch3_6/projection-test-results.json",
+        "docs/batch3_6/tools/projection_reference.py",
+        "docs/batch3_6/tools/scan_0x358.py",
+        "docs/batch3_6/unresolved.md",
+        "src/Features/Modules/Visual/ESP.cpp"
+      ],
+      "categories": [
+        "G"
+      ],
+      "categoryNames": [
+        "ESP / Projection / FrameTransform"
+      ],
+      "mixedCommit": false,
+      "runtimeSourceFiles": [
+        "src/Features/Modules/Visual/ESP.cpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "REVIEW_AS_UNIT",
+      "note": "Single-category commit; still review the file range before porting."
+    },
+    {
+      "commit": "73da58852bef82c30fb36e2b2b38d3f72f96f5ce",
+      "short": "73da588",
+      "date": "2026-11-08 01:28:01 +0800",
+      "subject": "diag(aura): 3.6.2-A 通过 SOLSTICE_DISABLE_AURA_DIAGNOSTIC 彻底隔离 Aura 执行路径",
+      "fileCount": 9,
+      "files": [
+        "CMakeLists.txt",
+        "docs/batch3_6_2_a/aura-execution-inventory.json",
+        "docs/batch3_6_2_a/aura-isolation-diff.md",
+        "docs/batch3_6_2_a/final-decision.md",
+        "docs/batch3_6_2_a/hang-comparison.md",
+        "docs/batch3_6_2_a/initialization-impact.md",
+        "docs/batch3_6_2_a/selective-rollback-proposal.md",
+        "src/Features/Modules/ModuleManager.cpp",
+        "src/Features/Modules/Player/Scaffold.cpp"
+      ],
+      "categories": [
+        "H",
+        "J",
+        "Z"
+      ],
+      "categoryNames": [
+        "Aura / Combat",
+        "Build System",
+        "Documentation / audit data / offline tooling (non-runtime)"
+      ],
+      "mixedCommit": true,
+      "runtimeSourceFiles": [
+        "src/Features/Modules/ModuleManager.cpp",
+        "src/Features/Modules/Player/Scaffold.cpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "SELECT_HUNKS_ONLY",
+      "note": "Mixed SDK + non-SDK commit: only reviewed relevant hunks may be ported. Never cherry-pick this commit wholesale."
+    },
+    {
+      "commit": "07b3d86680715d8a4df9354e61b824ebce9b393d",
+      "short": "07b3d86",
+      "date": "2026-11-08 10:39:38 +0800",
+      "subject": "diag(gl): 3.6.2-C 落实 GL 挂起三阶段诊断标记与 GetDrawData 判空",
+      "fileCount": 2,
+      "files": [
+        "docs/batch3_6_2_c/evidence_openglgui_diff_b32d185_to_HEAD.txt",
+        "src/Hook/Hooks/RenderHooks/OpenGLGui.cpp"
+      ],
+      "categories": [
+        "D",
+        "I"
+      ],
+      "categoryNames": [
+        "GUI / OpenGL / D3D",
+        "ExceptionHandler / Diagnostics"
+      ],
+      "mixedCommit": true,
+      "runtimeSourceFiles": [
+        "src/Hook/Hooks/RenderHooks/OpenGLGui.cpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "SELECT_HUNKS_ONLY",
+      "note": "Mixed SDK + non-SDK commit: only reviewed relevant hunks may be ported. Never cherry-pick this commit wholesale."
+    },
+    {
+      "commit": "669ce2c11dbe7a04169fa2ce9eb7b7b9c445d8d7",
+      "short": "669ce2c",
+      "date": "2026-11-08 11:53:36 +0800",
+      "subject": "diag(playui): 3.6.2-D playUi 运行期 AV 最小防御修复 + 故障上下文诊断",
+      "fileCount": 10,
+      "files": [
+        "docs/batch3_6_2_d/build-provenance.md",
+        "docs/batch3_6_2_d/exception-context-analysis.md",
+        "docs/batch3_6_2_d/final-decision.md",
+        "docs/batch3_6_2_d/minecraftgame-object-validation.md",
+        "docs/batch3_6_2_d/minimal-fix-summary.md",
+        "docs/batch3_6_2_d/patchfullstack-analysis.md",
+        "docs/batch3_6_2_d/playui-callchain.md",
+        "docs/batch3_6_2_d/slot164-runtime-analysis.md",
+        "src/SDK/Minecraft/MinecraftGame.cpp",
+        "src/Utils/SysUtils/ExceptionHandler.cpp"
+      ],
+      "categories": [
+        "B",
+        "I"
+      ],
+      "categoryNames": [
+        "Object Lifetime / InstanceLocator",
+        "ExceptionHandler / Diagnostics"
+      ],
+      "mixedCommit": true,
+      "runtimeSourceFiles": [
+        "src/SDK/Minecraft/MinecraftGame.cpp",
+        "src/Utils/SysUtils/ExceptionHandler.cpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "SELECT_HUNKS_ONLY",
+      "note": "Mixed SDK + non-SDK commit: only reviewed relevant hunks may be ported. Never cherry-pick this commit wholesale."
+    },
+    {
+      "commit": "7b30dd04e8f618fbbe9a27f465ca2d0b9deb5fc9",
+      "short": "7b30dd0",
+      "date": "2026-11-08 13:02:09 +0800",
+      "subject": "diag(provenance): 3.6.2-E 构建身份补全 + playUi/slot164/处理器审查交付物",
+      "fileCount": 12,
+      "files": [
+        "CMakeLists.txt",
+        "GenerateBuildInfo.cmake",
+        "docs/batch3_6_2_e/build-provenance.md",
+        "docs/batch3_6_2_e/exception-handler-review.md",
+        "docs/batch3_6_2_e/final-decision.md",
+        "docs/batch3_6_2_e/minimal-fix-summary.md",
+        "docs/batch3_6_2_e/patchfullstack-review.md",
+        "docs/batch3_6_2_e/playui-callsite-and-abi.md",
+        "docs/batch3_6_2_e/runtime-image-identity.md",
+        "docs/batch3_6_2_e/slot164-validation.md",
+        "docs/batch3_6_2_e/virtual-call-guard-review.md",
+        "src/Utils/SysUtils/ExceptionHandler.cpp"
+      ],
+      "categories": [
+        "I",
+        "J"
+      ],
+      "categoryNames": [
+        "ExceptionHandler / Diagnostics",
+        "Build System"
+      ],
+      "mixedCommit": true,
+      "runtimeSourceFiles": [
+        "src/Utils/SysUtils/ExceptionHandler.cpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "SELECT_HUNKS_ONLY",
+      "note": "Mixed SDK + non-SDK commit: only reviewed relevant hunks may be ported. Never cherry-pick this commit wholesale."
+    },
+    {
+      "commit": "2429e6e0a0ffa07a42b2d126ed7d876209d23b3e",
+      "short": "2429e6e",
+      "date": "2026-11-08 14:20:31 +0800",
+      "subject": "diag(forensics): 3.6.2-E.1 审查校正 — 守卫诊断/构建身份/处理器保护 + ABI 校正记录",
+      "fileCount": 9,
+      "files": [
+        "CMakeLists.txt",
+        "GenerateBuildInfo.cmake",
+        "docs/batch3_6_2_e/corrections-E1.md",
+        "docs/batch3_6_2_e/final-decision.md",
+        "docs/batch3_6_2_e/playui-callsite-and-abi.md",
+        "docs/batch3_6_2_e/runtime-image-identity.md",
+        "docs/batch3_6_2_e/slot164-validation.md",
+        "src/SDK/Minecraft/MinecraftGame.cpp",
+        "src/Utils/SysUtils/ExceptionHandler.cpp"
+      ],
+      "categories": [
+        "B",
+        "I",
+        "J"
+      ],
+      "categoryNames": [
+        "Object Lifetime / InstanceLocator",
+        "ExceptionHandler / Diagnostics",
+        "Build System"
+      ],
+      "mixedCommit": true,
+      "runtimeSourceFiles": [
+        "src/SDK/Minecraft/MinecraftGame.cpp",
+        "src/Utils/SysUtils/ExceptionHandler.cpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "SELECT_HUNKS_ONLY",
+      "note": "Mixed SDK + non-SDK commit: only reviewed relevant hunks may be ported. Never cherry-pick this commit wholesale."
+    },
+    {
+      "commit": "b879cb11633021668914de7696454de750e84b6a",
+      "short": "b879cb1",
+      "date": "2026-11-08 14:44:34 +0800",
+      "subject": "diag(forensics): 3.6.2-E.1.1 审查纠错 — ABI 三层交叉核验统一 XMM0/XMM1 + 文档一致性校正",
+      "fileCount": 8,
+      "files": [
+        "CMakeLists.txt",
+        "docs/batch3_6_2_d/final-decision.md",
+        "docs/batch3_6_2_d/playui-callchain.md",
+        "docs/batch3_6_2_d/slot164-runtime-analysis.md",
+        "docs/batch3_6_2_e/corrections-E1.1.md",
+        "docs/batch3_6_2_e/final-decision.md",
+        "docs/batch3_6_2_e/playui-callsite-and-abi.md",
+        "docs/batch3_6_2_e/slot164-validation.md"
+      ],
+      "categories": [
+        "I",
+        "J"
+      ],
+      "categoryNames": [
+        "ExceptionHandler / Diagnostics",
+        "Build System"
+      ],
+      "mixedCommit": true,
+      "runtimeSourceFiles": [],
+      "hasRuntimeSource": false,
+      "recommendation": "SELECT_HUNKS_ONLY",
+      "note": "Mixed SDK + non-SDK commit: only reviewed relevant hunks may be ported. Never cherry-pick this commit wholesale."
+    },
+    {
+      "commit": "67f82f008de7a26a8af40adca988e7d37959aaea",
+      "short": "67f82f0",
+      "date": "2026-11-08 15:09:17 +0800",
+      "subject": "docs(forensics): 3.6.2-E.1.2 证据纠错与溯源审计 — 撤回错误二进制论证/状态标签更正/RTTI修正",
+      "fileCount": 6,
+      "files": [
+        "docs/batch3_6_2_d/final-decision.md",
+        "docs/batch3_6_2_e/corrections-E1.1.2.md",
+        "docs/batch3_6_2_e/final-decision.md",
+        "docs/batch3_6_2_e/playui-callsite-and-abi.md",
+        "docs/batch3_6_2_e/runtime-image-identity.md",
+        "docs/batch3_6_2_e/slot164-validation.md"
+      ],
+      "categories": [
+        "I"
+      ],
+      "categoryNames": [
+        "ExceptionHandler / Diagnostics"
+      ],
+      "mixedCommit": false,
+      "runtimeSourceFiles": [],
+      "hasRuntimeSource": false,
+      "recommendation": "DOCS_ONLY",
+      "note": "Documentation/audit-only commit; no runtime code."
+    },
+    {
+      "commit": "794fc65fe62fc38e8126b5db62dc93a7981ad047",
+      "short": "794fc65",
+      "date": "2026-11-08 15:33:20 +0800",
+      "subject": "docs(forensics): 3.6.2-E.1.2.1 ABI 最终裁定 — 层①类型推导修订为 XMM2/XMM3",
+      "fileCount": 10,
+      "files": [
+        "docs/batch3_6_2_d/final-decision.md",
+        "docs/batch3_6_2_d/playui-callchain.md",
+        "docs/batch3_6_2_d/slot164-runtime-analysis.md",
+        "docs/batch3_6_2_e/corrections-E1.1.2.md",
+        "docs/batch3_6_2_e/corrections-E1.1.md",
+        "docs/batch3_6_2_e/corrections-E1.2.1.md",
+        "docs/batch3_6_2_e/corrections-E1.md",
+        "docs/batch3_6_2_e/final-decision.md",
+        "docs/batch3_6_2_e/playui-callsite-and-abi.md",
+        "docs/batch3_6_2_e/slot164-validation.md"
+      ],
+      "categories": [
+        "I"
+      ],
+      "categoryNames": [
+        "ExceptionHandler / Diagnostics"
+      ],
+      "mixedCommit": false,
+      "runtimeSourceFiles": [],
+      "hasRuntimeSource": false,
+      "recommendation": "DOCS_ONLY",
+      "note": "Documentation/audit-only commit; no runtime code."
+    },
+    {
+      "commit": "e8755437d5adf91e7ba952791d39d72d87741348",
+      "short": "e875543",
+      "date": "2026-11-08 17:36:32 +0800",
+      "subject": "feat(forensics): 3.6.2-F RenderEvent 订阅者级故障定位 — 交付诊断与静态调查，无根因修复",
+      "fileCount": 16,
+      "files": [
+        "CMakeLists.txt",
+        "docs/batch3_6_2_f/final-decision.md",
+        "docs/batch3_6_2_f/mapping-risk-for-render-subscribers.json",
+        "docs/batch3_6_2_f/minecraftgame-object-followup.md",
+        "docs/batch3_6_2_f/minimal-fix-summary.md",
+        "docs/batch3_6_2_f/patchfullstack-callchain.md",
+        "docs/batch3_6_2_f/render-subscriber-inventory.json",
+        "docs/batch3_6_2_f/render-subscriber-order.json",
+        "docs/batch3_6_2_f/runtime-build-identity.md",
+        "docs/batch3_6_2_f/runtime-capture-guide.md",
+        "docs/batch3_6_2_f/subscriber-instrumentation.md",
+        "include/nes/include/nes/event_dispatcher.hpp",
+        "src/Hook/Hooks/RenderHooks/OpenGLGui.cpp",
+        "tools/batch3_6_2_f_audit.py",
+        "tools/batch3_6_2_f_gen.py",
+        "tools/batch3_6_2_f_mapping_risk.py"
+      ],
+      "categories": [
+        "D",
+        "F",
+        "J",
+        "Z"
+      ],
+      "categoryNames": [
+        "GUI / OpenGL / D3D",
+        "RenderEvent / Dispatcher",
+        "Build System",
+        "Documentation / audit data / offline tooling (non-runtime)"
+      ],
+      "mixedCommit": true,
+      "runtimeSourceFiles": [
+        "include/nes/include/nes/event_dispatcher.hpp",
+        "src/Hook/Hooks/RenderHooks/OpenGLGui.cpp"
+      ],
+      "hasRuntimeSource": true,
+      "recommendation": "SELECT_HUNKS_ONLY",
+      "note": "Mixed SDK + non-SDK commit: only reviewed relevant hunks may be ported. Never cherry-pick this commit wholesale."
+    }
+  ]
+}
