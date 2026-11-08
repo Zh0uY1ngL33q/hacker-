@@ -180,3 +180,9 @@ diff --git a/.../src/Utils/SysUtils/ExceptionHandler.cpp b/.../src/Utils/SysUtil
 - **未做任何猜测性修改**：未改 slot 164、未删 playUi 调用、未动 OpenGL/ESP/SDK 架构。
 - 最终验收主状态不变：`NEEDS_RUNTIME_EXCEPTION_CONTEXT` 叠加 `BUILD_PROVENANCE_CONFIRMED` + `⚠️ RUNTIME_IMAGE_MISMATCH`。
 - 下一步收敛依赖构建机重建（从 main）+ 运行期身份采集 + 故障上下文复现，届时状态将收敛到 `PLAYUI_GUARD_REJECTED_WITH_REASON` / `AV_CONTEXT_CAPTURED_NEEDS_ANALYSIS` / `ROOT_CAUSE_CONFIRMED_PATCH_READY`。
+
+---
+
+## 8. E.1.2.1 修订补遗（2026-11-08）
+
+本文档 §2 记录的 E.1 当时"维持 XMM0/XMM1、纠正为 XMM0/XMM1"的结论，保留为当时决策记录。**E.1.2.1 由用户最终裁定将层 ① 类型推导 ABI 修订为 `volume=XMM2 / pitch=XMM3`**（按参数在完整参数列表中的序位：第 3 参数 volume→XMM2、第 4 参数 pitch→XMM3；与任务 §二 最初请求一致）。当前权威结论见 `final-decision.md` §11 与 `playui-callsite-and-abi.md` §4；二进制 caller/target 寄存器读取（层 ②③）仍标 PENDING。

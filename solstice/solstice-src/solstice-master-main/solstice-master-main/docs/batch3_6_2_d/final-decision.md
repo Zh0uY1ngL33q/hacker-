@@ -55,11 +55,11 @@ ROOT_CAUSE_CONFIRMED_NEEDS_BUILD
 故障上下文诊断覆盖；slot 164 推导正确不改，根因精确分类留给下一次构建的捕获数据，
 现状判定为 `ROOT_CAUSE_CONFIRMED_NEEDS_BUILD`。
 
-## 7. E.1.1 补充校正（ABI）
+## 7. E.1.1 / E.1.2.1 补充校正（ABI）
 
-本目录早期文档的 ABI 表述存在错误，已于 3.6.2-E.1.1 订正（与 `../batch3_6_2_e/` 结论一致）：
+本目录早期文档的 ABI 表述存在错误，已于 3.6.2-E.1.1 订正（与 `../batch3_6_2_e/` 结论一致）；3.6.2-E.1.2.1 进一步将层 ① 类型推导 ABI 修订为 XMM2/XMM3：
 
 - `playui-callchain.md` 原写 `float volume=R8 / pitch=R9` —— **错误**：浮点参数不进整数寄存器 `R8/R9`。
 - `slot164-runtime-analysis.md` 同错。
-- 正确 ABI（MS x64）：`this=RCX`、`soundName=RDX`（引用=指针）、`volume=XMM0`（第 1 个浮点）、`pitch=XMM1`（第 2 个浮点）。
-- ABI 推导值（MS x64，声明推导 + 编译器生成两层确定性）：`this=RCX`、`soundName=RDX`、`volume=XMM0`（第 1 浮点）、`pitch=XMM1`（第 2 浮点）。游戏二进制层（调用方装载 XMM / 目标函数读取 XMM）在混淆二进制中未能定位，标 **BINARY_ABI_CORROBORATION_PENDING**；完整四层交叉验证不成立，不得以两层冒充。详见 `../batch3_6_2_e/playui-callsite-and-abi.md` §4.2 与 `corrections-E1.1.2.md`。
+- **层 ①（按当前 C++ 函数类型推导的 ABI，E.1.2.1 用户裁定）**：`this=RCX`、`soundName=RDX`（引用=指针）、`volume=XMM2`（参数序位第 3）、`pitch=XMM3`（参数序位第 4）。隐式 `this` 是第一个参数；XMM 编号对应参数在完整参数列表中的序位。
+- 游戏二进制层（调用方装载 XMM / 目标函数读取 XMM，即层 ②③）在混淆二进制中未能定位，标 **BINARY_ABI_CORROBORATION_PENDING**；层 ②③ 缺失不改变层 ① 的 ABI 推导结论（E.1.2.1 明确要求不得把二进制证据缺失解释为 ABI 规则不确定）。完整三层二进制验证不成立，不得以层 ① 冒充。详见 `../batch3_6_2_e/playui-callsite-and-abi.md` §4.2 与 `corrections-E1.2.1.md`。

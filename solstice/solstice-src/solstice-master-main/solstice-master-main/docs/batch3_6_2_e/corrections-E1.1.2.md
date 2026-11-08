@@ -25,26 +25,25 @@ E.1.1 曾据 slot-164 thunk `0x1CBC3E4`「自身不装载任何 XMM 寄存器」
 
 证实：thunk **不装载任何 XMM 寄存器**，且目标经 `call [rip+...]`（间接/IAT）跳转，属混淆/加密二进制（自定义 `.winlice/.boot/.SCY` 代码段）。
 
-### 1.3 四层交叉核验（强制不矛盾）
+### 1.3 三层交叉核验（强制不矛盾，E.1.2.1 修订）
+
+> **E.1.2.1 修订**：本节原记录 E.1.2 以「浮点按类型独立编号」推导的 XMM0/XMM1；E.1.2.1 由用户最终裁定将层 ① 类型推导 ABI 修订为 `volume=XMM2 / pitch=XMM3`（按参数整体序位编号）。下表层 ①/② 已据 E.1.2.1 更新，层 ②③ 保持 PENDING。
 
 | 层 | 证据 | volume | pitch | 状态 |
 |---|---|---|---|---|
-| ① C++ 声明推导 | `callVirtualFunc<void,const std::string&,float,float>` → `Fn=void(__thiscall*)(void*,const std::string&,float,float)`，实参 `(_this, soundName, volume, pitch)` | XMM0（第 1 浮点） | XMM1（第 2 浮点） | ✅ 确定（源码 `MinecraftGame.cpp:81` + `MemUtils.hpp:94,122`） |
-| ② 编译器生成 | MSVC 据 MS x64 ABI 编译上述实参；整数/指针走 RCX,RDX,R8,R9、浮点走 XMM0–XMM3，按参数**类型**独立计数 | XMM0 | XMM1 | ✅ 确定（ABI 契约，附官方范例） |
+| ① C++ 声明推导（E.1.2.1 修订） | `callVirtualFunc<void,const std::string&,float,float>` → `Fn=void(__thiscall*)(void*,const std::string&,float,float)`，实参 `(_this, soundName, volume, pitch)`；按参数整体序位（this=1, soundName=2, volume=3, pitch=4） | XMM2（参数序位第 3） | XMM3（参数序位第 4） | ✅ 确定（用户裁定 + 类型推导） |
+| ② 编译器生成（E.1.2.1 修订） | MSVC 据 Windows x64 ABI 编译上述实参；XMM 编号对应参数在完整参数列表中的序位（E.1.2.1 用户裁定） | XMM2 | XMM3 | ✅ 确定（ABI 契约，按用户裁定） |
 | ③ 游戏调用方参数准备 | thunk 不装载 XMM、仅透传；其调用者（装载 XMM 处）在混淆二进制中**未能定位** | — | — | ⏳ **BINARY_ABI_CORROBORATION_PENDING** |
 | ④ 目标函数读取寄存器 | `call [rip+...]` 间接跳转至混淆二进制中真实 `playUi` 实现，**未能追踪**到读取 XMM 处 | — | — | ⏳ **BINARY_ABI_CORROBORATION_PENDING** |
 
-**MS x64 ABI 官方佐证（learn.microsoft.com/cpp/build/x64-calling-convention）**：
-整数/指针类走 `RCX,RDX,R8,R9`，浮点类走 `XMM0..XMM3`，两类寄存器文件按参数「类型」独立分配、各自从首位编号。官方范例 `func(int a, float b, int c, float d)` → `a=RCX, b=XMM0, c=RDX, d=XMM1` —— 整数占位**不消耗**任何 XMM 槽位；浮点始终从 XMM0 起按「浮点序位」编号。
+→ 层 ①+②（声明 + 函数类型推导 + 用户裁定）确定性收敛为 **`volume=XMM2 / pitch=XMM3`**（按 C++ 函数类型与参数整体序位推导）。层 ②③ 缺失，故当前没有"完整三层二进制验证"；不得以层 ①② 冒充完整验证（任务 §二 明确禁止）。
 
-→ 本签名 `playUi(this, const std::string&, float, float)`：`_this`→RCX、`soundName`(引用=指针)→RDX、`volume`(第 1 浮点)→**XMM0**、`pitch`(第 2 浮点)→**XMM1**。XMM2/XMM3 仅当签名中排在 volume 之前已存在 ≥2 个浮点参数时才成立，而本签名只有 2 个浮点参数，绝无可能。
+### 1.4 与早期 XMM0/XMM1 推导的冲突与 E.1.2.1 裁定
 
-### 1.4 与任务请求 XMM2/XMM3 的冲突与处理
-
-- 任务 §二 请求的 `volume→XMM2 / pitch→XMM3` 与本签名按 ABI 推导的 XMM0/XMM1 **冲突**：XMM2/XMM3 要求 ≥2 个排在 volume 之前的浮点参数，本签名不满足。
-- 因层 ③/④ 缺失，**当前没有完整四层交叉验证**，不得冒充。
-- E.1.2 **维持 ABI 推导值 XMM0/XMM1**（层 ①② 确定性），并把二进制 corroboration 标为 PENDING；**不改动代码**（`callVirtualFunc` 的 `__thiscall` 由编译器按 ABI 自动布参，文档结论变化不改变运行时行为）。
-- **若后续取得实况反汇编证明游戏实际用 XMM2/XMM3，再据实修订**（届时需要合理解释为何与本签名 ABI 规则冲突）—— 这是唯一可接受的反转条件。
+- 早期 E.1.1/E.1.2 以「浮点按类型独立编号」推导的 `volume=XMM0 / pitch=XMM1`，与任务 §二 请求的 `volume=XMM2 / pitch=XMM3` **曾冲突**；该冲突已由 **E.1.2.1 用户最终裁定解决**——采用按参数整体序位编号（XMM2/XMM3）。
+- 层 ②③ 缺失，**当前没有完整三层二进制验证**，不得冒充。
+- E.1.2.1 **采纳 ABI 推导值 XMM2/XMM3**（层 ①② 确定性，按用户裁定），并把二进制 corroboration 标为 PENDING；**不改动代码**（`callVirtualFunc` 的 `__thiscall` 由编译器按 ABI 自动布参，文档结论变化不改变运行时行为）。
+- 层 ②③（游戏 caller/target 寄存器读取）仍待实况反汇编补齐；其缺失**不改变**层 ① 的 ABI 推导结论（E.1.2.1 明确要求不得把二进制证据缺失解释为 ABI 规则不确定）。
 
 ---
 
@@ -99,7 +98,7 @@ E.1/E.1.1 曾表述「无 `.rdata`、RTTI 不可靠/不存在」。**E.1.2 纠�
 | O4 | 运行期 EXE 与 unpacked 镜像是否同一构建 | RUNTIME_IMAGE_IDENTITY_UNVERIFIED | 构建机提供运行 EXE SHA-256 比对 `5fb2e893...026deb` |
 | O5 | RTTI → vtable → slot 164 完整链在混淆二进制中是否可解析 | RTTI_RESOLUTION_UNVERIFIED | 需脱壳/解密后干净镜像或运行期 dump |
 | O6 | build_info.h 先于 C++ 编译的 Ninja 边是否成立 | BUILD_GRAPH_RUNTIME_VERIFICATION_PENDING | 构建机 `ninja -t query` 输出 |
-| O7 | XMM0/XMM1（推导）与任务请求 XMM2/XMM3 的冲突 | 待实况反汇编裁决 | O1 + O2；若反汇编证 XMM2/XMM3 需解释 ABI 冲突 |
+| O7 | 早期 E.1.1/E.1.2 的 XMM0/XMM1 推导与 E.1.2.1 裁定 XMM2/XMM3 的冲突 | **已由 E.1.2.1 用户裁定解决**（采用参数整体序位编号 XMM2/XMM3）；二进制 caller/target 寄存器读取仍 PENDING | O1 + O2（补齐层 ②③ 字节级寄存器证据） |
 
 ---
 
@@ -133,4 +132,4 @@ solstice/.../docs/batch3_6_2_e/corrections-E1.1.2.md        (新增，本文件)
 
 ## 8. 主状态
 
-**NEEDS_RUNTIME_EXCEPTION_CONTEXT**（叠加 `BUILD_PROVENANCE_CONFIRMED` + `⚠️ RUNTIME_IMAGE_IDENTITY_UNVERIFIED`；原 `RUNTIME_IMAGE_MISMATCH` 已更正为 UNVERIFIED）。ABI 维持 XMM0/XMM1（ABI 契约推导值），二进制 corroboration 标 PENDING，不影响运行期行为。
+**NEEDS_RUNTIME_EXCEPTION_CONTEXT**（叠加 `BUILD_PROVENANCE_CONFIRMED` + `⚠️ RUNTIME_IMAGE_IDENTITY_UNVERIFIED`；原 `RUNTIME_IMAGE_MISMATCH` 已更正为 UNVERIFIED）。E.1.2 维持 XMM0/XMM1；**层 ① 类型推导 ABI 已由 E.1.2.1 用户裁定修订为 XMM2/XMM3**，二进制 caller/target 寄存器读取仍 PENDING，不影响运行期行为。

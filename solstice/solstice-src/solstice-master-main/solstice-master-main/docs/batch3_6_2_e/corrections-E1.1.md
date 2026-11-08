@@ -169,3 +169,9 @@ OFF 与 undefined 都落 `0`，崩溃日志可区分"选项关"与"字段不存�
 ## 8. 最终验收状态（维持）
 
 **NEEDS_RUNTIME_EXCEPTION_CONTEXT** 叠加 `BUILD_PROVENANCE_CONFIRMED` + `⚠️ RUNTIME_IMAGE_MISMATCH`。ABI 统一为 XMM0/XMM1 属文档一致性校正，不影响运行期行为；收敛仍需构建机重建 + 运行期身份采集 + 故障上下文复现。
+
+---
+
+## 9. E.1.2.1 修订补遗（2026-11-08）
+
+本文档 §2 记录的 E.1.1 当时"以浮点按类型独立编号"推导并"统一收敛到 XMM0/XMM1"的结论，保留为当时决策记录。**E.1.2.1 由用户最终裁定将层 ① 类型推导 ABI 修订为 `volume=XMM2 / pitch=XMM3`**（按参数整体序位编号：第 3 参数 volume→XMM2、第 4 参数 pitch→XMM3）。当前权威结论见 `final-decision.md` §11 与 `playui-callsite-and-abi.md` §4；二进制 caller/target 寄存器读取（层 ②③）仍标 PENDING。

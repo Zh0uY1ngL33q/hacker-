@@ -47,10 +47,9 @@ if (auto* game = ci->getMinecraftGame(); InstanceLocator::isPlausibleGame(game))
 
 - **阶段**：`Solstice::init` 内、映射校验放行之后、主循环之前（init 收尾的 beacon 提示音）。
 - **线程**：崩溃栈显示为 `initThread`（见第六工作组，与 GL 渲染线程 `tid=0x1c20` 不同线程）。
-- **ABI**：`__thiscall`。`callVirtualFunc` 中
-  `Fn = Ret(__thiscall*)(void*, Args...)`，`vtable[index](_this, args...)`。
-  参数布局：`this=RCX`、`const std::string& soundName=RDX`、`float volume=XMM0`（第 1 个浮点参数）、`float pitch=XMM1`（第 2 个浮点参数），返回 `void`。
-  与游戏侧 `playUi(const std::string&, float, float)` 形参顺序一致。详见 `../batch3_6_2_e/playui-callsite-and-abi.md` §4 三层交叉核验（E.1.1 已订正：原 D 文档误写 `volume=R8/pitch=R9`，浮点不进整数寄存器）。
+- **ABI（E.1.2.1）**：`__thiscall` 在 x64 被忽略，使用默认 Windows x64 ABI。`callVirtualFunc` 中 `Fn = Ret(__thiscall*)(void*, Args...)`，`vtable[index](_this, args...)`。隐式 `this` 是第一个参数；XMM 编号对应参数在完整参数列表中的序位（E.1.2.1 用户裁定）。
+  参数布局（层 ① 类型推导）：`this=RCX`、`const std::string& soundName=RDX`、`float volume=XMM2`（参数序位第 3）、`float pitch=XMM3`（参数序位第 4），返回 `void`。
+  与任务 §二 最初请求的 `RCX / RDX / XMM2 / XMM3` 一致。游戏二进制 caller/target 寄存器读取（层 ②③）仍标 **BINARY_ABI_CORROBORATION_PENDING**。详见 `../batch3_6_2_e/playui-callsite-and-abi.md` §4 三层交叉核验与 `corrections-E1.2.1.md`（E.1.1 曾订正原 D 文档误写 `volume=R8/pitch=R9`；E.1.1/E.1.2 一度维持 XMM0/XMM1，被 E.1.2.1 修订为 XMM2/XMM3）。
 
 ## 6. 小结
 

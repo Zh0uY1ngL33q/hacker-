@@ -47,11 +47,12 @@ disp32=0x520 (1312)   1312 % 8 == 0   -> slot = 164
 
 ## 第四层：ABI（见 `playui-callsite-and-abi.md`）
 
-- 声明 `void playUi(const std::string&, float, float)`。
-- x64：**ABI 契约推导值** `RCX=this`、`RDX=std::string&`、`XMM0=volume`、`XMM1=pitch`（**非 XMM2/XMM3**）。
-- `__thiscall`：`vtable[index](_this, args...)`，`this` 在 `RCX`。与声明一致。
-- **E.1 校正（P0-1）**：E.1 审查主张 `volume=XMM2 / pitch=XMM3`，但经核对 `MinecraftGame::playUi → MemUtils::callVirtualFunc<void, const std::string&, float, float>`（`MinecraftGame.cpp:81`）的真实调用点源码，两个 `float` 作为第 1、第 2 个浮点实参传入，按 MS x64 ABI（整数/指针走 RCX,RDX,R8,R9、浮点走 XMM0–XMM3、按类型独立计数）编译后落在 XMM0/XMM1。position 法把浮点排到 XMM2/XMM3 是错误结论。slot 164 本身的四层推导不受 ABI 槽位影响；ABI 仅决定实参落点，不影响虚表索引。详见 `playui-callsite-and-abi.md` §4.1。
-- **E.1.1 / E.1.2 四层交叉核验（P0-1）**：层 ①（声明推导）与层 ②（MSVC 据 ABI 编译）确定性收敛到 `volume=XMM0 / pitch=XMM1`；但层 ③（游戏调用方装载 XMM）与层 ④（playUi 目标读取 XMM）因混淆二进制中未能定位 thunk `0x1CBC3E4` 的调用者与追踪间接调用目标，标记为 **BINARY_ABI_CORROBORATION_PENDING**。E.1.2 已撤回 E.1.1 中"thunk 不装载 XMM 即证明 XMM0/XMM1"的方法学错误论证。当前**无完整四层二进制验证**，ABI 值以层 ①② 的 ABI 契约推导为准（XMM0/XMM1），与任务请求的 XMM2/XMM3 冲突，待实况反汇编补齐。详见 `playui-callsite-and-abi.md` §4.2。
+- 声明 `void playUi(const std::string&, float, float)`；函数指针 `Fn = Ret(__thiscall*)(void*, const std::string&, float, float)`；调用实参 `(_this, soundName, volume, pitch)`。
+- **层 ①（按当前 C++ 函数类型推导的 ABI，E.1.2.1 用户裁定）**：`RCX=this`、`RDX=std::string&`、`XMM2=volume`（参数序位第 3）、`XMM3=pitch`（参数序位第 4）。
+- `__thiscall`：在 x64 被忽略，使用默认 Windows x64 ABI；`vtable[index](_this, args...)`，`this` 在 `RCX`。隐式 `this` 是第一个参数，XMM 编号对应参数在完整参数列表中的序位。
+- **三层区分（E.1.2.1）**：层 ① 类型推导 ABI = `volume=XMM2 / pitch=XMM3`（确定性）；层 ②（游戏调用方在 `call` 前把 volume/pitch 装进哪个 XMM）与层 ③（playUi 目标函数从哪个 XMM 读取）在混淆二进制中未能定位 thunk `0x1CBC3E4` 的调用者、也未能追踪 `call [rip+0x6eb6398]` 间接目标，标记 **BINARY_ABI_CORROBORATION_PENDING**——层 ②③ 的待验证状态不改变层 ① 的 ABI 推导结论。
+- E.1/E.1.1/E.1.2 曾以"浮点按类型独立编号"推导 `volume=XMM0 / pitch=XMM1`，该结论被 E.1.2.1 用户裁定修订为 XMM2/XMM3（按参数整体序位编号）。见 `playui-callsite-and-abi.md` §4、§4.1、§4.2 与 `corrections-E1.2.1.md`。
+- slot 164 本身的四层推导不受 ABI 槽位影响；ABI 仅决定实参落点，不影响虚表索引（164 不变）。
 
 ## 结论
 

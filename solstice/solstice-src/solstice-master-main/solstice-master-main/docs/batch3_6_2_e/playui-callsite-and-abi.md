@@ -50,83 +50,74 @@ if (auto* ci = ClientInstance::get(); ci) {
 - 唯一真实约束是「对象必须有效且 vtable 落点可信」——由 669ce2c 的 `isValidVirtualCall` 守卫覆盖（见 `virtual-call-guard-review.md`）。
 - 由于 `playUi` 是**可选**音效，`Solstice::init` 在调用它之后才打印 `Initialized!` 并 detach shutdown 线程；守卫若拒绝调用（early return），**不会**把初始化虚报为成功（初始化早已在调用前完成）。
 
-## 4. ABI —— 按真实声明与 x64 调用约定逐项核对
+## 4. ABI —— 按目标声明与用户最终裁定（E.1.2.1）逐项核对
 
 声明（`src/SDK/Minecraft/MinecraftGame.hpp:15`）：
 ```cpp
 void playUi(const std::string& soundName, float volume, float pitch);
 ```
 
-Windows x64 调用约定（整数/指针类走 `RCX,RDX,R8,R9`；浮点类走 `XMM0..XMM3`，两类独立计数）：
+Windows x64 调用约定（整数/指针类走 `RCX,RDX,R8,R9`；浮点类走 `XMM0..XMM3`）。**E.1.2.1 用户最终裁定**：寄存器类型不同，不代表寄存器编号独立分配；`XMM` 编号仍对应参数在**整个调用参数列表**中的位置，成员函数的隐式 `this` 是第一个参数。据此：
 
-| 参数 | 类型 | 寄存器 |
-|---|---|---|
-| `this` | 指针 | **RCX** |
-| `soundName` | `const std::string&`（引用=指针） | **RDX** |
-| `volume` | `float`（第 1 个浮点参数） | **XMM0** |
-| `pitch` | `float`（第 2 个浮点参数） | **XMM1** |
+| 参数 | 类型 | 参数序位 | 寄存器（层 ① 类型推导） |
+|---|---|---|---|
+| `this` | 指针（隐式第一参数） | 1 | **RCX** |
+| `soundName` | `const std::string&`（引用=指针） | 2 | **RDX** |
+| `volume` | `float` | 3 | **XMM2** |
+| `pitch` | `float` | 4 | **XMM3** |
 
-> 任务示例中写的「RCX / RDX / XMM2 / XMM3」**不正确**：前两个浮点参数落在 `XMM0`/`XMM1`，而非 `XMM2`/`XMM3`（后者仅当前面已有 ≥2 个浮点参数时才用到）。
+> **三层区分（E.1.2.1 明确要求）**：
+> 1. **层 ① 按当前 C++ 函数类型推导的 ABI**：`this=RCX`、`soundName=RDX`、`volume=XMM2`、`pitch=XMM3`（按上述参数序位推导，确定性结论；与任务 §二 最初请求的 `RCX / RDX / XMM2 / XMM3` 一致）。
+> 2. **层 ② 游戏二进制调用者的参数准备**（调用方在 `call` 之前把 volume/pitch 装进哪个 XMM）：**待验证（PENDING）**。
+> 3. **层 ③ 游戏目标函数实际读取的寄存器**（playUi 实现从哪个 XMM 取参）：**待验证（PENDING）**。
 >
-> **真实调用点反汇编核对（E.1 / P0-1 要求）**：本仓库的调用并非手写 asm，而是经 `MinecraftGame::playUi` → `MemUtils::callVirtualFunc<void, const std::string&, float, float>`（`src/SDK/Minecraft/MinecraftGame.cpp:81`）：
+> **不得把二进制证据缺失解释为 ABI 规则不确定**：层 ②③ 的待验证状态**不改变**层 ① 的 ABI 推导结论（XMM2/XMM3）。
+>
+> **真实调用点源码（对照一致性）**：本仓库调用经 `MinecraftGame::playUi` → `MemUtils::callVirtualFunc<void, const std::string&, float, float>`（`src/SDK/Minecraft/MinecraftGame.cpp:81`）：
 > ```cpp
 > // MemUtils.hpp:94  using Fn = Ret(__thiscall*)(void*, Args...);
 > // MemUtils.hpp:122 return reinterpret_cast<Fn>(vtable[index])(_this, args...);
 > MemUtils::callVirtualFunc<void, const std::string&, float, float>(index, this, soundName, volume, pitch);
 > ```
-> 模板实参展开后，`Fn = void(__thiscall*)(void*, const std::string&, float, float)`；调用时实参顺序为 `(_this, soundName, volume, pitch)`。按 MS x64 ABI，整数/指针寄存器（RCX,RDX,R8,R9）与 XMM 浮点寄存器（XMM0–XMM3）**按参数类型独立分配**：`_this`→RCX、`soundName`(引用=指针)→RDX、`volume`(第 1 个浮点)→**XMM0**、`pitch`(第 2 个浮点)→**XMM1**。这与声明完全一致，ABI 层与游戏自身 `playUi`（`48 8B 80 [disp32] FF 15` 的 vtable 调用）一致——我们的调用镜像了游戏自己的调用方式。
->
-> **E.1 审查校正记录**：E.1 审查意见要求把 ABI 改为 `this=RCX / soundName=RDX / volume=XMM2 / pitch=XMM3`，并禁止"浮点参数独立计数"的解释。经核对 `callVirtualFunc` 源码与 MS x64 ABI 规范，**XMM0/XMM1 才是正确值**，`XMM2/XMM3` 是把浮点寄存器按"整体参数位置"数出来的错误结论（positional counting）。本文件维持 XMM0/XMM1，因为：① 真实调用点源码（`callVirtualFunc`）把两个 float 作为第 1、第 2 个浮点参数传递，编译后必然落在 XMM0/XMM1；② 若写成 XMM2/XMM3，反而与真实调用点**不一致**，违背 E.1 自身"确认编译器生成的寄存器传参与函数声明一致"的要求。
+> 模板实参展开后，`Fn = void(__thiscall*)(void*, const std::string&, float, float)`，调用实参序列为 `(_this, soundName, volume, pitch)`，与上述参数序位（1→RCX、2→RDX、3→XMM2、4→XMM3）一致。`__thiscall` 在 x64 被忽略，使用默认 Windows x64 ABI。
 
-### 4.1 修订前后 ABI 对照（E.1）
+### 4.1 修订前后 ABI 对照（E.1 → E.1.2.1）
 
-| 参数 | 类型 | E.1 审查主张 | 真实（本文件 / callVirtualFunc 源码 + MS x64 ABI） |
-|---|---|---|---|
-| `this` | 指针 | RCX | **RCX** ✅ 一致 |
-| `soundName` | `const std::string&` | RDX | **RDX** ✅ 一致 |
-| `volume` | `float` | XMM2 | **XMM0** ✅ 纠正 |
-| `pitch` | `float` | XMM3 | **XMM1** ✅ 纠正 |
+| 参数 | 类型 | E.1 审查主张（后被 E.1.2.1 采纳） | E.1.1/E.1.2 暂定结论 | E.1.2.1 用户最终裁定（层 ① 类型推导） |
+|---|---|---|---|---|
+| `this` | 指针 | RCX | RCX | **RCX** ✅ |
+| `soundName` | `const std::string&` | RDX | RDX | **RDX** ✅ |
+| `volume` | `float` | XMM2 | XMM0 | **XMM2** ✅ |
+| `pitch` | `float` | XMM3 | XMM1 | **XMM3** ✅ |
 
-> 结论：仅浮点槽位被 E.1 误判为 XMM2/XMM3；实际为 XMM0/XMM1（见 §4.2 的 ABI 契约推导与证据缺口说明）。本文件不改动任何代码，仅校正文档。
+> 结论：E.1 审查主张的 `volume=XMM2 / pitch=XMM3` 经 E.1.1/E.1.2 一度以"浮点按类型独立编号"为由暂改为 XMM0/XMM1；**E.1.2.1 由用户最终裁定采纳 XMM2/XMM3**（按参数在完整参数列表中的序位：第 3 参数 volume→XMM2、第 4 参数 pitch→XMM3）。层 ① 类型推导 ABI 现为 `volume=XMM2 / pitch=XMM3`；游戏二进制 caller/target 寄存器读取（层 ②③）仍标 PENDING（见 §4.2）。本文件不改动任何代码，仅校正文档。
 
-### 4.2 四层交叉核验与证据缺口（E.1.1 / E.1.2 / P0-1）
+### 4.2 三层区分与证据缺口（E.1.2.1 / P0-1）
 
-任务要求把四层证据交叉核验：① C++ 声明推导；② 编译器生成的真实调用指令；③ 游戏二进制调用方的参数准备；④ 游戏目标函数读取的参数寄存器。结论必须唯一、不矛盾；且**不能把部分证据冒充完整验证**。
+任务要求把证据分层核验：① C++ 声明/函数类型推导；② 游戏二进制调用方的参数准备；③ 游戏目标函数实际读取的参数寄存器。结论必须明确区分"类型推导"与"二进制观测"，且**不得把二进制证据缺失解释为 ABI 规则不确定**。
 
-#### 层 ① / ②：声明推导 + MS x64 ABI 契约（确定性推导，非字节观测）
+#### 层 ①：按当前 C++ 函数类型推导的 ABI（确定性结论）
 
-- 函数指针 `Fn = Ret(__thiscall*)(void*, const std::string&, float, float)`；调用实参 `(_this, soundName, volume, pitch)`。
-- MS x64 调用约定（learn.microsoft.com/cpp/build/x64-calling-convention）：整数/指针类参数走 `RCX,RDX,R8,R9`，浮点类参数走 `XMM0..XMM3`，**两类寄存器文件按参数"类型"独立分配、各自从首位编号**。
-- 本签名参数序列：`_this`(指针)→RCX、`soundName`(引用=指针)→RDX、`volume`(第 1 个浮点)→**XMM0**、`pitch`(第 2 个浮点)→**XMM1**。
+- 目标声明 `void playUi(const std::string& soundName, float volume, float pitch)`；函数指针 `Fn = Ret(__thiscall*)(void*, const std::string&, float, float)`；调用实参 `(_this, soundName, volume, pitch)`。
+- 隐式 `this` 是第一个参数；按参数在**完整调用参数列表**中的序位分配寄存器（E.1.2.1 用户裁定）：`_this`(参数1,指针)→RCX、`soundName`(参数2,引用=指针)→RDX、`volume`(参数3,float)→**XMM2**、`pitch`(参数4,float)→**XMM3**。
+- `__thiscall` 在 x64 被忽略，使用默认 Windows x64 ABI；浮点类走 XMM0..XMM3，但 XMM 编号对应参数整体序位，故第 3、第 4 参数落到 XMM2/XMM3。
 
-> 规范佐证（Microsoft 官方范例）：`func(int a, float b, int c, float d)` → `a=RCX, b=XMM0, c=RDX, d=XMM1`。即整数占位**不消耗**任何 XMM 槽位；浮点始终从 XMM0 起按"浮点序位"编号。这证明本签名 `volume=XMM0 / pitch=XMM1`，**而非** XMM2/XMM3。XMM2/XMM3 仅当签名中排在 `volume` 之前已存在 ≥2 个浮点参数时才成立——而 `playUi(const std::string&, float, float)` 只有 2 个浮点参数，绝无可能。
+→ 层 ① 收敛为 **`volume=XMM2`、`pitch=XMM3`**（按 C++ 函数类型与用户裁定推导，确定性）。
 
-→ 层 ①+② 收敛为 **`volume=XMM0`、`pitch=XMM1`**。这是依据公开 ABI 契约的**确定性推导**，不依赖任何字节级观测。
+#### 层 ② / ③：游戏二进制（调用方参数准备 + 目标函数读取）—— PENDING
 
-#### 层 ③ / ④：游戏二进制（调用方参数准备 + 目标函数读取）—— BINARY_ABI_CORROBORATION_PENDING
-
-- E.1.1 曾据 slot-164 thunk `0x1CBC3E4`"自身不装载任何 XMM 寄存器"推断 volume/pitch 由调用方经 XMM0/XMM1 透传、从而"证明"XMM0/XMM1。**该推断在方法学上不成立**：一个只做 `mov rcx,[rcx+8]` → 取 vtable → `call [rip+...]` 的 trampoline 本就不装载 XMM，它只是**原样透传**调用方设置的 XMM 寄存器——因此"thunk 不装载 XMM"既不支持也不否定 XMM0/XMM1，不能作为二进制 corroboration 证据。E.1.2 据此**撤回**该论证。
-- E.1.2 重新完整反汇编该 thunk（RVA `0x1CBC3E4`，6 条指令）：
-  ```
-  0x1cbc3e4: mov rcx, [rcx+8]            ; this 调整后作为新 RCX
-  0x1cbc3e8: mov rax, [rcx]              ; rax = vtable
-  0x1cbc3eb: mov rax, [rax+0x520]        ; rax = vtable[164]
-  0x1cbc3f2: call qword [rip+0x6eb6398]  ; 经 IAT/间接指针调用目标
-  0x1cbc3f8: add rsp, 0x38
-  0x1cbc3fc: ret
-  ```
-  证实：thunk **不装载任何 XMM 寄存器**，且目标经 `call [rip+...]`（间接/IAT）跳转，属混淆/加密二进制（自定义 `.winlice/.boot/.SCY` 代码段）。
-- 层 ③（调用方在 `call` 之前把 volume/pitch 装进哪个 XMM）与层 ④（playUi 目标函数从哪个 XMM 读取）需要**定位该 thunk 的调用者**与**追踪间接调用目标**到真实 `playUi` 实现。在混淆二进制中这两步**未能完成**（调用经寄存器/间接跳转，段结构被改写，无干净符号），故层 ③/④ 标记为 **BINARY_ABI_CORROBORATION_PENDING**——不得据此声称已二进制验证 XMM0/XMM1，也不得据此声称 XMM2/XMM3。
+- 层 ②（调用方在 `call` 之前把 volume/pitch 装进哪个 XMM）与层 ③（playUi 目标函数从哪个 XMM 读取）需要定位 slot-164 thunk `0x1CBC3E4` 的调用者并追踪其 `call [rip+0x6eb6398]` 间接目标到真实 `playUi` 实现。在混淆/加密二进制（自定义 `.winlice/.boot/.SCY` 代码段、寄存器/间接跳转、无干净符号）中这两步**未能完成**，故层 ②③ 标记为 **BINARY_ABI_CORROBORATION_PENDING**。
+- thunk `0x1CBC3E4` 自身不装载任何 XMM 寄存器（仅 `mov rcx,[rcx+8]` → 取 vtable → `call [rip+...]`），它只**原样透传**调用方设置的 XMM 寄存器——因此"thunk 不装载 XMM"既不支持也不否定 XMM2/XMM3，不能作为二进制 corroboration 证据（E.1.2 已撤回据此证明 XMM0/XMM1 的论证；该撤回在 E.1.2.1 同样适用：thunk 透传不构成任何寄存器编号证据）。
 
 #### 结论（强制不矛盾）
 
-- 层 ①+②（声明 + ABI 契约）：**`volume=XMM0 / pitch=XMM1`**（确定性推导，按 MS 官方范例）。
-- 层 ③+④（二进制观测）：**PENDING**，未取得调用方/目标函数的字节级寄存器证据。
-- 因层 ③/④ 缺失，**当前没有"完整四层交叉验证"**；不得以层 ①+② 冒充完整验证（任务明确禁止）。
-- 本签名按 MS x64 ABI 的推导值（XMM0/XMM1）与任务 §二 请求的 `volume=XMM2 / pitch=XMM3` **冲突**：XMM2/XMM3 要求签名中存在 ≥2 个排在 volume 之前的浮点参数，而本签名无此条件。在取得游戏二进制"调用点装载 XMM"与"playUi 实现读取 XMM"的实况反汇编前，本文件**维持 ABI 推导值 XMM0/XMM1**，并把二进制 corroboration 标为 PENDING；若后续取得实况反汇编证明游戏实际用 XMM2/XMM3，再据实修订（届时需要合理解释为何与本签名 ABI 规则冲突）。
+- 层 ①（声明 + 函数类型推导 + 用户裁定）：**`volume=XMM2 / pitch=XMM3`**（确定性推导）。
+- 层 ②③（二进制观测）：**PENDING**，未取得调用方/目标函数的字节级寄存器证据。
+- 层 ②③ 的待验证状态**不改变**层 ① 的 ABI 规则结论（XMM2/XMM3）；不得把二进制证据缺失解释为 ABI 规则不确定（E.1.2.1 明确要求）。
+- 本签名按上述类型推导的 ABI（XMM2/XMM3）与早期 E.1.1/E.1.2 文档中"按浮点类型独立编号"推导的 XMM0/XMM1 **冲突**：该冲突已由 E.1.2.1 用户裁定解决——采用按参数整体序位编号（XMM2/XMM3）。二进制 caller/target 寄存器读取留待运行期 dump 补齐（O1/O2）。
 
 ## 5. 结论
 
 - 崩溃落在调用点 A（`Solstice::init` 尾音效），由 `initThread` 执行，对象已校验。
 - `playUi` 是**可选音效**，非初始化必需；守卫拒绝不会虚报初始化成功。
-- ABI 正确（RCX/RDX/XMM0/XMM1），无需为 ABI 改动任何代码。
+- ABI（层 ① 类型推导）：`RCX / RDX / XMM2 / XMM3`（E.1.2.1 用户裁定）；二进制 caller/target 寄存器读取仍 PENDING，无需为 ABI 改动任何代码。

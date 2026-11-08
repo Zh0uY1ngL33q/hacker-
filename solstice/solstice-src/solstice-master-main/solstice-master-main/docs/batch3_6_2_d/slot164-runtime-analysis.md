@@ -39,9 +39,10 @@ return reinterpret_cast<Fn>(vtable[index])(_this, args...);
 
 ## 4. 第四层：调用 ABI 层
 
-- `__thiscall`：`this` 在 `RCX`（指针）；`const std::string&` 引用=指针走 `RDX`；浮点参数走 `XMM0..XMM3`（整数/浮点两套寄存器独立计数，浮点不进 `R8/R9`）。
-- 参数：`this=RCX`、`const std::string& soundName=RDX`、`float volume=XMM0`（第 1 个浮点）、`float pitch=XMM1`（第 2 个浮点），返回 `void`。
-- 与 `playUi(const std::string&, float, float)` 一致；ABI 层无错位。E.1.1 已订正原 D 文档误写的 `volume=R8/pitch=R9`。
+- `__thiscall` 在 x64 被忽略，使用默认 Windows x64 ABI：隐式 `this` 是第一个参数（指针→RCX）；`const std::string&` 引用=指针走 `RDX`；浮点参数走 `XMM0..XMM3`，XMM 编号对应参数在完整参数列表中的序位（E.1.2.1 用户裁定）。
+- **层 ①（按当前 C++ 函数类型推导的 ABI，E.1.2.1）**：`this=RCX`、`const std::string& soundName=RDX`、`float volume=XMM2`（参数序位第 3）、`float pitch=XMM3`（参数序位第 4），返回 `void`。
+- **三层区分（E.1.2.1）**：层 ① 类型推导 ABI = `volume=XMM2 / pitch=XMM3`（确定性）；层 ②（游戏调用方装载 XMM）/ 层 ③（playUi 目标读取 XMM）在混淆二进制中未能定位，标 **BINARY_ABI_CORROBORATION_PENDING**——层 ②③ 缺失不改变层 ① 结论。
+- 与任务 §二 最初请求的 `RCX / RDX / XMM2 / XMM3` 一致。E.1.1 曾订正原 D 文档误写的 `volume=R8/pitch=R9`；E.1.1/E.1.2 一度维持 XMM0/XMM1，该结论被 E.1.2.1 修订为 XMM2/XMM3（按参数整体序位编号，详见 `../batch3_6_2_e/playui-callsite-and-abi.md` §4 与 `corrections-E1.2.1.md`）。
 
 ## 5. 关键告诫：四层都是「静态」验证
 
