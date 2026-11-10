@@ -6,9 +6,11 @@
 
 #include <MinHook.h>
 #include <spdlog/spdlog.h>
+#include <IsolationPolicy.hpp>
 
 #include "Hooks/ActorHooks/ActorModelHook.hpp"
 #include "Hooks/ActorHooks/AnimationHooks.hpp"
+#include "Hooks/ActorHooks/BaseTickHook.hpp"
 #include "Hooks/ActorHooks/NametagRenderHook.hpp"
 #include "Hooks/ContainerHooks/ContainerScreenControllerHook.hpp"
 #include "Hooks/MiscHooks/FireBlockChangedHook.hpp"
@@ -26,11 +28,42 @@
 #include "Hooks/RenderHooks/LookInputHook.hpp"
 #include "Hooks/RenderHooks/RenderItemInHandHook.hpp"
 #include "Hooks/RenderHooks/SetupAndRenderHook.hpp"
-#include "Hooks/ActorHooks/NametagRenderHook.hpp"
-
 
 #define ADD_HOOK(hook) hooks.emplace_back(std::make_shared<hook>())
 
+#if SOLSTICE_ISOLATION_SWAP_ONLY
+
+// Isolation variant: D3DHook is the ONLY hook installed. It owns the two
+// native OpenGL SwapBuffers detours; its s_init() skips kiero entirely, so no
+// D3D12/D3D11 vtable bindings (fallback RVAs) exist either. PacketReceiveHook
+// is never constructed, so the 219 packet-handler detours are never created.
+// The initLp path is a no-op, which suspends the dynamic Actor::baseTick hook.
+void HookManager::init(bool initLp)
+{
+    if (initLp)
+    {
+        spdlog::info("[isolation] initLp skipped: dynamic Actor::baseTick hook suspended");
+        return;
+    }
+
+    std::vector<std::shared_ptr<Hook>> hooks;
+    ADD_HOOK(D3DHook);
+    for (auto& hook : hooks)
+    {
+        hook->init();
+        mHooks.emplace_back(hook);
+    }
+
+    // Still one unified enable, exactly like the stable baseline. No detour is
+    // enabled during its own init().
+    const MH_STATUS enableStatus = MH_EnableHook(MH_ALL_HOOKS);
+    spdlog::info("[isolation] SwapBuffers-only hook set enabled: MH_EnableHook(all)={} (0=success)",
+                 static_cast<int>(enableStatus));
+}
+
+#else
+
+// Full client: original stable-baseline hook set and original ordering.
 void HookManager::init(bool initLp)
 {
     if (initLp)
@@ -66,8 +99,6 @@ void HookManager::init(bool initLp)
         ADD_HOOK(PreGameHook);
         ADD_HOOK(NametagRenderHook);
 
-
-
         for (auto& hook : hooks)
         {
             hook->init();
@@ -78,6 +109,8 @@ void HookManager::init(bool initLp)
         spdlog::info("[GUI probe] MH_EnableHook(all)={} (0=success)", static_cast<int>(enableStatus));
     }
 }
+
+#endif
 
 void HookManager::shutdown()
 {
@@ -91,4 +124,3 @@ void HookManager::shutdown()
 
     mHooks.clear();
 }
-

@@ -5,6 +5,7 @@
 #include <build_info.h>
 #include <Features/Modules/ModuleManager.hpp>
 #include <Utils/OAuthUtils.hpp>
+#include <IsolationPolicy.hpp>
 
 #include "Combat/Aura.hpp"
 #include "Combat/Aura2.hpp"
@@ -143,6 +144,14 @@
 
 void ModuleManager::init()
 {
+#if SOLSTICE_ISOLATION_SWAP_ONLY
+    // Isolation contract (4): no ClickGUI, no HudEditor/HUD, no visual module.
+    // Returning here also skips every module constructor that reads hud.json /
+    // Templates, and the OAuthUtils::getLastCommitHash() file read at the end of
+    // this function, so the A/B run starts from a clean external state.
+    spdlog::info("[isolation] ModuleManager registers 0 modules; ClickGUI/HUD/visual modules suspended");
+    return;
+#endif
     // Visual (must be initialized first)
     mModules.emplace_back(std::make_shared<HudEditor>());
 

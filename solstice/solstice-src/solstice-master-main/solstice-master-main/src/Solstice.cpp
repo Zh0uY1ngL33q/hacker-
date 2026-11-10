@@ -7,6 +7,7 @@
 
 #include <fstream>
 #include <filesystem>
+#include <IsolationPolicy.hpp>
 #include <Features/FeatureManager.hpp>
 #include <Features/Configs/ConfigManager.hpp>
 #include <Hook/HookManager.hpp>
@@ -182,7 +183,10 @@ void Solstice::init(HMODULE hModule)
 
     HWND hwnd = ProcUtils::getMinecraftWindow(); // Cache the window handle
 
-#ifdef __DEBUG__
+// A persisted EnforceDebugging=true in preferences.json would spin in a
+// MessageBoxA loop before any hook exists -- exactly the external residue this
+// isolation build is meant to exclude from the A/B comparison.
+#if defined(__DEBUG__) && !SOLSTICE_ISOLATION_SWAP_ONLY
     if (Prefs->mEnforceDebugging)
     {
         while (!IsDebuggerPresent())
@@ -305,6 +309,11 @@ void Solstice::init(HMODULE hModule)
 // explicitly recorded as an override (below) rather than as a resolution --
 // so an operator's decision can never turn an unusable mapping into an OK one.
 #ifdef __DEBUG__
+
+// In the isolation build the manual gate is an external human input, not part
+// of the render path. Skipping it keeps the A/B comparison free of a console
+// wait (and of a possible hang when no console is attached).
+#if !SOLSTICE_ISOLATION_SWAP_ONLY
         console->critical("Solstice should not be used in this state.");
         console->info("Type 'DEBUG' to continue, or press ENTER to exit.");
         std::string input;
@@ -329,6 +338,12 @@ void Solstice::init(HMODULE hModule)
             console->critical("[init] OPERATOR OVERRIDE: continuing with {} unusable mappings; "
                               "every SDK result in this session is untrusted", failedSigs);
         }
+// isolation build: report the state but never block on stdin
+#else
+        console->warn("[isolation] {} unusable mappings reported; manual DEBUG gate skipped, "
+                      "continuing without console input", failedSigs);
+#endif
+
 #else
         console->critical("[init] mapping table is not trustworthy and no override was enabled; "
                           "refusing to start. The classification report above is complete.");
@@ -366,6 +381,7 @@ void Solstice::init(HMODULE hModule)
         console->error("clientinstance not found -- SDK-dependent features will be skipped");
     }
 
+#if !SOLSTICE_ISOLATION_SWAP_ONLY
     // press enter to continue if failed sigs
     if (failedSigs > 0)
     {
@@ -373,7 +389,10 @@ void Solstice::init(HMODULE hModule)
         std::string input;
         std::getline(std::cin, input);
     }
-
+#else
+    if (failedSigs > 0)
+        console->info("[isolation] {} failed mappings recorded; second console wait skipped", failedSigs);
+#endif
 
     gFeatureManager = std::make_shared<FeatureManager>();
     gFeatureManager->init();
@@ -385,10 +404,14 @@ void Solstice::init(HMODULE hModule)
 
 
 
+#if !SOLSTICE_ISOLATION_SWAP_ONLY
     ClientInstance* readyClient = ClientInstance::get();
     if (readyClient && readyClient->getMinecraftGame())
         readyClient->getMinecraftGame()->playUi("beacon.activate", 1, 1.0f);
     ChatUtils::displayClientMessage("Initialized!");
+#else
+    console->info("[isolation] init complete: only the native SwapBuffers detours are active");
+#endif
 
     console->info("Press END to eject dll.");
     mLastTick = NOW;
@@ -399,6 +422,18 @@ void Solstice::init(HMODULE hModule)
 
 void Solstice::shutdownThread()
 {
+#if SOLSTICE_ISOLATION_SWAP_ONLY
+    // Isolation build: no network update check, no IRC auto-enable, no
+    // ConfigManager::loadConfig (persisted config), no signature bytepatch and
+    // no module ticks. KeyHook is not installed here, so END is polled in this
+    // loop to keep the DLL unloadable.
+    console->info("[isolation] shutdown thread active; hold END to eject");
+    while (!mRequestEject)
+    {
+        if (GetAsyncKeyState(VK_END) & 0x8000) mRequestEject = true;
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+#else
     // Wait for the user to press END
     bool firstCall = true;
     bool isLpValid = false;
@@ -490,12 +525,15 @@ void Solstice::shutdownThread()
         gFeatureManager->mModuleManager->onClientTick();
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
+#endif
 
     mRequestEject = true;
 
     setTitle("");
 
+#if !SOLSTICE_ISOLATION_SWAP_ONLY
     patchInHandSlot(false);
+#endif
 
     HookManager::shutdown();
 
@@ -506,11 +544,13 @@ void Solstice::shutdownThread()
     // Shutdown
     console->warn("Shutting down...");
 
+#if !SOLSTICE_ISOLATION_SWAP_ONLY
     if (auto* ci = ClientInstance::get(); ci) {
         if (auto* game = ci->getMinecraftGame(); InstanceLocator::isPlausibleGame(game))
             game->playUi("beacon.deactivate", 1, 1.0f);
         // Chat feeds through the queued path which already tolerates missing GuiData.
     }
+#endif
     ChatUtils::displayClientMessageRaw("§asolstice§7 » §cEjected!");
 
     mInitialized = false;

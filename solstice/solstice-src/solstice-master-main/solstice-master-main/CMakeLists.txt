@@ -25,6 +25,18 @@ add_compile_definitions(__PRIVATE_DEBUG__)
 add_compile_definitions(__PRIVATE_BUILD__)
 add_compile_definitions(__DEBUG__)
 
+# SwapBuffers-only isolation variant (see src/IsolationPolicy.hpp).
+# ON  = diagnostic build: only the native OpenGL SwapBuffers detours exist.
+# OFF = full client, from the SAME source tree, for a clean A/B comparison.
+option(SOLSTICE_SWAP_ONLY_ISOLATION
+        "Keep only the OpenGL SwapBuffers hook; disable RenderEvent, ClickGUI/HUD, visual modules and every other hook" ON)
+if (SOLSTICE_SWAP_ONLY_ISOLATION)
+    add_compile_definitions(SOLSTICE_SWAP_ONLY_ISOLATION)
+    message(STATUS "Solstice build: SWAP-ONLY ISOLATION (full client: -DSOLSTICE_SWAP_ONLY_ISOLATION=OFF)")
+else ()
+    message(STATUS "Solstice build: FULL client")
+endif ()
+
 find_program(LD_COMMAND ld)
 
 if (NOT LD_COMMAND)

@@ -8,6 +8,7 @@
 #include <chrono>
 #include <thread>
 #include <Hook/Detour.hpp>
+#include <IsolationPolicy.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -109,6 +110,22 @@ namespace {
         ~GlSwapScope() { --glSwapDepth; glSwapCalls.fetch_sub(1); }
     };
 
+#if SOLSTICE_ISOLATION_SWAP_ONLY
+
+    // Isolation contract (2) + (3): no RenderEvent fan-out, no ImGui frame,
+    // no ClickGUI/HUD initialization. Call the native swap and return.
+    BOOL WINAPI onGdiSwapBuffers(HDC dc)
+    {
+        return gdiSwapDetour->getOriginal<&onGdiSwapBuffers>()(dc);
+    }
+
+    BOOL WINAPI onWglSwapBuffers(HDC dc)
+    {
+        return wglSwapDetour->getOriginal<&onWglSwapBuffers>()(dc);
+    }
+
+#else
+
     BOOL WINAPI onGdiSwapBuffers(HDC dc)
     {
         GlSwapScope scope;
@@ -122,6 +139,8 @@ namespace {
         if (scope.outermost) OpenGLGui::render(dc);
         return wglSwapDetour->getOriginal<&onWglSwapBuffers>()(dc);
     }
+
+#endif
 
     void installGlSwapHooks()
     {
@@ -329,6 +348,12 @@ bool D3DHook::createTextureFromData(const uint8_t* data, int width, int height, 
 
 HRESULT D3DHook::present(IDXGISwapChain3* swapChain, UINT syncInterval, UINT flags)
 {
+#if SOLSTICE_ISOLATION_SWAP_ONLY
+    // Isolation contract (2): RenderEvent must never reach any subscriber.
+    // kiero is not bound in this build so this is unreachable, but keep the
+    // whole D3D present body out of the compiled isolation path as well.
+    return oPresent ? oPresent(swapChain, syncInterval, flags) : S_OK;
+#else
     if (OpenGLGui::isActive()) return oPresent(swapChain, syncInterval, flags);
     static bool loggedPresent = false;
     if (!loggedPresent) {
@@ -558,6 +583,7 @@ HRESULT D3DHook::present(IDXGISwapChain3* swapChain, UINT syncInterval, UINT fla
 
 
     return oPresent(swapChain, syncInterval, flags);
+#endif
 }
 
 HRESULT D3DHook::resizeBuffers(IDXGISwapChain3* swapChain, UINT bufferCount, UINT width, UINT height,
@@ -664,6 +690,16 @@ void D3DHook::s_init()
 {
     Solstice::console->info("Initializing D3DHook");
     installGlSwapHooks(); // HookManager enables these with the other detours.
+
+#if SOLSTICE_ISOLATION_SWAP_ONLY
+    // Isolation contract (1) + (5): the two native SwapBuffers detours are the
+    // only hooks. kiero is deliberately NOT initialized -- it creates a dummy
+    // device and binds D3D12/D3D11 Present/ResizeBuffers by vtable index
+    // (the fallback RVA paths), all of which must be suspended here.
+    Solstice::console->info("[isolation] SwapBuffers detours created only; kiero D3D12/D3D11 "
+                            "fallback bindings, RenderEvent, ClickGUI and HUD are disabled");
+    return;
+#else
     // Snapshot before kiero creates its dummy device. Loaded modules alone do
     // not prove the active renderer, but distinguish pre-existing runtimes.
     for (const char* name : {"dxgi.dll", "d3d11.dll", "d3d12.dll", "opengl32.dll", "vulkan-1.dll"}) {
@@ -693,6 +729,7 @@ void D3DHook::s_init()
     }
     Solstice::console->error("Failed to initialize kiero");
     MessageBoxA(NULL, "Failed to initialize kiero", "Solstice", MB_OK | MB_ICONERROR);
+#endif
 }
 
 void D3DHook::shutdown()
@@ -703,6 +740,9 @@ void D3DHook::shutdown()
 void D3DHook::s_shutdown()
 {
     Solstice::console->info("Shutting down D3DHook");
+#if !SOLSTICE_ISOLATION_SWAP_ONLY
+    // None of these were initialized in the isolation build: no GL context, no
+    // ImGui/ClickGUI state, no kiero bindings, no D3D11-on-12 resources.
     OpenGLGui::shutdown();
     FrameTransforms.reset();
     kiero::unbind(8);
@@ -710,6 +750,7 @@ void D3DHook::s_shutdown()
     kiero::unbind(140);
     kiero::unbind(145);
     kiero::shutdown();
+#endif
     const auto swapDeadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
     while (glSwapCalls.load() && std::chrono::steady_clock::now() < swapDeadline)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
