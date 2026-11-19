@@ -1,6 +1,7 @@
 # have fun dark you retard <3
 cmake_minimum_required(VERSION 3.28)
 include(cmake/CPM.cmake)
+include(cmake/Dependencies.cmake)
 project(Solstice)
 
 # throw error if building for x86
@@ -31,32 +32,32 @@ set(CMAKE_UNITY_BUILD TRUE)
 
 CPMAddPackage(
         NAME spdlog
-        SOURCE_DIR "D:/dev/deps/spdlog-1.9.2"
+        SOURCE_DIR "${SPDLOG_DIR}"
 )
 
 CPMAddPackage(
         NAME magic_enum
-        SOURCE_DIR "D:/dev/deps/magic_enum-0.9.5"
+        SOURCE_DIR "${MAGIC_ENUM_DIR}"
 )
 
 CPMAddPackage(
         NAME glm
-        SOURCE_DIR "D:/dev/deps/glm-1.0.1"
+        SOURCE_DIR "${GLM_DIR}"
 )
 
 CPMAddPackage(
         NAME nlohmann_json
-        SOURCE_DIR "D:/dev/deps/json-3.11.3"
+        SOURCE_DIR "${NLOHMANN_JSON_DIR}"
 )
 
 CPMAddPackage(
         NAME DirectXTK
-        SOURCE_DIR "D:/dev/deps/DirectXTK-main"
+        SOURCE_DIR "${DIRECTXTK_DIR}"
 )
 
 CPMAddPackage(
         NAME cryptopp-cmake
-        SOURCE_DIR "D:/dev/deps/cryptopp-cmake-master"
+        SOURCE_DIR "${CRYPTOPP_DIR}"
 )
 
 if(MSVC)
