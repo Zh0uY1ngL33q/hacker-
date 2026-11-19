@@ -288,7 +288,24 @@ target_include_directories(Solstice PRIVATE include/Kiero)
 
 target_link_libraries(Solstice PRIVATE OpenMP::OpenMP_CXX DirectXTK spdlog version.lib nlohmann_json glm minhook kiero nuvola_event_system libhat dbghelp.lib winmm.lib magic_enum d3d12.lib d3d11.lib d2d1.lib dxgi.lib dxguid.lib dwrite.lib winmm.lib dbghelp.lib comctl32.lib ws2_32.lib cryptopp ole32.lib Mmdevapi.lib)
 
-set_property(TARGET Solstice nlohmann_json minhook spdlog cryptopp DirectXTK glm kiero nuvola_event_system magic_enum libhat PROPERTY MSVC_RUNTIME_LIBRARY "$<$<CONFIG:Debug>:MultiThreadedDLL>$<$<CONFIG:Release>:MultiThreaded>")
+# Set MSVC runtime only on real compiled targets. nlohmann_json and glm are
+# INTERFACE (header-only) targets; setting MSVC_RUNTIME_LIBRARY on them is a
+# hard CMake error ("INTERFACE_LIBRARY targets may only set whitelisted properties").
+foreach(_rt_target Solstice minhook spdlog cryptopp DirectXTK kiero nuvola_event_system magic_enum libhat)
+    if (TARGET ${_rt_target})
+        set_property(TARGET ${_rt_target} PROPERTY MSVC_RUNTIME_LIBRARY "$<$<CONFIG:Debug>:MultiThreadedDLL>$<$<CONFIG:Release>:MultiThreaded>")
+    endif ()
+endforeach()
+unset(_rt_target)
+
+# Crypto++ is not unity-build safe: several .cpp files define the same helper
+# symbols in anonymous namespaces. Keep per-file compilation for its objects.
+foreach(_cu_target cryptopp-object cryptopp-static cryptopp)
+    if (TARGET ${_cu_target})
+        set_property(TARGET ${_cu_target} PROPERTY UNITY_BUILD FALSE)
+    endif ()
+endforeach()
+unset(_cu_target)
 
 
 target_precompile_headers(Solstice PRIVATE
