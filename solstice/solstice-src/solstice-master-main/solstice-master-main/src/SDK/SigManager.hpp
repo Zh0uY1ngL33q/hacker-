@@ -49,7 +49,7 @@ public:
     DEFINE_SIG(ClientInstance_grabMouse, "48 8B 01 48 8B ? ? ? ? ? EB ? 48 8B", SigType::Sig, 0);
     DEFINE_SIG(ClientInstance_releaseMouse, "40 ? 48 83 EC ? 48 8B ? 48 8B ? 48 8B ? ? ? ? ? FF 15 ? ? ? ? 84 C0 74 ? 48 8B ? ? ? ? ? 48 8B ? 48 8B ? ? ? ? ? 48 83 C4 ? 5B 48 FF ? ? ? ? ? 48 83 C4 ? 5B C3 48 89", SigType::Sig, 0);
     DEFINE_SIG(ContainerScreenController_tick, "48 8B ? 48 89 ? ? 48 89 ? ? 48 89 ? ? 55 41 54 41 55 41 56 41 57 48 8D ? ? 48 81 ? ? ? ? ? 0F 29 ? ? 0F 29 ? ? 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? 4C 8B ? 48 ? ? ? ? ? ? E8 ? ? ? ? 48 ? ? ? 49 ? ? ? ?", SigType::RefSig, 1);
-    DEFINE_SIG(ContainerScreenController_handleAutoPlace, "E8 ? ? ? ? 48 8B 4F 08 44 8B C3 48 81 C1 ? ? ?", SigType::RefSig, 1);
+    DEFINE_SIG(ContainerScreenController_handleAutoPlace, "15 ? ? ? ? 48 8B 4F 08 44 8B C3 48 81 C1 ? ? ?", SigType::RefSig, 1);
     DEFINE_SIG(ComplexInventoryTransaction_vtable, "48 8D 05 ? ? ? ? 48 89 ? 8B ? ? 89 ? ? 48 ? ? ? 48 ? ? ? E8 ? ? ? ? 90 48 8D 05 ? ? ? ? 49 ? ? 8B ?", SigType::RefSig, 3);
     DEFINE_SIG(EnchantUtils_getEnchantLevel, "E8 ? ? ? ? 8B D8 4D 8B ? 49 8B", SigType::RefSig, 1);
     DEFINE_SIG(GameMode_getDestroyRate, "48 89 5C 24 18 57 48 83 EC 30 48 8B F9 0F 29 74 24", SigType::RefSig, 1);
@@ -64,9 +64,9 @@ public:
     DEFINE_SIG(ItemUseOnActorInventoryTransaction_vtable, "48 8D ? ? ? ? ? 48 89 ? 48 89 ? ? 89 6F ? C7 47 74", SigType::RefSig, 3);
     DEFINE_SIG(ItemReleaseInventoryTransaction_vtable, "48 8D ? ? ? ? ? 48 89 ? ? 40 88 ? ? ? ? ? 89 AF ? ? ? ? 40 88 ? ? ? ? ? 89 AF ? ? ? ? 0F 57 ? 0F 11 ? ? ? ? ? 48 89 ? ? ? ? ? 48 C7 87 C8 00 00 00", SigType::RefSig, 3); // "gamePlayEmote" -> couple of refs -> this 
     DEFINE_SIG(Keyboard_feed, "E8 ? ? ? ? E9 ? ? ? ? 41 0F ? ? ? 45 0F ? ? ? 45 0F", SigType::RefSig, 1);
-    DEFINE_SIG(MainView_instance, "48 8B 05 ? ? ? ? C6 40 ? ? 0F 95 C0", SigType::RefSig, 3);
+    DEFINE_SIG(MainView_instance, "48 8B 05 ? ? ? ? C6 40 ? ? 0F 57 C0", SigType::RefSig, 3);
     DEFINE_SIG(MinecraftPackets_createPacket, "E8 ? ? ? ? 90 48 83 ? ? ? ? ? 00 0F 84 ? ? ? ? E8 ? ? ? ? 48 8B ? E8 ? ? ?", SigType::RefSig, 1);
-    DEFINE_SIG(Mob_getJumpControlComponent, "E8 ? ? ? ? 48 85 C0 74 ? C6 40 ? ? 48 83 C4 ? 5B", SigType::RefSig, 1);
+    DEFINE_SIG(Mob_getJumpControlComponent, "E8 ? ? ? ? 48 85 C0 74 ? C6 40 ? ? 48 83 C4 ? C3", SigType::RefSig, 1);
     DEFINE_SIG(Mob_getCurrentSwingDuration, "48 89 5C 24 10 57 48 83 EC 50 0F 29 74 24 40 48 8B 05 ? ? ? ? 48 33 C4 48 89 44 24 30 F3 0F 10 35 ? ? ? ? 48 8B F9 E8 ? ? ? ? 48 85 C0 74 04 F3 0F 10", SigType::RefSig, 1);
     DEFINE_SIG(MouseDevice_feed, "48 8B C4 48 89 58 08 48 89 68 10 48 89 70 18 57 41 54 41 55 41 56 41 57 48 83 EC", SigType::RefSig, 1);
     DEFINE_SIG(NetworkStackItemDescriptor_ctor, "48 ? ? ? ? ? ? E8 ? ? ? ? 90 48 8B CF E8 ? ? ? ? 48 ? ? 48 ? ? E8 ? ? ? ? F2 ? ? ?", SigType::RefSig, 1);
@@ -78,9 +78,9 @@ public:
     DEFINE_SIG(ScreenView_setupAndRender, "48 8B ? ? E8 ? ? ? ? 90 48 8D ? ? ? E8 ? ? ? ? 48 8B 8C ? ? ? ? ? 48 33 ? E8 ? ? ? ?", SigType::RefSig, 1);
     DEFINE_SIG(SimulatedPlayer_simulateJump, "40 53 48 83 EC ? 48 8B 01 48 8B D9 48 8B 80 ? ? ? ? FF 15 ? ? ? ? 84 C0 0F 84 ? ? ? ? 4C 8B 53", SigType::Sig, 0);
     DEFINE_SIG(ItemInHandRenderer_render_bytepatch, "F3 0F ? ? ? ? ? ? 48 8B ? F3 41 ? ? ? 0F 57", SigType::Sig, 0);
-    DEFINE_SIG(SneakMovementSystem_tickSneakMovementSystem, "32 C0 41 88 41 ? 84 C0", SigType::Sig, 0);
+    DEFINE_SIG(SneakMovementSystem_tickSneakMovementSystem, "32 C0 41 88 47 ? 84 C9", SigType::Sig, 0);
     DEFINE_SIG(ConnectionRequest_create, "40 ? 53 56 57 41 ? 41 ? 41 ? 41 ? 48 8D ? ? ? ? ? ? 48 81 EC ? ? ? ? 0F 29 ? ? ? ? ? ? 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? ? ? ? 49 8B ? 48 89 ? ? ? ? ? 48 89 ? ? 48 89", SigType::Sig, 0);
-    DEFINE_SIG(CameraDirectLookSystemUtil_handleLookInput, "48 89 ? ? ? 57 48 83 EC ? F3 41 ? ? ? 49 8B ? F3 41 ? ? ? ? F3 0F", SigType::Sig, 0);
+    DEFINE_SIG(CameraDirectLookSystemUtil_handleLookInput, "48 89 ? ? ? 57 48 83 EC ? F3 0F ? ? ? 49 8B ? F3 41 ? ? ? ? F3 0F", SigType::Sig, 0);
     DEFINE_SIG(ItemRenderer_render, "48 8B ? 48 89 ? ? 55 56 57 41 ? 41 ? 41 ? 41 ? 48 81 EC ? ? ? ? 0F 29 ? ? 0F 29 ? ? 44 0F ? ? ? 44 0F ? ? ? 49 8B", SigType::Sig, 0);
     DEFINE_SIG(ItemPositionConst, "F3 0F ? ? ? ? ? ? F3 0F ? ? F3 0F ? ? F3 0F ? ? ? ? ? ? F3 0F ? ? 0F B7", SigType::Sig, 0);
     /*DEFINE_SIG(glm_rotate, "40 53 48 83 EC ? F3 0F 59 0D ? ? ? ? 4C 8D 4C 24", SigType::Sig, 0);
@@ -92,7 +92,7 @@ public:
     DEFINE_SIG(JSON_parse, "E8 ? ? ? ? 0F B6 D8 48 8D 8D ? ? ? ? E8 ? ? ? ? 90 48 8D 8D ? ? ? ? E8 ? ? ? ? 84 DB 0F 84 ? ? ? ? C6 44 24", SigType::RefSig, 1);
     DEFINE_SIG(Actor_getStatusFlag, "E8 ? ? ? ? 84 C0 0F 84 ? ? ? ? F3 0F 10 BF", SigType::RefSig, 1); // bro the amount of references for this went from 43 to 4.
     DEFINE_SIG(Level_getRuntimeActorList, "48 89 ? ? ? 55 56 57 48 83 EC ? 48 8B ? 48 89 ? ? ? 33 D2", SigType::Sig, 0);
-    DEFINE_SIG(ConcreteBlockLegacy_getCollisionShapeForCamera, "40 ? 48 83 EC ? 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? ? 4C 8B ? 4D 8B ? 49 8B", SigType::Sig, 0);
+    DEFINE_SIG(ConcreteBlockLegacy_getCollisionShapeForCamera, "41 ? 48 83 EC ? 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? ? 4C 8B ? 4D 8B ? 49 8B", SigType::Sig, 0);
     DEFINE_SIG(WaterBlockLegacy_getCollisionShapeForCamera, "0F 10 ? ? ? ? ? 48 8B ? F2 0F ? ? ? ? ? ? 0F 11 ? F2 0F ? ? ? C3 CC", SigType::Sig, 0);
     DEFINE_SIG(mce_framebuilder_RenderItemInHandDescription_ctor, "48 89 ? ? ? 48 89 ? ? ? 55 56 57 41 ? 41 ? 41 ? 41 ? 48 83 EC ? 4D 8B ? 4D 8B ? 4C 8B ? 48 8B ? 45 33", SigType::Sig, 0);
 
@@ -108,7 +108,7 @@ public:
     DEFINE_SIG(FastEat, "FF C8 89 87 ? ? ? ? 83 F8", SigType::Sig, 0);
     DEFINE_SIG(Unknown_renderNametag, "48 8B ? 55 53 56 57 41 ? 41 ? 41 ? 48 8D ? ? 48 81 EC ? ? ? ? 0F 29 ? ? 0F 29 ? ? 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? 4C 89", SigType::Sig, 0);
     DEFINE_SIG(Reach, "74 ? F3 44 ? ? ? ? ? ? ? EB ? F3 0F", SigType::Sig, 0);
-    DEFINE_SIG(BlockReach, "F3 0F ? ? ? ? ? ? 48 8B ? ? ? 48 83 C4 ? 5F C3 83 C0", SigType::Sig, 0);
+    DEFINE_SIG(BlockReach, "F3 0F ? ? ? ? ? ? 48 8B ? ? ? 48 83 C4 ? 5F C3 83 F8", SigType::Sig, 0);
     DEFINE_SIG(GetSpeedInAirWithSprint, "41 C7 40 ? ? ? ? ? F6 02", SigType::Sig, 0);
     DEFINE_SIG(ConnectionRequest_create_DeviceModel, "48 8B 11 48 83 C2 ? EB", SigType::Sig, 0);
     DEFINE_SIG(ConnectionRequest_create_DeviceOS, "BA ? ? ? ? 0F 44 ? C3 CC CC CC CC CC CC CC CC CC", SigType::Sig, 0);
@@ -144,7 +144,7 @@ public:
     DEFINE_SIG(ContainerScreenController_handleTakeAll, "44 8B ? E8 ? ? ? ? 48 8B ? ? 44 8B", SigType::Sig, 0);
     DEFINE_SIG(Dimension_getBrightnessDependentFogColor, "41 0F 10 00 48 8B C2 0F 11 02", SigType::Sig, 0);
     DEFINE_SIG(GameRenderer_bobHurt, "40 53 48 81 EC D0 00 00 00 0F 29 BC 24 A0 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 90 00 00 00 48 8B DA 0F 28 FA 48 8D 91 80 1A 00", SigType::Sig, 0);
-    DEFINE_SIG(GuiData_getOptions, "E8 ? ? ? ? 48 8B F0 48 8B 08 48 8B 79 ? 48 8B ? ? ? ? ? 48 8B", SigType::RefSig, 1);
+    DEFINE_SIG(GuiData_getOptions, "8B ? ? ? ? 48 8B F0 48 8B 08 48 8B 79 ? 48 8B ? ? ? ? ? 48 8B", SigType::RefSig, 1);
     DEFINE_SIG(HIDController_onKeyDown, "40 53 48 83 EC ? 80 79 ? ? 8B", SigType::Sig, 0);
     DEFINE_SIG(HIDController_onKeyUp, "48 83 EC ? 44 8B C2 41 83", SigType::Sig, 0);
     DEFINE_SIG(HudScreenController_shouldRenderScoreboardSidebar, "48 8B 89 ? ? ? ? E8 ? ? ? ? E9 ? ? ? ? 41 81 F8 ? ? ? ? 75 ? 48 8B", SigType::Sig, 0);

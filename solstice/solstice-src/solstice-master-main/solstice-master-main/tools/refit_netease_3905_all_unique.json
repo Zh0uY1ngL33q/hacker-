@@ -1,0 +1,128 @@
+[
+  {
+    "name": "Actor_mContainerManagerModel",
+    "kind": "offset",
+    "verified": true,
+    "old_pattern": "49 8B ? ? ? ? ? 48 89 ? ? ? 48 89 ? ? ? F0 FF ? ? 66 0F ? ? ? ? EB ? 0F 57 ? 66 0F 73 D8 ? 66 48 ? ? ? 0F 57 ? 66 0F ? ? ? ? ? ? 48 85",
+    "new_pattern": "85 F6 ? ? ? ? ? 48 89 ? ? ? 48 89 ? ? ? F0 FF ? ? 66 0F ? ? ? ? EB ? 0F 57 ? 66 0F 73 D8 ? 66 48 ? ? ? 0F 57 ? 66 0F ? ? ? ? ? ? 74 1D",
+    "diff_count": 4,
+    "evidence": "offline unique match in 3.9.20.300505, mism=4, rva=0x3010711"
+  },
+  {
+    "name": "Actor_mGameMode",
+    "kind": "offset",
+    "verified": true,
+    "old_pattern": "49 8B 8E ? ? ? ? 45 84 FF 74 ? 84 DB",
+    "new_pattern": "49 8B 8E ? ? ? ? 45 84 FF 74 ? E8 07",
+    "diff_count": 2,
+    "evidence": "offline unique match in 3.9.20.300505, mism=2, rva=0x228BCE8"
+  },
+  {
+    "name": "LevelChunk_mSubChunks",
+    "kind": "offset",
+    "verified": true,
+    "old_pattern": "48 2B ? ? ? ? ? 48 8B ? 48 C1 FF ? 48 0F",
+    "new_pattern": "48 2B ? ? ? ? ? 48 8B ? 48 C1 FF ? 48 8B",
+    "diff_count": 1,
+    "evidence": "offline unique match in 3.9.20.300505, mism=1, rva=0x2A34B0C"
+  },
+  {
+    "name": "Actor_getNameTag",
+    "kind": "sig",
+    "verified": true,
+    "old_pattern": "E8 ? ? ? ? 48 83 78 18 ? 76 ? 48 8B ? EB ? 48 8D ? ? ? ? ? 4C 8B ? 4C 8B ? 48 8D ? ? ? ? ? 48 8D ? ? ? E8 ? ? ? ? 48 8B",
+    "new_pattern": "44 ? ? ? ? 48 83 78 18 ? 72 ? 48 8B ? EB ? 48 8D ? ? ? ? ? 4C 8B ? 4C 8B ? 48 8D ? ? ? ? ? 48 8D ? ? ? 07 ? ? ? ? 8B D0",
+    "diff_count": 5,
+    "evidence": "offline unique match in 3.9.20.300505, mism=5, rva=0x6C5065B"
+  },
+  {
+    "name": "ContainerScreenController_handleAutoPlace",
+    "kind": "sig",
+    "verified": true,
+    "old_pattern": "E8 ? ? ? ? 48 8B 4F 08 44 8B C3 48 81 C1 ? ? ?",
+    "new_pattern": "15 ? ? ? ? 48 8B 4F 08 44 8B C3 48 81 C1 ? ? ?",
+    "diff_count": 1,
+    "evidence": "offline unique match in 3.9.20.300505, mism=1, rva=0x1DCDC2F"
+  },
+  {
+    "name": "MainView_instance",
+    "kind": "sig",
+    "verified": true,
+    "old_pattern": "48 8B 05 ? ? ? ? C6 40 ? ? 0F 95 C0",
+    "new_pattern": "48 8B 05 ? ? ? ? C6 40 ? ? 0F 57 C0",
+    "diff_count": 1,
+    "evidence": "offline unique match in 3.9.20.300505, mism=1, rva=0x19D95A4"
+  },
+  {
+    "name": "Mob_getJumpControlComponent",
+    "kind": "sig",
+    "verified": true,
+    "old_pattern": "E8 ? ? ? ? 48 85 C0 74 ? C6 40 ? ? 48 83 C4 ? 5B",
+    "new_pattern": "E8 ? ? ? ? 48 85 C0 74 ? C6 40 ? ? 48 83 C4 ? C3",
+    "diff_count": 1,
+    "evidence": "offline unique match in 3.9.20.300505, mism=1, rva=0xE90364"
+  },
+  {
+    "name": "RakNet_RakPeer_runUpdateCycle",
+    "kind": "sig",
+    "verified": true,
+    "old_pattern": "48 89 5C 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ? ? ? ? B8 ? ? ? ? E8 ? ? ? ? 48 2B E0 0F 29 B4 24 ? ? ? ? 0F 29 BC 24 ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 ? ? ? ? 4C 8B EA 48 89 54 24 ? 48 8B D9",
+    "new_pattern": "48 89 5C 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ? ? ? ? B8 ? ? ? ? E8 ? ? ? ? 48 2B E0 0F 29 B4 24 ? ? ? ? 0F 29 BC 24 ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 ? ? ? ? 49 8B F1 4C 89 44 24 ? 4C 8B FA",
+    "diff_count": 6,
+    "evidence": "offline unique match in 3.9.20.300505, mism=6, rva=0x2130FA0"
+  },
+  {
+    "name": "SneakMovementSystem_tickSneakMovementSystem",
+    "kind": "sig",
+    "verified": true,
+    "old_pattern": "32 C0 41 88 41 ? 84 C0",
+    "new_pattern": "32 C0 41 88 47 ? 84 C9",
+    "diff_count": 2,
+    "evidence": "offline unique match in 3.9.20.300505, mism=2, rva=0xD9D97A"
+  },
+  {
+    "name": "CameraDirectLookSystemUtil_handleLookInput",
+    "kind": "sig",
+    "verified": true,
+    "old_pattern": "48 89 ? ? ? 57 48 83 EC ? F3 41 ? ? ? 49 8B ? F3 41 ? ? ? ? F3 0F",
+    "new_pattern": "48 89 ? ? ? 57 48 83 EC ? F3 0F ? ? ? 49 8B ? F3 41 ? ? ? ? F3 0F",
+    "diff_count": 1,
+    "evidence": "offline unique match in 3.9.20.300505, mism=1, rva=0x11034DA"
+  },
+  {
+    "name": "ConcreteBlockLegacy_getCollisionShapeForCamera",
+    "kind": "sig",
+    "verified": true,
+    "old_pattern": "40 ? 48 83 EC ? 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? ? 4C 8B ? 4D 8B ? 49 8B",
+    "new_pattern": "41 ? 48 83 EC ? 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? ? 4C 8B ? 4D 8B ? 49 8B",
+    "diff_count": 1,
+    "evidence": "offline unique match in 3.9.20.300505, mism=1, rva=0x98F1F6"
+  },
+  {
+    "name": "BlockReach",
+    "kind": "sig",
+    "verified": true,
+    "old_pattern": "F3 0F ? ? ? ? ? ? 48 8B ? ? ? 48 83 C4 ? 5F C3 83 C0",
+    "new_pattern": "F3 0F ? ? ? ? ? ? 48 8B ? ? ? 48 83 C4 ? 5F C3 83 F8",
+    "diff_count": 1,
+    "evidence": "offline unique match in 3.9.20.300505, mism=1, rva=0x7B084D0"
+  },
+  {
+    "name": "TapSwingAnim",
+    "kind": "sig",
+    "verified": true,
+    "old_pattern": "F3 44 ? ? ? ? ? ? ? 4C 8D ? ? ? 48 8B ? 48 C7 44 24 30 ? ? ? ? c7 44 24 ? ? ? ? ? 8b 08",
+    "new_pattern": "FD F3 ? ? ? ? ? ? ? 4C 8D ? ? ? 48 8B ? 48 C7 44 24 20 ? ? ? ? C7 44 24 ? ? ? ? ? 8B 08",
+    "diff_count": 3,
+    "evidence": "offline unique match in 3.9.20.300505, mism=3, rva=0x2D71B16"
+  },
+  {
+    "name": "GuiData_getOptions",
+    "kind": "sig",
+    "verified": true,
+    "old_pattern": "E8 ? ? ? ? 48 8B F0 48 8B 08 48 8B 79 ? 48 8B ? ? ? ? ? 48 8B",
+    "new_pattern": "8B ? ? ? ? 48 8B F0 48 8B 08 48 8B 79 ? 48 8B ? ? ? ? ? 48 8B",
+    "diff_count": 1,
+    "evidence": "offline unique match in 3.9.20.300505, mism=1, rva=0x6C4F0F1"
+  }
+]

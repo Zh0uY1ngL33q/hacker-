@@ -1,0 +1,654 @@
+[
+  {
+    "name": "UIProfanityContext_mEnabled",
+    "kind": "offset",
+    "pattern": "80 79 ? ? 74 ? 80 79 ? ? 74 ? 45 ? ? 75 ? 4C 8D",
+    "result": "gone"
+  },
+  {
+    "name": "BlockSource_mBuildHeight",
+    "kind": "offset",
+    "pattern": "0F BF ? ? 3B C8 0F 8D ? ? ? ? 8B 0F",
+    "rva": "0x5D15A40",
+    "mismatches": 2,
+    "candidates": 5,
+    "new_pattern": "0F 4F ? ? 3B C8 0F 8D ? ? ? ? 45 0F",
+    "result": "ambiguous"
+  },
+  {
+    "name": "ContainerManagerModel_getContainerType",
+    "kind": "offset",
+    "pattern": "48 8B ? ? FF 15 ? ? ? ? 84 C0 75 ? 48 8B ? 48 8B ? 48 8B ? ? FF 15 ? ? ? ? 84 C0 74 ? B0",
+    "rva": "0x5E6389",
+    "mismatches": 1,
+    "candidates": 4,
+    "new_pattern": "48 8B ? ? FF 15 ? ? ? ? 84 C0 75 ? 48 8B ? 48 8B ? 48 8B ? ? FF 15 ? ? ? ? 84 C0 74 ? 48",
+    "result": "ambiguous"
+  },
+  {
+    "name": "ContainerManagerModel_getSlot",
+    "kind": "offset",
+    "pattern": "48 8B ? ? FF 15 ? ? ? ? 0F B6 ? ? 44 89",
+    "result": "gone"
+  },
+  {
+    "name": "BlockLegacy_getCollisionShape",
+    "kind": "offset",
+    "pattern": "48 8B ? ? FF 15 ? ? ? ? 0F 10 ? 0F 11 ? ? ? ? ? ? F2 0F ? ? ? F2 0F",
+    "result": "gone"
+  },
+  {
+    "name": "ClientInstance_getMouseGrabbed",
+    "kind": "offset",
+    "pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 84 C0 75 ? 48 8B ? ? ? ? ? 48 85 ? 0F 84 ? ? ? ? 80 38 ? 0F 84 ? ? ? ? 48 8B ? ? ? ? ? 48 85 ? 74 ? F0 FF ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? ? ? ? F2 0F",
+    "result": "gone"
+  },
+  {
+    "name": "MainView_bedrockPlatform",
+    "kind": "offset",
+    "pattern": "48 8B ? ? ? ? ? 48 8B ? B2 ? 48 8B ? ? ? ? ? FF 15 ? ? ? ? 84 C0",
+    "result": "gone"
+  },
+  {
+    "name": "MinecraftSim_mGameSim",
+    "kind": "offset",
+    "pattern": "49 8B 85 ? ? ? ? 8B 40",
+    "rva": "0x9163B2",
+    "mismatches": 1,
+    "candidates": 18,
+    "new_pattern": "49 8B 85 ? ? ? ? C6 40",
+    "result": "ambiguous"
+  },
+  {
+    "name": "MinecraftSim_mRenderSim",
+    "kind": "offset",
+    "pattern": "48 8B ? ? ? ? ? F3 0F ? ? ? F3 41 ? ? ? ? 48 8D",
+    "result": "gone"
+  },
+  {
+    "name": "bgfx_d3d12_RendererContextD3D12_m_commandQueue",
+    "kind": "offset",
+    "pattern": "48 8B ? ? ? ? ? 4C 8B ? ? 48 8B ? 48 8B ? ? 48 8B ? ? FF 15 ? ? ? ? 48 FF ? ? 48 8B ? ? 48 8B ? 48 3B ? 74 ? 48 8B",
+    "result": "gone"
+  },
+  {
+    "name": "bgfx_context_m_renderCtx",
+    "kind": "offset",
+    "pattern": "48 8B ? ? ? ? ? 48 8B ? 48 8B ? ? FF 15 ? ? ? ? 48 89 ? ? ? ? ? 48 63",
+    "result": "gone"
+  },
+  {
+    "name": "BlockLegacy_mBlockId",
+    "kind": "offset",
+    "pattern": "44 0F ? ? ? ? ? ? B8 ? ? ? ? 48 8B ? 48 8B",
+    "result": "gone"
+  },
+  {
+    "name": "BlockLegacy_mayPlaceOn",
+    "kind": "offset",
+    "pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 49 8B ? 0F B6 ? E8 ? ? ? ? 48 85 ? 74 ? 45 0F",
+    "result": "gone"
+  },
+  {
+    "name": "Actor_mContainerManagerModel",
+    "kind": "offset",
+    "pattern": "49 8B ? ? ? ? ? 48 89 ? ? ? 48 89 ? ? ? F0 FF ? ? 66 0F ? ? ? ? EB ? 0F 57 ? 66 0F 73 D8 ? 66 48 ? ? ? 0F 57 ? 66 0F ? ? ? ? ? ? 48 85",
+    "rva": "0x3010711",
+    "mismatches": 4,
+    "candidates": 1,
+    "new_pattern": "85 F6 ? ? ? ? ? 48 89 ? ? ? 48 89 ? ? ? F0 FF ? ? 66 0F ? ? ? ? EB ? 0F 57 ? 66 0F 73 D8 ? 66 48 ? ? ? 0F 57 ? 66 0F ? ? ? ? ? ? 74 1D",
+    "result": "unique"
+  },
+  {
+    "name": "Actor_mGameMode",
+    "kind": "offset",
+    "pattern": "49 8B 8E ? ? ? ? 45 84 FF 74 ? 84 DB",
+    "rva": "0x228BCE8",
+    "mismatches": 2,
+    "candidates": 1,
+    "new_pattern": "49 8B 8E ? ? ? ? 45 84 FF 74 ? E8 07",
+    "result": "unique"
+  },
+  {
+    "name": "Actor_mSupplies",
+    "kind": "offset",
+    "pattern": "48 8B ? ? ? ? ? 80 BA B0 00 00 00 ? 75 ? 48 8B ? ? ? ? ? 8B 52 ? 48 8B ? 48 8B ? ? 48 FF ? ? ? ? ? 48 8D ? ? ? ? ? C3 48 89",
+    "result": "gone"
+  },
+  {
+    "name": "LevelRendererPlayer_mCameraPos",
+    "kind": "offset",
+    "pattern": "F3 0F ? ? ? ? ? ? F3 0F ? ? F3 0F ? ? F3 0F ? ? F3 0F ? ? F3 0F ? ? F3 0F ? ? 0F 2F ? ? ? ? ? 0F 83 ? ? ? ? 80 BB 3A 0A 00 00",
+    "result": "gone"
+  },
+  {
+    "name": "LevelRendererPlayer_mFovX",
+    "kind": "offset",
+    "pattern": "0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 80 B9 58 0F 00 00",
+    "result": "gone"
+  },
+  {
+    "name": "LevelRendererPlayer_mFovY",
+    "kind": "offset",
+    "pattern": "89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? F3 0F",
+    "result": "gone"
+  },
+  {
+    "name": "Actor_mLevel",
+    "kind": "offset",
+    "pattern": "48 8B ? ? ? ? ? 48 89 ? ? ? F3 0F ? ? ? 4C 8B",
+    "result": "gone"
+  },
+  {
+    "name": "Level_getPlayerList",
+    "kind": "offset",
+    "pattern": "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 8B 48 ? 39 8E ? ? ? ? 0F 84",
+    "result": "gone"
+  },
+  {
+    "name": "Level_getPlayerMovementSettings",
+    "kind": "offset",
+    "pattern": "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 49 8B 7E ? 80 78",
+    "rva": "0x79DE3A8",
+    "mismatches": 1,
+    "candidates": 2,
+    "new_pattern": "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 49 8B 45 ? 80 78",
+    "result": "ambiguous"
+  },
+  {
+    "name": "Level_getLevelData",
+    "kind": "offset",
+    "pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 8B 88",
+    "result": "gone"
+  },
+  {
+    "name": "Level_getBlockPalette",
+    "kind": "offset",
+    "pattern": "48 8B ? ? ? ? ? 48 8B ? FF 15 ? ? ? ? 4C 8B ? 48 8B ? 48 8B ? ? 48 8D ? ? 49 8B ? FF 15 ? ? ? ? 48 8B ? 44 0F",
+    "result": "gone"
+  },
+  {
+    "name": "Actor_mHurtTimeComponent",
+    "kind": "offset",
+    "pattern": "48 8B ? ? ? ? ? 48 85 ? 74 ? 66 0F ? ? ? ? ? ? 0F 5B ? 0F 2F",
+    "result": "gone"
+  },
+  {
+    "name": "LevelChunk_mSubChunks",
+    "kind": "offset",
+    "pattern": "48 2B ? ? ? ? ? 48 8B ? 48 C1 FF ? 48 0F",
+    "rva": "0x2A34B0C",
+    "mismatches": 1,
+    "candidates": 1,
+    "new_pattern": "48 2B ? ? ? ? ? 48 8B ? 48 C1 FF ? 48 8B",
+    "result": "unique"
+  },
+  {
+    "name": "BlockSource_clip",
+    "kind": "offset",
+    "pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 90 48 8D ? ? ? ? ? 48 8D ? ? ? ? ? E8 ? ? ? ? 48 8B",
+    "rva": "0x32CD68",
+    "mismatches": 2,
+    "candidates": 68,
+    "new_pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 90 48 8D ? ? ? ? ? F0 FF ? ? ? ? ? E8 ? ? ? ? 48 8B",
+    "result": "ambiguous"
+  },
+  {
+    "name": "ClientInstance_getInputHandler",
+    "kind": "offset",
+    "pattern": "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 48 8B C8 E8 ? ? ? ? 83 F8 ? 0F 85 ? ? ? ? 48 8B 8D ? ? ? ? 48 8B 01 48 8B 80 ? ? ? ?",
+    "result": "gone"
+  },
+  {
+    "name": "Actor_getNameTag",
+    "kind": "sig",
+    "pattern": "E8 ? ? ? ? 48 83 78 18 ? 76 ? 48 8B ? EB ? 48 8D ? ? ? ? ? 4C 8B ? 4C 8B ? 48 8D ? ? ? ? ? 48 8D ? ? ? E8 ? ? ? ? 48 8B",
+    "rva": "0x6C5065B",
+    "mismatches": 5,
+    "candidates": 1,
+    "new_pattern": "44 ? ? ? ? 48 83 78 18 ? 72 ? 48 8B ? EB ? 48 8D ? ? ? ? ? 4C 8B ? 4C 8B ? 48 8D ? ? ? ? ? 48 8D ? ? ? 07 ? ? ? ? 8B D0",
+    "result": "unique"
+  },
+  {
+    "name": "ContainerScreenController_handleAutoPlace",
+    "kind": "sig",
+    "pattern": "E8 ? ? ? ? 48 8B 4F 08 44 8B C3 48 81 C1 ? ? ?",
+    "rva": "0x1DCDC2F",
+    "mismatches": 1,
+    "candidates": 1,
+    "new_pattern": "15 ? ? ? ? 48 8B 4F 08 44 8B C3 48 81 C1 ? ? ?",
+    "result": "unique"
+  },
+  {
+    "name": "HoverTextRenderer_render",
+    "kind": "sig",
+    "pattern": "48 8B C4 48 89 58 08 48 89 68 10 48 89 70 18 57 48 81 EC ? ? ? ? 0F 29 70 E8 0F 29 78 D8 44 0F 29 40 ? 49 8B D9 49 8B F8 48 8B F1 48 8B 6A 10",
+    "result": "gone"
+  },
+  {
+    "name": "GuiData_displayClientMessage",
+    "kind": "sig",
+    "pattern": "48 89 ? ? ? ? ? ? E8 ? ? ? ? 4C 8B ? 48 85 ? 74 ? BF FF FF FF",
+    "rva": "0x10C2977",
+    "mismatches": 2,
+    "candidates": 3,
+    "new_pattern": "48 89 ? ? ? ? ? ? 20 ? ? ? ? 28 8B ? 48 85 ? 74 ? BF FF FF FF",
+    "result": "ambiguous"
+  },
+  {
+    "name": "ItemUseInventoryTransaction_vtable",
+    "kind": "sig",
+    "pattern": "48 8D ? ? ? ? ? 48 89 ? 8B 46 ? 89 47 ? 0F B6 ? ? 88 47 ? 8B 56",
+    "result": "gone"
+  },
+  {
+    "name": "ItemReleaseInventoryTransaction_vtable",
+    "kind": "sig",
+    "pattern": "48 8D ? ? ? ? ? 48 89 ? ? 40 88 ? ? ? ? ? 89 AF ? ? ? ? 40 88 ? ? ? ? ? 89 AF ? ? ? ? 0F 57 ? 0F 11 ? ? ? ? ? 48 89 ? ? ? ? ? 48 C7 87 C8 00 00 00",
+    "result": "gone"
+  },
+  {
+    "name": "Keyboard_feed",
+    "kind": "sig",
+    "pattern": "E8 ? ? ? ? E9 ? ? ? ? 41 0F ? ? ? 45 0F ? ? ? 45 0F",
+    "result": "gone"
+  },
+  {
+    "name": "MainView_instance",
+    "kind": "sig",
+    "pattern": "48 8B 05 ? ? ? ? C6 40 ? ? 0F 95 C0",
+    "rva": "0x19D95A4",
+    "mismatches": 1,
+    "candidates": 1,
+    "new_pattern": "48 8B 05 ? ? ? ? C6 40 ? ? 0F 57 C0",
+    "result": "unique"
+  },
+  {
+    "name": "Mob_getJumpControlComponent",
+    "kind": "sig",
+    "pattern": "E8 ? ? ? ? 48 85 C0 74 ? C6 40 ? ? 48 83 C4 ? 5B",
+    "rva": "0xE90364",
+    "mismatches": 1,
+    "candidates": 1,
+    "new_pattern": "E8 ? ? ? ? 48 85 C0 74 ? C6 40 ? ? 48 83 C4 ? C3",
+    "result": "unique"
+  },
+  {
+    "name": "Mob_getCurrentSwingDuration",
+    "kind": "sig",
+    "pattern": "48 89 5C 24 10 57 48 83 EC 50 0F 29 74 24 40 48 8B 05 ? ? ? ? 48 33 C4 48 89 44 24 30 F3 0F 10 35 ? ? ? ? 48 8B F9 E8 ? ? ? ? 48 85 C0 74 04 F3 0F 10",
+    "result": "gone"
+  },
+  {
+    "name": "NetworkStackItemDescriptor_ctor",
+    "kind": "sig",
+    "pattern": "48 ? ? ? ? ? ? E8 ? ? ? ? 90 48 8B CF E8 ? ? ? ? 48 ? ? 48 ? ? E8 ? ? ? ? F2 ? ? ?",
+    "rva": "0x7E44D5",
+    "mismatches": 2,
+    "candidates": 34,
+    "new_pattern": "48 ? ? ? ? ? ? E8 ? ? ? ? 90 48 8B CF E8 ? ? ? ? 48 ? ? 48 ? ? 0F ? ? ? ? 00 ? ? ?",
+    "result": "ambiguous"
+  },
+  {
+    "name": "PlayerMovement_clearInputStateInlined",
+    "kind": "sig",
+    "pattern": "75 ? 48 8B ? ? ? ? ? ? 48 8D ? ? ? ? ? ? 48 89 ? ? ? 4D 8B",
+    "result": "gone"
+  },
+  {
+    "name": "PlayerMovement_clearInputStateInlined2",
+    "kind": "sig",
+    "pattern": "0F 84 ? ? ? ? 48 8B ? ? 48 89 ? ? ? ? ? ? 48 89 ? ? ? ? ? ? 4C 89 ? ? ? ? ? ? 0F 10",
+    "result": "gone"
+  },
+  {
+    "name": "RakNet_RakPeer_runUpdateCycle",
+    "kind": "sig",
+    "pattern": "48 89 5C 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ? ? ? ? B8 ? ? ? ? E8 ? ? ? ? 48 2B E0 0F 29 B4 24 ? ? ? ? 0F 29 BC 24 ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 ? ? ? ? 4C 8B EA 48 89 54 24 ? 48 8B D9",
+    "rva": "0x2130FA0",
+    "mismatches": 6,
+    "candidates": 1,
+    "new_pattern": "48 89 5C 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ? ? ? ? B8 ? ? ? ? E8 ? ? ? ? 48 2B E0 0F 29 B4 24 ? ? ? ? 0F 29 BC 24 ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 ? ? ? ? 49 8B F1 4C 89 44 24 ? 4C 8B FA",
+    "result": "unique"
+  },
+  {
+    "name": "ScreenView_setupAndRender",
+    "kind": "sig",
+    "pattern": "48 8B ? ? E8 ? ? ? ? 90 48 8D ? ? ? E8 ? ? ? ? 48 8B 8C ? ? ? ? ? 48 33 ? E8 ? ? ? ?",
+    "rva": "0xCF72A7",
+    "mismatches": 1,
+    "candidates": 10,
+    "new_pattern": "48 8B ? ? 15 ? ? ? ? 90 48 8D ? ? ? E8 ? ? ? ? 48 8B 8C ? ? ? ? ? 48 33 ? E8 ? ? ? ?",
+    "result": "ambiguous"
+  },
+  {
+    "name": "SimulatedPlayer_simulateJump",
+    "kind": "sig",
+    "pattern": "40 53 48 83 EC ? 48 8B 01 48 8B D9 48 8B 80 ? ? ? ? FF 15 ? ? ? ? 84 C0 0F 84 ? ? ? ? 4C 8B 53",
+    "rva": "0x1B2BF00",
+    "mismatches": 2,
+    "candidates": 2,
+    "new_pattern": "40 53 48 83 EC ? 48 8B 01 48 8B D9 48 8B 80 ? ? ? ? FF 15 ? ? ? ? 84 C0 0F 84 ? ? ? ? 48 8B 03",
+    "result": "ambiguous"
+  },
+  {
+    "name": "SneakMovementSystem_tickSneakMovementSystem",
+    "kind": "sig",
+    "pattern": "32 C0 41 88 41 ? 84 C0",
+    "rva": "0xD9D97A",
+    "mismatches": 2,
+    "candidates": 1,
+    "new_pattern": "32 C0 41 88 47 ? 84 C9",
+    "result": "unique"
+  },
+  {
+    "name": "ConnectionRequest_create",
+    "kind": "sig",
+    "pattern": "40 ? 53 56 57 41 ? 41 ? 41 ? 41 ? 48 8D ? ? ? ? ? ? 48 81 EC ? ? ? ? 0F 29 ? ? ? ? ? ? 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? ? ? ? 49 8B ? 48 89 ? ? ? ? ? 48 89 ? ? 48 89",
+    "rva": "0x2E362E0",
+    "mismatches": 1,
+    "candidates": 2,
+    "new_pattern": "40 ? 53 56 57 41 ? 41 ? 41 ? 41 ? 48 8D ? ? ? ? ? ? 48 81 EC ? ? ? ? 0F 29 ? ? ? ? ? ? 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? ? ? ? 49 8B ? 48 89 ? ? ? ? ? 4C 89 ? ? 48 89",
+    "result": "ambiguous"
+  },
+  {
+    "name": "CameraDirectLookSystemUtil_handleLookInput",
+    "kind": "sig",
+    "pattern": "48 89 ? ? ? 57 48 83 EC ? F3 41 ? ? ? 49 8B ? F3 41 ? ? ? ? F3 0F",
+    "rva": "0x11034DA",
+    "mismatches": 1,
+    "candidates": 1,
+    "new_pattern": "48 89 ? ? ? 57 48 83 EC ? F3 0F ? ? ? 49 8B ? F3 41 ? ? ? ? F3 0F",
+    "result": "unique"
+  },
+  {
+    "name": "ItemRenderer_render",
+    "kind": "sig",
+    "pattern": "48 8B ? 48 89 ? ? 55 56 57 41 ? 41 ? 41 ? 41 ? 48 81 EC ? ? ? ? 0F 29 ? ? 0F 29 ? ? 44 0F ? ? ? 44 0F ? ? ? 49 8B",
+    "rva": "0xB40250",
+    "mismatches": 1,
+    "candidates": 9,
+    "new_pattern": "48 8B ? 48 89 ? ? 55 56 57 41 ? 41 ? 41 ? 41 ? 48 81 EC ? ? ? ? 0F 29 ? ? 0F 29 ? ? 44 0F ? ? ? 44 0F ? ? ? 48 8B",
+    "result": "ambiguous"
+  },
+  {
+    "name": "ActorAnimationControllerPlayer_applyToPose",
+    "kind": "sig",
+    "pattern": "48 8B C4 48 89 58 08 48 89 68 10 48 89 70 18 57 41 54 41 56 48 81 EC ? ? ? ? 4C 63 B4 24 ? ? ? ? 45 33 E4 4C 89 A2 ? ? ? ?",
+    "result": "gone"
+  },
+  {
+    "name": "JSON_parse",
+    "kind": "sig",
+    "pattern": "E8 ? ? ? ? 0F B6 D8 48 8D 8D ? ? ? ? E8 ? ? ? ? 90 48 8D 8D ? ? ? ? E8 ? ? ? ? 84 DB 0F 84 ? ? ? ? C6 44 24",
+    "result": "gone"
+  },
+  {
+    "name": "Actor_getStatusFlag",
+    "kind": "sig",
+    "pattern": "E8 ? ? ? ? 84 C0 0F 84 ? ? ? ? F3 0F 10 BF",
+    "rva": "0x408F5E",
+    "mismatches": 1,
+    "candidates": 46,
+    "new_pattern": "E8 ? ? ? ? 84 C0 0F 84 ? ? ? ? F3 0F 10 B6",
+    "result": "ambiguous"
+  },
+  {
+    "name": "ConcreteBlockLegacy_getCollisionShapeForCamera",
+    "kind": "sig",
+    "pattern": "40 ? 48 83 EC ? 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? ? 4C 8B ? 4D 8B ? 49 8B",
+    "rva": "0x98F1F6",
+    "mismatches": 1,
+    "candidates": 1,
+    "new_pattern": "41 ? 48 83 EC ? 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? ? 4C 8B ? 4D 8B ? 49 8B",
+    "result": "unique"
+  },
+  {
+    "name": "mce_framebuilder_RenderItemInHandDescription_ctor",
+    "kind": "sig",
+    "pattern": "48 89 ? ? ? 48 89 ? ? ? 55 56 57 41 ? 41 ? 41 ? 41 ? 48 83 EC ? 4D 8B ? 4D 8B ? 4C 8B ? 48 8B ? 45 33",
+    "rva": "0x1E9F8B0",
+    "mismatches": 2,
+    "candidates": 4,
+    "new_pattern": "48 89 ? ? ? 48 89 ? ? ? 55 56 57 41 ? 41 ? 41 ? 41 ? 48 83 EC ? 49 8B ? 49 8B ? 4C 8B ? 48 8B ? 45 33",
+    "result": "ambiguous"
+  },
+  {
+    "name": "checkBlocks",
+    "kind": "sig",
+    "pattern": "48 8D 05 ? ? ? ? 4D 8B CE 48 89 44 24 ? 4C 8D 44 24",
+    "rva": "0x482EEEB",
+    "mismatches": 2,
+    "candidates": 2,
+    "new_pattern": "48 8D 05 ? ? ? ? 4D 8B CE 48 89 44 24 ? 48 8D 94 24",
+    "result": "ambiguous"
+  },
+  {
+    "name": "Unknown_renderBlockOverlay",
+    "kind": "sig",
+    "pattern": "40 ? 53 56 57 41 ? 41 ? 48 8D ? ? ? ? ? ? 48 81 EC ? ? ? ? 49 8B ? 49 8B ? 4C 8B ? 48 8B ? 48 8B",
+    "rva": "0x5F9F90",
+    "mismatches": 3,
+    "candidates": 3,
+    "new_pattern": "40 ? 53 56 57 41 ? 41 ? 48 8D ? ? ? ? ? ? 48 81 EC ? ? ? ? 49 8B ? 4D 8B ? 48 8B ? 48 8B ? 48 89",
+    "result": "ambiguous"
+  },
+  {
+    "name": "FastEat",
+    "kind": "sig",
+    "pattern": "FF C8 89 87 ? ? ? ? 83 F8",
+    "rva": "0xACC344",
+    "mismatches": 2,
+    "candidates": 48,
+    "new_pattern": "FF C8 89 87 ? ? ? ? 32 C0",
+    "result": "ambiguous"
+  },
+  {
+    "name": "Reach",
+    "kind": "sig",
+    "pattern": "74 ? F3 44 ? ? ? ? ? ? ? EB ? F3 0F",
+    "result": "gone"
+  },
+  {
+    "name": "BlockReach",
+    "kind": "sig",
+    "pattern": "F3 0F ? ? ? ? ? ? 48 8B ? ? ? 48 83 C4 ? 5F C3 83 C0",
+    "rva": "0x7B084D0",
+    "mismatches": 1,
+    "candidates": 1,
+    "new_pattern": "F3 0F ? ? ? ? ? ? 48 8B ? ? ? 48 83 C4 ? 5F C3 83 F8",
+    "result": "unique"
+  },
+  {
+    "name": "GetSpeedInAirWithSprint",
+    "kind": "sig",
+    "pattern": "41 C7 40 ? ? ? ? ? F6 02",
+    "rva": "0x7F41973",
+    "mismatches": 1,
+    "candidates": 2,
+    "new_pattern": "41 C7 40 ? ? ? ? ? C3 02",
+    "result": "ambiguous"
+  },
+  {
+    "name": "ConnectionRequest_create_DeviceModel",
+    "kind": "sig",
+    "pattern": "48 8B 11 48 83 C2 ? EB",
+    "rva": "0x12AC4CE",
+    "mismatches": 1,
+    "candidates": 11,
+    "new_pattern": "48 8B 11 48 83 C2 ? 48",
+    "result": "ambiguous"
+  },
+  {
+    "name": "ConnectionRequest_create_DefaultInputMode",
+    "kind": "sig",
+    "pattern": "C6 44 24 58 ? 48 63 ? 48 89 ? ? ? 48 8D ? ? ? ? ? 48 8D ? ? ? ? ? E8 ? ? ? ? 48 8B ? 33 D2 48 8D ? ? ? E8 ? ? ? ? 0F B6 ? ? 0F B6 ? ? ? 88 44 ? ? 48 8B ? 48 8B ? ? ? 48 89 ? ? ? C6 43 08 ? 88 54 ? ? 48 89 ? 48 89 ? ? ? 48 8D ? ? ? E8 ? ? ? ? 90 48 8D ? ? ? E8 ? ? ? ? C6 44 24 58",
+    "result": "gone"
+  },
+  {
+    "name": "ConnectionRequest_create_CurrentInputMode",
+    "kind": "sig",
+    "pattern": "48 63 ? ? ? ? ? 48 89 ? ? ? 48 8D ? ? ? ? ? 48 8D ? ? ? ? ? E8 ? ? ? ? 48 8B ? 33 D2 48 8D ? ? ? E8 ? ? ? ? 0F B6 ? ? 0F B6 ? ? ? 88 44 ? ? 48 8B ? 48 8B ? ? ? 48 89 ? ? ? C6 43 08 ? 88 54 ? ? 48 89 ? 48 89 ? ? ? 48 8D ? ? ? E8 ? ? ? ? 90 48 8D ? ? ? E8 ? ? ? ? C6 44 24 58 ? 48 63 ? ? ? ? ? 48 89 ? ? ? 48 8D ? ? ? ? ? 48 8D ? ? ? ? ? E8 ? ? ? ? 48 8B ? 33 D2 48 8D ? ? ? E8 ? ? ? ? 0F B6 ? ? 0F B6 ? ? ? 88 44 ? ? 48 8B ? 48 8B ? ? ? 48 89 ? ? ? C6 43 08 ? 88 54 ? ? 48 89 ? 48 89 ? ? ? 48 8D ? ? ? E8 ? ? ? ? 90 48 8D ? ? ? E8 ? ? ? ? C6 44 24 58",
+    "result": "gone"
+  },
+  {
+    "name": "InputModeBypass",
+    "kind": "sig",
+    "pattern": "8b d7 48 8b ce 48 8b 80 ? ? ? ? ff 15 ? ? ? ? 49 8b 07",
+    "rva": "0xDA5A3A",
+    "mismatches": 1,
+    "candidates": 106,
+    "new_pattern": "8B D7 48 8B CE 48 8B 80 ? ? ? ? FF 15 ? ? ? ? 49 8B 04",
+    "result": "ambiguous"
+  },
+  {
+    "name": "InputModeBypassFix",
+    "kind": "sig",
+    "pattern": "49 8b 07 8b d7 49 8b cf 48 8b 80 ? ? ? ? ff 15 ? ? ? ? 49 8b 07",
+    "rva": "0x5BC632E",
+    "mismatches": 3,
+    "candidates": 2,
+    "new_pattern": "49 8B 07 8B D7 49 8B CF 48 8B 80 ? ? ? ? FF 15 ? ? ? ? E8 E0 86",
+    "result": "ambiguous"
+  },
+  {
+    "name": "TapSwingAnim",
+    "kind": "sig",
+    "pattern": "F3 44 ? ? ? ? ? ? ? 4C 8D ? ? ? 48 8B ? 48 C7 44 24 30 ? ? ? ? c7 44 24 ? ? ? ? ? 8b 08",
+    "rva": "0x2D71B16",
+    "mismatches": 3,
+    "candidates": 1,
+    "new_pattern": "FD F3 ? ? ? ? ? ? ? 4C 8D ? ? ? 48 8B ? 48 C7 44 24 20 ? ? ? ? C7 44 24 ? ? ? ? ? 8B 08",
+    "result": "unique"
+  },
+  {
+    "name": "Unknown_updatePlayerFromCamera",
+    "kind": "sig",
+    "pattern": "4C 8B ? 49 89 ? ? 49 89 ? ? 55 41 ? 41 ? 49 8D",
+    "result": "gone"
+  },
+  {
+    "name": "FluxSwing",
+    "kind": "sig",
+    "pattern": "E8 ? ? ? ? 48 8B ? F3 0F ? ? ? ? ? ? F3 0F ? ? ? ? ? ? F3 0F ? ? ? ? ? ? C6 40 38 ? 48 8B ? EB",
+    "result": "gone"
+  },
+  {
+    "name": "BobHurt",
+    "kind": "sig",
+    "pattern": "48 89 5C 24 ? 57 48 81 EC ? ? ? ? 0F 29 B4 24 ? ? ? ? 48 81 C1",
+    "rva": "0xCDF860",
+    "mismatches": 2,
+    "candidates": 24,
+    "new_pattern": "48 89 5C 24 ? 57 48 81 EC ? ? ? ? 0F 29 B4 24 ? ? ? ? 48 8B FA",
+    "result": "ambiguous"
+  },
+  {
+    "name": "ItemInHandRenderer_renderItem_bytepatch",
+    "kind": "sig",
+    "pattern": "F3 0F ? ? ? ? ? ? 0F 57 ? F3 0F ? ? ? ? ? ? F3 0F ? ? 0F 2F ? 73 ? F3 41",
+    "result": "gone"
+  },
+  {
+    "name": "ItemInHandRenderer_renderItem_bytepatch2",
+    "kind": "sig",
+    "pattern": "8B 52 ? 48 8B ? 48 8B ? ? FF 15 ? ? ? ? 48 8B ? EB ? 48 8D ? ? ? ? ? 48 8B ? ? ? ? ? 48 8B",
+    "result": "gone"
+  },
+  {
+    "name": "Actor_getGameMode",
+    "kind": "sig",
+    "pattern": "E8 ? ? ? ? 48 8B ? 48 8B ? 4C 8B ? 49 8B ? ? ? ? ? E8 ? ? ?",
+    "result": "gone"
+  },
+  {
+    "name": "Actor_getLevel",
+    "kind": "sig",
+    "pattern": "E8 ? ? ? ? 48 8B ? 48 8B ? 48 8B ? ? ? ? ? 48 8B ? E8 ? ? ? ? 4C 8B ? 4C 8B ? 48 8B",
+    "result": "gone"
+  },
+  {
+    "name": "GameRenderer_bobHurt",
+    "kind": "sig",
+    "pattern": "40 53 48 81 EC D0 00 00 00 0F 29 BC 24 A0 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 90 00 00 00 48 8B DA 0F 28 FA 48 8D 91 80 1A 00",
+    "result": "gone"
+  },
+  {
+    "name": "GuiData_getOptions",
+    "kind": "sig",
+    "pattern": "E8 ? ? ? ? 48 8B F0 48 8B 08 48 8B 79 ? 48 8B ? ? ? ? ? 48 8B",
+    "rva": "0x6C4F0F1",
+    "mismatches": 1,
+    "candidates": 1,
+    "new_pattern": "8B ? ? ? ? 48 8B F0 48 8B 08 48 8B 79 ? 48 8B ? ? ? ? ? 48 8B",
+    "result": "unique"
+  },
+  {
+    "name": "ItemInHandRenderer_applyTransform",
+    "kind": "sig",
+    "pattern": "40 88 7C 24 30 44 88 6C 24 28 F3 44 0F 11 44 24 20 4C 8D 8D ? ? ? ? 4C 8B C6 49 8B D7 49 8B CC E8 ? ? ? ? 48 8B CE E8 ? ? ?",
+    "result": "gone"
+  },
+  {
+    "name": "LevelRendererCamera_updateCameraTransform",
+    "kind": "sig",
+    "pattern": "48 8B C8 E8 ? ? ? ? 48 8B CD E8 ? ? ? ? F3 41 0F 10",
+    "rva": "0x1B728AD",
+    "mismatches": 2,
+    "candidates": 3,
+    "new_pattern": "48 8B CF E8 ? ? ? ? 48 8B CF E8 ? ? ? ? F3 41 0F 10",
+    "result": "ambiguous"
+  },
+  {
+    "name": "LevelRendererPlayer_renderNametag",
+    "kind": "sig",
+    "pattern": "40 55 53 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ? ? ? ? 48 81 EC ? ? ? ? 0F 29 B4 24 ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 ? ? ? ? 4D 8B E9 4C 89 44 24 ? 48 8B F2 4C 8B F1 48 89 54",
+    "rva": "0x316950",
+    "mismatches": 6,
+    "candidates": 2,
+    "new_pattern": "40 55 53 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ? ? ? ? 48 81 EC ? ? ? ? 0F 29 B4 24 ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 ? ? ? ? 49 8B F1 4C 89 44 24 ? 48 8B FA 4C 8B E1 4C 89 4C",
+    "result": "ambiguous"
+  },
+  {
+    "name": "LocalPlayer_applyTurnDelta",
+    "kind": "sig",
+    "pattern": "48 8B CE E8 ? ? ? ? 48 8B ? ? ? ? ? 48 ? ? E8 ? ? ? ? 4C 8D ? ? ? ? ? ? 49 8B ? ? 49 8B ? ? 41 ? ? ? ? 41 ? ? ? ? 45 ? ? ?",
+    "rva": "0x12A51F8",
+    "mismatches": 2,
+    "candidates": 48,
+    "new_pattern": "48 8B CE E8 ? ? ? ? 48 8B ? ? ? ? ? 48 ? ? E8 ? ? ? ? 4C 8D ? ? ? ? ? ? 49 8B ? ? 49 8B ? ? 49 ? ? ? ? 41 ? ? ? ? 5D ? ? ?",
+    "result": "ambiguous"
+  },
+  {
+    "name": "MoveInputComponent_ClearMoveState1",
+    "kind": "sig",
+    "pattern": "80 B9 ? ? ? ? 00 75 ? F3 0F 10 ? ? ? ? ? F3 0F 11 ?",
+    "rva": "0x209A9F4",
+    "mismatches": 2,
+    "candidates": 10,
+    "new_pattern": "80 3F ? ? ? ? 00 80 ? F3 0F 10 ? ? ? ? ? F3 0F 11 ?",
+    "result": "ambiguous"
+  },
+  {
+    "name": "NoItemRotation_PatchSig",
+    "kind": "sig",
+    "pattern": "80 BE ? ? ? ? 00 75 ? F3 0F ? ? ? ? 4C ?",
+    "result": "gone"
+  },
+  {
+    "name": "Player_getSupplies",
+    "kind": "sig",
+    "pattern": "E8 ? ? ? ? 48 8B C8 E8 ? ? ? ? 48 8B D8 48 8B ? E8 ? ? ? ? 48 8D ? ? ? ?",
+    "rva": "0x373E93",
+    "mismatches": 1,
+    "candidates": 7,
+    "new_pattern": "E8 ? ? ? ? 48 8B C8 E8 ? ? ? ? 48 8B D8 48 8B ? E8 ? ? ? ? 48 8B ? ? ? ?",
+    "result": "ambiguous"
+  },
+  {
+    "name": "RenderController_getHurtColor",
+    "kind": "sig",
+    "pattern": "E8 ? ? ? ? 44 ? ? ? ? 4C ? ? ? 4C ? ? 48 ? ? ? ? ? ? 49 ? ? E8 ? ? ?",
+    "result": "gone"
+  }
+]
