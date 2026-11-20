@@ -1,0 +1,48 @@
+{
+  "source": "_ARCHIVE_pre_20261120/docs_legacy/batch3_5_3 (analyzed the SAME target image)",
+  "target": "unpacked/unpacked_Minecraft.Windows.exe / NetEase 3.9.20.300505",
+  "verified_functions": [
+    {
+      "name": "ClientInstance_vtable_slot308_mPacketSender",
+      "rva": "0x130a940",
+      "confidence": "L0",
+      "evidence": "16-byte prefix byte-exact at archived RVA; leaf getter [rcx+0x108]"
+    },
+    {
+      "name": "ClientInstance_vtable_slot318_p118",
+      "rva": "0x1a26180",
+      "confidence": "L0",
+      "evidence": "16-byte prefix byte-exact at archived RVA; leaf getter [rcx+0x118]; semantic role UNVERIFIED"
+    }
+  ],
+  "verified_rtti": [
+    {
+      "name": "ClientInstance vtable",
+      "rva": "0x8ddb590",
+      "first_slot": "0x19a3800",
+      "check": "points into image"
+    },
+    {
+      "name": "BlockSource vtable",
+      "rva": "0x921b490",
+      "first_slot": "0x5d2bee0",
+      "check": "points into image"
+    },
+    {
+      "name": "ClientInstance COL",
+      "rva": "0x9ab2858",
+      "sig": 1,
+      "check": "RTTI COL signature"
+    },
+    {
+      "name": "BlockSource COL",
+      "rva": "0x9e91d20",
+      "sig": 1,
+      "check": "RTTI COL signature"
+    }
+  ],
+  "not_migrated": [
+    "getLocalPlayer (no stored body for byte compare)",
+    "slot318 semantic role (UNVERIFIED by batch3_5_3 final-decision)"
+  ]
+}
