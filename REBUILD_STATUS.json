@@ -1,0 +1,48 @@
+{
+  "objective": "Rebuild from solstice-src.zip (1.21.44 upstream) for NetEase 3.9.20.300505",
+  "target_identity": {
+    "image": "unpacked/unpacked_Minecraft.Windows.exe",
+    "netease_version": "3.9.20.300505 (full-file string scan)",
+    "pe_resource_version": "1.21.120.0 (NOT the NetEase version)"
+  },
+  "baseline": "solstice-src.zip, imported verbatim at commit 4c4e56c",
+  "no_probe_policy": "no runtime probes, no diagnostic instrumentation, no state machine carried over",
+  "mapping": {
+    "before": {
+      "AMBIGUOUS": 32,
+      "OK": 50,
+      "MISSING": 82,
+      "SUSPECT": 12
+    },
+    "after": {
+      "AMBIGUOUS": 32,
+      "OK": 59,
+      "MISSING": 72,
+      "SUSPECT": 13
+    },
+    "applied_high_confidence": 10,
+    "verified_ok_gain": 9,
+    "remaining": {
+      "MISSING": 72,
+      "AMBIGUOUS": 32,
+      "SUSPECT": 13
+    }
+  },
+  "deterministic_fixes": [
+    "vendored CPM v0.38.7 (offline-safe)",
+    "D:/dev/deps replaced with downloadable dependencies",
+    "INTERFACE target MSVC_RUNTIME_LIBRARY error fixed",
+    "cryptopp unity build disabled",
+    "callVirtualFunc rejects implausible vtable indices (playUi=3238145 no longer jumps)"
+  ],
+  "deferred_per_user_policy": [
+    "26 AMBIGUOUS with no unique candidate",
+    "13 SUSPECT values (implausible) - not applied",
+    "42 gone patterns - require disassembly",
+    "4 triage hits lacking new_pattern bytes"
+  ],
+  "build_commands": [
+    "cmake -S <src> -B build -G \"Visual Studio 17 2022\" -A x64",
+    "cmake --build build --config Release"
+  ]
+}
