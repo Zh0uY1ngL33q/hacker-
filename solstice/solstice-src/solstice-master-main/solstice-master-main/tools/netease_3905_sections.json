@@ -1,0 +1,110 @@
+{
+  "moduleBase": "0x7ff66b9f0000",
+  "sections": [
+    {
+      "name": ".text",
+      "rva": "0x1000",
+      "virtualSize": "0x8b6f000",
+      "rawSize": "0x8b6ea00",
+      "characteristics": "0x60000020"
+    },
+    {
+      "name": "        ",
+      "rva": "0x8b70000",
+      "virtualSize": "0x1d1f000",
+      "rawSize": "0x1d14e00",
+      "characteristics": "0xc0000040"
+    },
+    {
+      "name": "        ",
+      "rva": "0xa88f000",
+      "virtualSize": "0x11ae000",
+      "rawSize": "0xf4b800",
+      "characteristics": "0xc0000040"
+    },
+    {
+      "name": "        ",
+      "rva": "0xba3d000",
+      "virtualSize": "0x4b2000",
+      "rawSize": "0x4b1e00",
+      "characteristics": "0x40000040"
+    },
+    {
+      "name": "        ",
+      "rva": "0xbeef000",
+      "virtualSize": "0xf000",
+      "rawSize": "0xec00",
+      "characteristics": "0x40000040"
+    },
+    {
+      "name": "        ",
+      "rva": "0xbefe000",
+      "virtualSize": "0x43000",
+      "rawSize": "0x42800",
+      "characteristics": "0x40000040"
+    },
+    {
+      "name": "        ",
+      "rva": "0xbf41000",
+      "virtualSize": "0x14a000",
+      "rawSize": "0x149c00",
+      "characteristics": "0x42000040"
+    },
+    {
+      "name": ".edata",
+      "rva": "0xc08b000",
+      "virtualSize": "0x1000",
+      "rawSize": "0x600",
+      "characteristics": "0x40000040"
+    },
+    {
+      "name": ".idata",
+      "rva": "0xc08c000",
+      "virtualSize": "0x2000",
+      "rawSize": "0x1a00",
+      "characteristics": "0xc0000040"
+    },
+    {
+      "name": ".tls",
+      "rva": "0xc08e000",
+      "virtualSize": "0x4000",
+      "rawSize": "0x3200",
+      "characteristics": "0xc0000000"
+    },
+    {
+      "name": ".rsrc",
+      "rva": "0xc092000",
+      "virtualSize": "0x43000",
+      "rawSize": "0x42800",
+      "characteristics": "0x40000040"
+    },
+    {
+      "name": ".winlice",
+      "rva": "0xc0d5000",
+      "virtualSize": "0xea6000",
+      "rawSize": "0xea6000",
+      "characteristics": "0xe0000060"
+    },
+    {
+      "name": ".boot",
+      "rva": "0xcf7b000",
+      "virtualSize": "0x82f000",
+      "rawSize": "0x82f000",
+      "characteristics": "0x60000060"
+    },
+    {
+      "name": ".reloc",
+      "rva": "0xd7aa000",
+      "virtualSize": "0x1000",
+      "rawSize": "0x400",
+      "characteristics": "0x40000000"
+    },
+    {
+      "name": ".SCY",
+      "rva": "0xd7ab000",
+      "virtualSize": "0xc000",
+      "rawSize": "0xc000",
+      "characteristics": "0xe0000060"
+    }
+  ]
+}

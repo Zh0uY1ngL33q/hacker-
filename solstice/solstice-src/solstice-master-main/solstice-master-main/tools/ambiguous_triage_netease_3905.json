@@ -1,0 +1,1525 @@
+[
+  {
+    "name": "GameSession_mEventCallback",
+    "kind": "offset",
+    "status": "AMBIGUOUS",
+    "matches": 6,
+    "verdict": "no plausible value",
+    "candidates": [
+      {
+        "rva": "0x1B88AD1",
+        "value": -914012152,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1C0089C",
+        "value": -914012128,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1CF0539",
+        "value": -914012152,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1CF0675",
+        "value": -914012152,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1CF07B1",
+        "value": -914012152,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x579FB70",
+        "value": -914012080,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "ClientInstance_getBlockSource",
+    "kind": "offset",
+    "status": "AMBIGUOUS",
+    "matches": 4,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x1E94A93",
+        "value": 318,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x21BD5D0",
+        "value": 35,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x21CC2B0",
+        "value": 35,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x645EE7C",
+        "value": 69,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "ClientInstance_setDisableInput",
+    "kind": "offset",
+    "status": "SUSPECT",
+    "matches": 64,
+    "verdict": "no plausible value",
+    "candidates": [
+      {
+        "rva": "0x1BD36E7",
+        "value": 84423017,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1BD38F7",
+        "value": 84423017,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1BD3B07",
+        "value": 84423017,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1BD3D17",
+        "value": 84423017,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1CF29D7",
+        "value": 84423017,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1CF2BE7",
+        "value": 84423017,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1CF2DF7",
+        "value": 84423017,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1CF3007",
+        "value": 84423017,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "ClientInstance_grabMouse",
+    "kind": "offset",
+    "status": "SUSPECT",
+    "matches": 8,
+    "verdict": "no plausible value",
+    "candidates": [
+      {
+        "rva": "0xBFB977",
+        "value": -250605207,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1991C38",
+        "value": 84939113,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1997FAD",
+        "value": 84939113,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1E5EC04",
+        "value": -49278615,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1E721AC",
+        "value": -49278615,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1E89E51",
+        "value": -49278615,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x293502F",
+        "value": 84939113,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x3A03FA7",
+        "value": -217050775,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "ClientInstance_releaseMouse",
+    "kind": "offset",
+    "status": "SUSPECT",
+    "matches": 64,
+    "verdict": "no plausible value",
+    "candidates": [
+      {
+        "rva": "0x1BD36E7",
+        "value": 84423017,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1BD38F7",
+        "value": 84423017,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1BD3B07",
+        "value": 84423017,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1BD3D17",
+        "value": 84423017,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1CF29D7",
+        "value": 84423017,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1CF2BE7",
+        "value": 84423017,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1CF2DF7",
+        "value": 84423017,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1CF3007",
+        "value": 84423017,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "ClientInstance_mLevelRenderer",
+    "kind": "offset",
+    "status": "AMBIGUOUS",
+    "matches": 3,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x1A26354",
+        "value": 240,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x256AE10",
+        "value": 456,
+        "plausible": true,
+        "data_refs": 4,
+        "ref_sites": [
+          "0x8EE8040",
+          "0x8EE8080",
+          "0x8EE8B60",
+          "0x8EE8BA0"
+        ]
+      },
+      {
+        "rva": "0x2DAE1DF",
+        "value": 4920,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "ClientInstance_mPacketSender",
+    "kind": "offset",
+    "status": "AMBIGUOUS",
+    "matches": 6,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x2182D4B",
+        "value": 552,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x21E280D",
+        "value": 2464,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x21E56ED",
+        "value": 2464,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x223905A",
+        "value": 2464,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x22391A4",
+        "value": 2464,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x2DABF45",
+        "value": -896841632,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "MinecraftGame_playUi",
+    "kind": "offset",
+    "status": "SUSPECT",
+    "matches": 1,
+    "verdict": "no plausible value",
+    "candidates": [
+      {
+        "rva": "0x1CBB9E4",
+        "value": 3238145,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "MinecraftGame_mClientInstances",
+    "kind": "offset",
+    "status": "AMBIGUOUS",
+    "matches": 2,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x1A3C03A",
+        "value": 2912,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x621961A",
+        "value": 768,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "MinecraftGame_mMouseGrabbed",
+    "kind": "offset",
+    "status": "SUSPECT",
+    "matches": 1,
+    "verdict": "no plausible value",
+    "candidates": [
+      {
+        "rva": "0x37E31F6",
+        "value": -964358145,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "Actor_baseTick",
+    "kind": "offset",
+    "status": "SUSPECT",
+    "matches": 1,
+    "verdict": "no plausible value",
+    "candidates": [
+      {
+        "rva": "0x593BCB2",
+        "value": -13539068,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "Actor_swing",
+    "kind": "offset",
+    "status": "SUSPECT",
+    "matches": 1,
+    "verdict": "no plausible value",
+    "candidates": [
+      {
+        "rva": "0x38157B9",
+        "value": 17305961,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "Level_getHitResult",
+    "kind": "offset",
+    "status": "SUSPECT",
+    "matches": 64,
+    "verdict": "no plausible value",
+    "candidates": [
+      {
+        "rva": "0x2A8E6F",
+        "value": -151183361,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x2B9158",
+        "value": 98376201,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x845CAF",
+        "value": 251469815,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x84F859",
+        "value": -37937155,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x19AC842",
+        "value": 43851730,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x19B0564",
+        "value": 73203826,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x19EFB56",
+        "value": 1908690,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1A47B66",
+        "value": 69009420,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "LevelData_mTick",
+    "kind": "offset",
+    "status": "SUSPECT",
+    "matches": 2,
+    "verdict": "value-gate",
+    "candidates": [
+      {
+        "rva": "0x5A90B1E",
+        "value": -1219654324,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x63F12A7",
+        "value": 312,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "Actor_mDestroying",
+    "kind": "offset",
+    "status": "AMBIGUOUS",
+    "matches": 8,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x1A67C05",
+        "value": 5738,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x3491170",
+        "value": 93015810,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x34919A7",
+        "value": 93013707,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x349225D",
+        "value": 93011477,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x349288F",
+        "value": 93009891,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x3492C2F",
+        "value": 93008963,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x3493610",
+        "value": 93006434,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x6089B40",
+        "value": 136,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "BlockSource_getChunk",
+    "kind": "offset",
+    "status": "SUSPECT",
+    "matches": 1,
+    "verdict": "no plausible value",
+    "candidates": [
+      {
+        "rva": "0x7C843CA",
+        "value": 8015420,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "BlockSource_setBlock",
+    "kind": "offset",
+    "status": "AMBIGUOUS",
+    "matches": 2,
+    "verdict": "value-gate",
+    "candidates": [
+      {
+        "rva": "0x2A9307E",
+        "value": 34,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x5DC36F8",
+        "value": 17305961,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "LevelChunk_mSubChunks",
+    "kind": "offset",
+    "status": "SUSPECT",
+    "matches": 1,
+    "verdict": "no plausible value",
+    "candidates": [
+      {
+        "rva": "0x2A34B0C",
+        "value": -369670096,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "ClientInputMappingFactory_mKeyboardMouseSettings",
+    "kind": "offset",
+    "status": "SUSPECT",
+    "matches": 1,
+    "verdict": "no plausible value",
+    "candidates": [
+      {
+        "rva": "0x67A5213",
+        "value": 138447688,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "ClientInstance_mStackScene",
+    "kind": "offset",
+    "status": "AMBIGUOUS",
+    "matches": 8,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x1991F2D",
+        "value": 1600,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1997B1B",
+        "value": 6024,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1999B3F",
+        "value": 1600,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x199B487",
+        "value": 6024,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x2A4C1BB",
+        "value": 216,
+        "plausible": true,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x53E3823",
+        "value": 105256662,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x8493E73",
+        "value": 38118862,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x84AA45E",
+        "value": 38027235,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "gDataUtil_MiscData_Instance",
+    "kind": "offset",
+    "status": "SUSPECT",
+    "matches": 31,
+    "verdict": "no plausible value",
+    "candidates": [
+      {
+        "rva": "0x24E888",
+        "value": 190369049,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x13EFB5A",
+        "value": 171881103,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x19B1983",
+        "value": 165854446,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x2569F5D",
+        "value": 153564948,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x31EABDD",
+        "value": 140543564,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x3727DAC",
+        "value": 134951101,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x3727F2C",
+        "value": 134950717,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x37280AC",
+        "value": 134950333,
+        "plausible": false,
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "Actor_setPosition",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 2,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x5797200",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x8684180",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "ClientInstance_grabMouse",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 8,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0xBFB977",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1991C38",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1997FAD",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1E5EC04",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1E721AC",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1E89E51",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x293502F",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x3A03FA7",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "ClientInstance_releaseMouse",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 2,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x1A2EA60",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1A53310",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "EnchantUtils_getEnchantLevel",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 2,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x31FE72",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x5E991A8",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "GameMode_getDestroyRate",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 2,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x5BF4AB0",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x8627710",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "GameMode_baseUseItem",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 2,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x3966FD1",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x3967895",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "ItemStack_vTable",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 64,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x159F26",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x159FD6",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1C42A1",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1C438A",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1C4481",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1C4571",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1C465A",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1C474A",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "ItemStack_fromDescriptor",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 6,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x102E470",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x10C79B0",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1175170",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1175360",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x17F1D60",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x87754A0",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "MouseDevice_feed",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 3,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0xCECF50",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x346E4B0",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x85FF8C0",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "BlockSource_fireBlockChanged",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 2,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x5D37620",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x87A8F60",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "WaterBlockLegacy_getCollisionShapeForCamera",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 5,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x413120",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x2FC4CD0",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x322CB80",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x59F2BF0",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x6C026C0",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "ResourcePackManager_composeFullStackBp",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 4,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x1E927AC",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x21117B4",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x2361C15",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x237AC9D",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "tickEntity_ItemUseSlowdownModifierComponent",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 4,
+    "verdict": "vtable-ref",
+    "candidates": [
+      {
+        "rva": "0x1029710",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x10FF040",
+        "data_refs": 1,
+        "ref_sites": [
+          "0x8D76B20"
+        ]
+      },
+      {
+        "rva": "0x11BC9E0",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x160FDE0",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "CameraComponent_applyRotation",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 3,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x4E9F42",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1CD6155",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x63210E9",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "FireRender",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 2,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x1CD2860",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x2BD52F0",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "Actor_canSee",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 11,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0xB8FB0D",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x107A895",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x593D0B7",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x593D755",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x593D94C",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x593DC97",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x593DE84",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x593E0ED",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "ClientInstance_switchControlMode",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 19,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x1F71630",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x2318690",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x2319710",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x243D670",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x2442460",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x2F535A0",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x2FF1380",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x31EF640",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "ContainerManagerController_handleSwap",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 35,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x97ADE4",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1D57023",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1D6DA1D",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1D741A3",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x27D0C1A",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x29F1BB6",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x29F1FD3",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x2A1C981",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "ContainerManagerController_transferItems",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 2,
+    "verdict": "vtable-ref",
+    "candidates": [
+      {
+        "rva": "0x5B926D0",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x5B92BA0",
+        "data_refs": 23,
+        "ref_sites": [
+          "0x8CF1768",
+          "0x8CF1A90",
+          "0x8CF1D08",
+          "0x8CF1E40"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ContainerScreenController_handlePlaceAll",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 5,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x1DE3B0F",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x1DE3DEF",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x230913C",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x2309397",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x65BCDAA",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "HudScreenController_shouldRenderScoreboardSidebar",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 2,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x2139A2D",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x213ACB9",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "ItemInHandRenderer_FluxSwingCallsite",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 3,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x27C7CF2",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x27C8A38",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x2B71AED",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "ItemRenderer_renderGuiItemNew",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 3,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x1D20641",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x24E062F",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x5DAAB69",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  },
+  {
+    "name": "Scoreboard_getDisplaySlotEntries",
+    "kind": "sig",
+    "status": "AMBIGUOUS",
+    "matches": 4,
+    "verdict": "unresolved",
+    "candidates": [
+      {
+        "rva": "0x28A331C",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x2F52E69",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x31CD5E7",
+        "data_refs": 0,
+        "ref_sites": []
+      },
+      {
+        "rva": "0x5D2D4CC",
+        "data_refs": 0,
+        "ref_sites": []
+      }
+    ]
+  }
+]
