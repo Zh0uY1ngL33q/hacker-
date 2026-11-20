@@ -1,0 +1,89 @@
+{
+  "before": {
+    "AMBIGUOUS": 32,
+    "OK": 50,
+    "MISSING": 82,
+    "SUSPECT": 12
+  },
+  "after": {
+    "AMBIGUOUS": 32,
+    "OK": 59,
+    "MISSING": 72,
+    "SUSPECT": 13
+  },
+  "changes": [
+    {
+      "name": "ClientInstance_grabMouse",
+      "kind": "offset",
+      "from": "SUSPECT",
+      "to": "AMBIGUOUS"
+    },
+    {
+      "name": "ClientInstance_releaseMouse",
+      "kind": "offset",
+      "from": "SUSPECT",
+      "to": "AMBIGUOUS"
+    },
+    {
+      "name": "Actor_mGameMode",
+      "kind": "offset",
+      "from": "MISSING",
+      "to": "OK"
+    },
+    {
+      "name": "LevelChunk_mSubChunks",
+      "kind": "offset",
+      "from": "MISSING",
+      "to": "SUSPECT"
+    },
+    {
+      "name": "ContainerScreenController_handleAutoPlace",
+      "kind": "sig",
+      "from": "MISSING",
+      "to": "OK"
+    },
+    {
+      "name": "MainView_instance",
+      "kind": "sig",
+      "from": "MISSING",
+      "to": "OK"
+    },
+    {
+      "name": "Mob_getJumpControlComponent",
+      "kind": "sig",
+      "from": "MISSING",
+      "to": "OK"
+    },
+    {
+      "name": "SneakMovementSystem_tickSneakMovementSystem",
+      "kind": "sig",
+      "from": "MISSING",
+      "to": "OK"
+    },
+    {
+      "name": "CameraDirectLookSystemUtil_handleLookInput",
+      "kind": "sig",
+      "from": "MISSING",
+      "to": "OK"
+    },
+    {
+      "name": "ConcreteBlockLegacy_getCollisionShapeForCamera",
+      "kind": "sig",
+      "from": "MISSING",
+      "to": "OK"
+    },
+    {
+      "name": "BlockReach",
+      "kind": "sig",
+      "from": "MISSING",
+      "to": "OK"
+    },
+    {
+      "name": "GuiData_getOptions",
+      "kind": "sig",
+      "from": "MISSING",
+      "to": "OK"
+    }
+  ],
+  "conclusion": "+9 OK net; 8 of 10 applied patterns verified OK, 2 moved to SUSPECT (not OK but no longer MISSING)"
+}

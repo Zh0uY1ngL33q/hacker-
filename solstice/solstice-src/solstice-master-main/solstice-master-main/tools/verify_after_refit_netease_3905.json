@@ -1,0 +1,2331 @@
+{
+  "image": "unpacked/unpacked_Minecraft.Windows.exe",
+  "codeSection": ".text",
+  "results": [
+    {
+      "kind": "offset",
+      "read_type": "uint8_t",
+      "name": "GameSession_mEventCallback",
+      "pattern": "48 8B 4B ? 48 85 C9 74 0D 48 8B 01 48 8B 40 20 FF 15 ? ? ? ? 48 ? ? ?",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "matches": 6,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x1B88AD1",
+        "0x1C0089C",
+        "0x1CF0539",
+        "0x1CF0675",
+        "0x1CF07B1",
+        "0x579FB70"
+      ],
+      "rva": "0x1B88AD1",
+      "field_offset": 8
+    },
+    {
+      "kind": "offset",
+      "read_type": "uint8_t",
+      "name": "BedrockPlatformUWP_mcGame",
+      "pattern": "48 8B ? ? 48 8B ? 48 8B ? ? FF 15 ? ? ? ? 84 C0 74 ? 48 8B ? ? 48 8B ? 48 8B ? ? FF 15 ? ? ? ? 84 C0",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x282FFE9"
+      ],
+      "rva": "0x282FFE9",
+      "field_offset": 64
+    },
+    {
+      "kind": "offset",
+      "read_type": "uint8_t",
+      "name": "Container_getItem",
+      "pattern": "49 8B B6 ? ? ? ? 48 8B 0E 48 8B B9 ? ? ? ? 45 8B C5 49 8B D4 48 8D 4C 24 ? E8 ? ? ? ? 48 8B D8 45 8B C7",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x1DE5C05"
+      ],
+      "rva": "0x1DE5C05",
+      "field_offset": 6
+    },
+    {
+      "kind": "offset",
+      "read_type": "uint8_t",
+      "name": "UIProfanityContext_mEnabled",
+      "pattern": "80 79 ? ? 74 ? 80 79 ? ? 74 ? 45 ? ? 75 ? 4C 8D",
+      "disp_off": 2,
+      "offset_type": "FieldOffset",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "read_type": "uint8_t",
+      "name": "BlockSource_mBuildHeight",
+      "pattern": "0F BF ? ? 3B C8 0F 8D ? ? ? ? 8B 0F",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "read_type": "uint8_t",
+      "name": "ContainerManagerModel_getContainerType",
+      "pattern": "48 8B ? ? FF 15 ? ? ? ? 84 C0 75 ? 48 8B ? 48 8B ? 48 8B ? ? FF 15 ? ? ? ? 84 C0 74 ? B0",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "read_type": "uint8_t",
+      "name": "ContainerManagerModel_getSlot",
+      "pattern": "48 8B ? ? FF 15 ? ? ? ? 0F B6 ? ? 44 89",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "read_type": "uint8_t",
+      "name": "BlockLegacy_getCollisionShape",
+      "pattern": "48 8B ? ? FF 15 ? ? ? ? 0F 10 ? 0F 11 ? ? ? ? ? ? F2 0F ? ? ? F2 0F",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "ClientInstance_getLocalPlayer",
+      "pattern": "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 48 85 C0 74 10 48 8B C8 E8 ? ? ? ? 48 8B 0F 48 39 08 74",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x1A3C058"
+      ],
+      "rva": "0x1A3C058",
+      "field_offset": 35
+    },
+    {
+      "kind": "offset",
+      "name": "ClientInstance_getBlockSource",
+      "pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 48 85 ? 75 ? 48 83 C4 ? 5B C3 48 8B",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 4,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x1E94A93",
+        "0x21BD5D0",
+        "0x21CC2B0",
+        "0x645EE7C"
+      ],
+      "rva": "0x1E94A93",
+      "field_offset": 318
+    },
+    {
+      "kind": "offset",
+      "name": "ClientInstance_getOptions",
+      "pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 48 8B ? 48 8B ? 48 8B ? ? ? ? ? 48 8B ? FF 15 ? ? ? ? 3C ? 75 ? 48 8B ? 48 8B ? 48 8B ? ? ? ? ? FF 15 ? ? ? ? 3C",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x2D1827E"
+      ],
+      "rva": "0x2D1827E",
+      "field_offset": 186
+    },
+    {
+      "kind": "offset",
+      "name": "ClientInstance_getMouseGrabbed",
+      "pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 84 C0 75 ? 48 8B ? ? ? ? ? 48 85 ? 0F 84 ? ? ? ? 80 38 ? 0F 84 ? ? ? ? 48 8B ? ? ? ? ? 48 85 ? 74 ? F0 FF ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? ? ? ? F2 0F",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "ClientInstance_setDisableInput",
+      "pattern": "48 8B ? ? ? ? ? 48 8B ? FF 15 ? ? ? ? 48 85 ? 74 ? 48 8B ? 48 8B ? 48 8B",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 64,
+      "status": "SUSPECT",
+      "match_rvas": [
+        "0x1BD36E7",
+        "0x1BD38F7",
+        "0x1BD3B07",
+        "0x1BD3D17",
+        "0x1CF29D7",
+        "0x1CF2BE7",
+        "0x1CF2DF7",
+        "0x1CF3007"
+      ],
+      "rva": "0x1BD36E7",
+      "field_offset": 84423017,
+      "note": "implausible vtable index 84423017"
+    },
+    {
+      "kind": "offset",
+      "name": "ClientInstance_grabMouse",
+      "pattern": "48 8B 01 48 8B ? ? ? ? ? EB ? 48 8B",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 8,
+      "status": "SUSPECT",
+      "match_rvas": [
+        "0xBFB977",
+        "0x1991C38",
+        "0x1997FAD",
+        "0x1E5EC04",
+        "0x1E721AC",
+        "0x1E89E51",
+        "0x293502F",
+        "0x3A03FA7"
+      ],
+      "rva": "0xBFB977",
+      "field_offset": -250605207,
+      "note": "implausible vtable index -250605207"
+    },
+    {
+      "kind": "offset",
+      "name": "ClientInstance_releaseMouse",
+      "pattern": "48 8B ? ? ? ? ? 48 8B ? FF 15 ? ? ? ? 48 85 ? 74 ? 48 8B ? 48 8B ? 48 8B",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 64,
+      "status": "SUSPECT",
+      "match_rvas": [
+        "0x1BD36E7",
+        "0x1BD38F7",
+        "0x1BD3B07",
+        "0x1BD3D17",
+        "0x1CF29D7",
+        "0x1CF2BE7",
+        "0x1CF2DF7",
+        "0x1CF3007"
+      ],
+      "rva": "0x1BD36E7",
+      "field_offset": 84423017,
+      "note": "implausible vtable index 84423017"
+    },
+    {
+      "kind": "offset",
+      "name": "ClientInstance_mMinecraftSim",
+      "pattern": "48 8B 89 ? ? ? ? 48 85 C9 74 0C 48 8B 89 ? ? ? ? E9 ? ? ? ? 0F 57 C0",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x1A25030"
+      ],
+      "rva": "0x1A25030",
+      "field_offset": 224
+    },
+    {
+      "kind": "offset",
+      "name": "ClientInstance_mLevelRenderer",
+      "pattern": "48 8B 89 ? ? ? ? 48 85 C9 74 11 E8 ? ? ?",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 3,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x1A26354",
+        "0x256AE10",
+        "0x2DAE1DF"
+      ],
+      "rva": "0x1A26354",
+      "field_offset": 240
+    },
+    {
+      "kind": "offset",
+      "name": "ClientInstance_mPacketSender",
+      "pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 4C 8B C0 48 8B ? 48 8B ? 10 48 8B ? 49 8B ? FF 15 ? ? ? ?",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 6,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x2182D4B",
+        "0x21E280D",
+        "0x21E56ED",
+        "0x223905A",
+        "0x22391A4",
+        "0x2DABF45"
+      ],
+      "rva": "0x2182D4B",
+      "field_offset": 552
+    },
+    {
+      "kind": "offset",
+      "name": "MinecraftGame_playUi",
+      "pattern": "48 8B 49 08 48 8B 01 48 8B 80 ? ? ? ? FF 15 ? ? ? ? 48 83 C4 38",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 1,
+      "status": "SUSPECT",
+      "match_rvas": [
+        "0x1CBB9E4"
+      ],
+      "rva": "0x1CBB9E4",
+      "field_offset": 3238145,
+      "note": "implausible vtable index 3238145"
+    },
+    {
+      "kind": "offset",
+      "name": "MinecraftGame_mClientInstances",
+      "pattern": "48 8B 99 ? ? ? ? 48 8B FA 48 8B 1B 80 7B ? 00",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 2,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x1A3C03A",
+        "0x621961A"
+      ],
+      "rva": "0x1A3C03A",
+      "field_offset": 2912
+    },
+    {
+      "kind": "offset",
+      "name": "MinecraftGame_mProfanityContext",
+      "pattern": "49 8B ? ? ? ? ? ? 49 8B ? 48 8B ? ? ? ? ? FF 15 ? ? ? ? 48 8D ? ? E8",
+      "disp_off": 4,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x16CCE4D"
+      ],
+      "rva": "0x16CCE4D",
+      "field_offset": 1
+    },
+    {
+      "kind": "offset",
+      "name": "MinecraftGame_mMouseGrabbed",
+      "pattern": "45 ? ? 0F 85 ? ? ? ? 41 C6 ? ? ? ? ?",
+      "disp_off": 2,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 1,
+      "status": "SUSPECT",
+      "match_rvas": [
+        "0x37E31F6"
+      ],
+      "rva": "0x37E31F6",
+      "field_offset": -964358145,
+      "note": "implausible field offset 0xC6850FFF"
+    },
+    {
+      "kind": "offset",
+      "name": "MainView_bedrockPlatform",
+      "pattern": "48 8B ? ? ? ? ? 48 8B ? B2 ? 48 8B ? ? ? ? ? FF 15 ? ? ? ? 84 C0",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "Actor_baseTick",
+      "pattern": "48 83 EC 20 48 8B F9 E8 ? ? ? ? 48 8B 07 48 8B",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 1,
+      "status": "SUSPECT",
+      "match_rvas": [
+        "0x593BCB2"
+      ],
+      "rva": "0x593BCB2",
+      "field_offset": -13539068,
+      "note": "implausible vtable index -13539068"
+    },
+    {
+      "kind": "offset",
+      "name": "MinecraftSim_mGameSim",
+      "pattern": "49 8B 85 ? ? ? ? 8B 40",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "MinecraftSim_mRenderSim",
+      "pattern": "48 8B ? ? ? ? ? F3 0F ? ? ? F3 41 ? ? ? ? 48 8D",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "MinecraftSim_mGameSession",
+      "pattern": "48 8B 99 ? ? ? ? 48 85 DB 74 ? 48 8D ? ? E8 ? ? ? ? 84 C0 74",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x576EE86"
+      ],
+      "rva": "0x576EE86",
+      "field_offset": 216
+    },
+    {
+      "kind": "offset",
+      "name": "bgfx_d3d12_RendererContextD3D12_m_commandQueue",
+      "pattern": "48 8B ? ? ? ? ? 4C 8B ? ? 48 8B ? 48 8B ? ? 48 8B ? ? FF 15 ? ? ? ? 48 FF ? ? 48 8B ? ? 48 8B ? 48 3B ? 74 ? 48 8B",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "bgfx_context_m_renderCtx",
+      "pattern": "48 8B ? ? ? ? ? 48 8B ? 48 8B ? ? FF 15 ? ? ? ? 48 89 ? ? ? ? ? 48 63",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "BlockLegacy_mBlockId",
+      "pattern": "44 0F ? ? ? ? ? ? B8 ? ? ? ? 48 8B ? 48 8B",
+      "disp_off": 4,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "BlockLegacy_mayPlaceOn",
+      "pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 49 8B ? 0F B6 ? E8 ? ? ? ? 48 85 ? 74 ? 45 0F",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "Actor_mContainerManagerModel",
+      "pattern": "49 8B ? ? ? ? ? 48 89 ? ? ? 48 89 ? ? ? F0 FF ? ? 66 0F ? ? ? ? EB ? 0F 57 ? 66 0F 73 D8 ? 66 48 ? ? ? 0F 57 ? 66 0F ? ? ? ? ? ? 48 85",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "Actor_mGameMode",
+      "pattern": "49 8B 8E ? ? ? ? 45 84 FF 74 ? E8 07",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x228BCE8"
+      ],
+      "rva": "0x228BCE8",
+      "field_offset": 2808
+    },
+    {
+      "kind": "offset",
+      "name": "Actor_mSupplies",
+      "pattern": "48 8B ? ? ? ? ? 80 BA B0 00 00 00 ? 75 ? 48 8B ? ? ? ? ? 8B 52 ? 48 8B ? 48 8B ? ? 48 FF ? ? ? ? ? 48 8D ? ? ? ? ? C3 48 89",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "PlayerInventory_mContainer",
+      "pattern": "48 8B 89 ? ? ? ? 8B 52 ? 48 8B 01 48 8B 40 ? 48 FF 25 ? ? ? ? 48 8D 05 ? ? ? ?",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x5AA489C"
+      ],
+      "rva": "0x5AA489C",
+      "field_offset": 288
+    },
+    {
+      "kind": "offset",
+      "name": "LevelRenderer_mRendererPlayer",
+      "pattern": "48 8B ? ? ? ? ? F3 0F ? ? ? ? ? ? 0F AF",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x2D5F835"
+      ],
+      "rva": "0x2D5F835",
+      "field_offset": 1448
+    },
+    {
+      "kind": "offset",
+      "name": "LevelRendererPlayer_mCameraPos",
+      "pattern": "F3 0F ? ? ? ? ? ? F3 0F ? ? F3 0F ? ? F3 0F ? ? F3 0F ? ? F3 0F ? ? F3 0F ? ? 0F 2F ? ? ? ? ? 0F 83 ? ? ? ? 80 BB 3A 0A 00 00",
+      "disp_off": 4,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "LevelRendererPlayer_mFovX",
+      "pattern": "0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 80 B9 58 0F 00 00",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "LevelRendererPlayer_mFovY",
+      "pattern": "89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? 89 87 ? ? ? ? 41 8B ? ? ? F3 0F",
+      "disp_off": 2,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "Actor_mSwinging",
+      "pattern": "80 ? ? ? ? ? 00 74 1C 8B ? ? ? ? ? FF C1 89 ? ? ? ?",
+      "disp_off": 2,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x58F0F92"
+      ],
+      "rva": "0x58F0F92",
+      "field_offset": 2212
+    },
+    {
+      "kind": "offset",
+      "name": "Actor_swing",
+      "pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 83 7C 24 ? ? 74",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 1,
+      "status": "SUSPECT",
+      "match_rvas": [
+        "0x38157B9"
+      ],
+      "rva": "0x38157B9",
+      "field_offset": 17305961,
+      "note": "implausible vtable index 17305961"
+    },
+    {
+      "kind": "offset",
+      "name": "Actor_mLevel",
+      "pattern": "48 8B ? ? ? ? ? 48 89 ? ? ? F3 0F ? ? ? 4C 8B",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "Level_getHitResult",
+      "pattern": "E8 ? ? ? ? E8 ? ? ? ? 48 ? ? E8 ? ? ? ? E8 ? ? ?",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 64,
+      "status": "SUSPECT",
+      "match_rvas": [
+        "0x2A8E6F",
+        "0x2B9158",
+        "0x845CAF",
+        "0x84F859",
+        "0x19AC842",
+        "0x19B0564",
+        "0x19EFB56",
+        "0x1A47B66"
+      ],
+      "rva": "0x2A8E6F",
+      "field_offset": -151183360,
+      "note": "implausible vtable index -151183360"
+    },
+    {
+      "kind": "offset",
+      "name": "Level_getPlayerList",
+      "pattern": "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 8B 48 ? 39 8E ? ? ? ? 0F 84",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "Level_getPlayerMovementSettings",
+      "pattern": "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 49 8B 7E ? 80 78",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "Level_getLevelData",
+      "pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 0F 10 ? ? ? ? ? 0F 11 ? ? 8B 88",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "Level_getBlockPalette",
+      "pattern": "48 8B ? ? ? ? ? 48 8B ? FF 15 ? ? ? ? 4C 8B ? 48 8B ? 48 8B ? ? 48 8D ? ? 49 8B ? FF 15 ? ? ? ? 48 8B ? 44 0F",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "LevelData_mTick",
+      "pattern": "48 8B ? ? ? ? ? 4C 8B ? ? ? ? ? E8 ? ? ? ? 44 8B",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 2,
+      "status": "SUSPECT",
+      "match_rvas": [
+        "0x5A90B1E",
+        "0x63F12A7"
+      ],
+      "rva": "0x5A90B1E",
+      "field_offset": -1219654324,
+      "note": "implausible field offset 0xB74D8D4C"
+    },
+    {
+      "kind": "offset",
+      "name": "Actor_mDestroying",
+      "pattern": "0F B6 ? ? ? ? ? 80 7B ? 00 0F ? ? ? ?",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 8,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x1A67C05",
+        "0x3491170",
+        "0x34919A7",
+        "0x349225D",
+        "0x349288F",
+        "0x3492C2F",
+        "0x3493610",
+        "0x6089B40"
+      ],
+      "rva": "0x1A67C05",
+      "field_offset": 5738
+    },
+    {
+      "kind": "offset",
+      "name": "Actor_mHurtTimeComponent",
+      "pattern": "48 8B ? ? ? ? ? 48 85 ? 74 ? 66 0F ? ? ? ? ? ? 0F 5B ? 0F 2F",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "BlockSource_getChunk",
+      "pattern": "48 8B ? ? ? ? ? 44 89 ? ? ? FF 15 ? ? ? ? 48 83 C4",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 1,
+      "status": "SUSPECT",
+      "match_rvas": [
+        "0x7C843CA"
+      ],
+      "rva": "0x7C843CA",
+      "field_offset": 8015420,
+      "note": "implausible vtable index 8015420"
+    },
+    {
+      "kind": "offset",
+      "name": "BlockSource_setBlock",
+      "pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? EB ? 41 83 FF",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 2,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x2A9307E",
+        "0x5DC36F8"
+      ],
+      "rva": "0x2A9307E",
+      "field_offset": 34
+    },
+    {
+      "kind": "offset",
+      "name": "LevelChunk_mSubChunks",
+      "pattern": "48 2B ? ? ? ? ? 48 8B ? 48 C1 FF ? 48 8B",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 1,
+      "status": "SUSPECT",
+      "match_rvas": [
+        "0x2A34B0C"
+      ],
+      "rva": "0x2A34B0C",
+      "field_offset": -369670096,
+      "note": "implausible field offset 0xE9F74830"
+    },
+    {
+      "kind": "offset",
+      "name": "Actor_mSerializedSkin",
+      "pattern": "4C 8B ? ? ? ? ? 48 8B ? 48 8B ? ? 89 44",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x5AA1342"
+      ],
+      "rva": "0x5AA1342",
+      "field_offset": 5608
+    },
+    {
+      "kind": "offset",
+      "name": "BlockSource_clip",
+      "pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 90 48 8D ? ? ? ? ? 48 8D ? ? ? ? ? E8 ? ? ? ? 48 8B",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "ClientInstance_getInputHandler",
+      "pattern": "48 8B 80 ? ? ? ? FF 15 ? ? ? ? 48 8B C8 E8 ? ? ? ? 83 F8 ? 0F 85 ? ? ? ? 48 8B 8D ? ? ? ? 48 8B 01 48 8B 80 ? ? ? ?",
+      "disp_off": 3,
+      "offset_type": "Index",
+      "read_type": "int",
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "offset",
+      "name": "ClientInputMappingFactory_mKeyboardMouseSettings",
+      "pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 48 8B C8 E8 ? ? ? ? 48 3B",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 1,
+      "status": "SUSPECT",
+      "match_rvas": [
+        "0x67A5213"
+      ],
+      "rva": "0x67A5213",
+      "field_offset": 138447688,
+      "note": "implausible field offset 0x8408B48"
+    },
+    {
+      "kind": "offset",
+      "name": "Actor_mContainerModel",
+      "pattern": "48 8B ? ? ? ? ? 0F ? ? 48 85 ? 74 ? 48 8B 01 48 8B ? ? FF 15 ? ? ?",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x5AA5526"
+      ],
+      "rva": "0x5AA5526",
+      "field_offset": 3304
+    },
+    {
+      "kind": "offset",
+      "name": "ClientInstance_mStackScene",
+      "pattern": "48 8B ? ? ? ? ? E8 ? ? ? ? 90 48 8B ? ? 48 8B ? ? 48 ? ? 74",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 8,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x1991F2D",
+        "0x1997B1B",
+        "0x1999B3F",
+        "0x199B487",
+        "0x2A4C1BB",
+        "0x53E3823",
+        "0x8493E73",
+        "0x84AA45E"
+      ],
+      "rva": "0x1991F2D",
+      "field_offset": 1600
+    },
+    {
+      "kind": "offset",
+      "name": "Minecraft_mRealTimer",
+      "pattern": "48 8B 81 ? ? 00 00 F3 0F 10 ? ? 0F 5A ?",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x576EE10"
+      ],
+      "rva": "0x576EE10",
+      "field_offset": 248
+    },
+    {
+      "kind": "offset",
+      "name": "gDataUtil_MiscData_Instance",
+      "pattern": "48 8B ? ? ? ? ? 48 8B 0D ? ? ? ? 48 8D 35 ? ? ?",
+      "disp_off": 3,
+      "offset_type": "FieldOffset",
+      "read_type": "int",
+      "matches": 31,
+      "status": "SUSPECT",
+      "match_rvas": [
+        "0x24E888",
+        "0x13EFB5A",
+        "0x19B1983",
+        "0x2569F5D",
+        "0x31EABDD",
+        "0x3727DAC",
+        "0x3727F2C",
+        "0x37280AC"
+      ],
+      "rva": "0x24E888",
+      "field_offset": 190369049,
+      "note": "implausible field offset 0xB58CD19"
+    },
+    {
+      "kind": "sig",
+      "name": "Actor_setPosition",
+      "pattern": "48 89 ? ? ? 57 48 83 EC ? 48 8B ? 48 8B ? 48 8B ? ? ? ? ? 48 85 ? 74 ? 48 8B ? 48 8B ? ? ? ? ? FF 15",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 2,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x5797200",
+        "0x8684180"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "Actor_getNameTag",
+      "pattern": "E8 ? ? ? ? 48 83 78 18 ? 76 ? 48 8B ? EB ? 48 8D ? ? ? ? ? 4C 8B ? 4C 8B ? 48 8D ? ? ? ? ? 48 8D ? ? ? E8 ? ? ? ? 48 8B",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "Actor_setNameTag",
+      "pattern": "E8 ? ? ? ? 4C 8D ? ? ? ? ? 8B D3 48 8B ? E8 ? ? ? ? E9",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x5781EBD"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ActorRenderDispatcher_render",
+      "pattern": "48 ? ? 48 ? ? E8 ? ? ? ? 48 ? ? ? ? 48 ? ? E8 ? ? ? ? 0F 28 ? ? ? ? ? ? 48 ? ? ? ? ? ? 41",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x282707E"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ClientInstance_mBgfx",
+      "pattern": "48 8B ? ? ? ? ? 48 8D ? ? ? ? ? FF 15 ? ? ? ? 0F B7",
+      "sig_type": "RefSig",
+      "disp_off": 3,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x665974A"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ClientInstance_grabMouse",
+      "pattern": "48 8B 01 48 8B ? ? ? ? ? EB ? 48 8B",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 8,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0xBFB977",
+        "0x1991C38",
+        "0x1997FAD",
+        "0x1E5EC04",
+        "0x1E721AC",
+        "0x1E89E51",
+        "0x293502F",
+        "0x3A03FA7"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ClientInstance_releaseMouse",
+      "pattern": "40 ? 48 83 EC ? 48 8B ? 48 8B ? 48 8B ? ? ? ? ? FF 15 ? ? ? ? 84 C0 74 ? 48 8B ? ? ? ? ? 48 8B ? 48 8B ? ? ? ? ? 48 83 C4 ? 5B 48 FF ? ? ? ? ? 48 83 C4 ? 5B C3 48 89",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 2,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x1A2EA60",
+        "0x1A53310"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ContainerScreenController_tick",
+      "pattern": "48 8B ? 48 89 ? ? 48 89 ? ? 48 89 ? ? 55 41 54 41 55 41 56 41 57 48 8D ? ? 48 81 ? ? ? ? ? 0F 29 ? ? 0F 29 ? ? 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? 4C 8B ? 48 ? ? ? ? ? ? E8 ? ? ? ? 48 ? ? ? 49 ? ? ? ?",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x1E25C00"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ContainerScreenController_handleAutoPlace",
+      "pattern": "15 ? ? ? ? 48 8B 4F 08 44 8B C3 48 81 C1 ? ? ?",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x1DCDC2F"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ComplexInventoryTransaction_vtable",
+      "pattern": "48 8D 05 ? ? ? ? 48 89 ? 8B ? ? 89 ? ? 48 ? ? ? 48 ? ? ? E8 ? ? ? ? 90 48 8D 05 ? ? ? ? 49 ? ? 8B ?",
+      "sig_type": "RefSig",
+      "disp_off": 3,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0xCF2358"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "EnchantUtils_getEnchantLevel",
+      "pattern": "E8 ? ? ? ? 8B D8 4D 8B ? 49 8B",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 2,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x31FE72",
+        "0x5E991A8"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "GameMode_getDestroyRate",
+      "pattern": "48 89 5C 24 18 57 48 83 EC 30 48 8B F9 0F 29 74 24",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 2,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x5BF4AB0",
+        "0x8627710"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "HoverTextRenderer_render",
+      "pattern": "48 8B C4 48 89 58 08 48 89 68 10 48 89 70 18 57 48 81 EC ? ? ? ? 0F 29 70 E8 0F 29 78 D8 44 0F 29 40 ? 49 8B D9 49 8B F8 48 8B F1 48 8B 6A 10",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "GameMode_baseUseItem",
+      "pattern": "48 ? ? E8 ? ? ? ? 0F B6 F8 40 84 FF 74 ? 48 ?",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 2,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x3966FD1",
+        "0x3967895"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "GuiData_displayClientMessage",
+      "pattern": "48 89 ? ? ? ? ? ? E8 ? ? ? ? 4C 8B ? 48 85 ? 74 ? BF FF FF FF",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "InventoryTransaction_addAction",
+      "pattern": "E8 ? ? ? ? 48 81 C3 ? ? ? ? 49 3B ? 75 ? 41 BE",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x5A78497"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ItemStack_vTable",
+      "pattern": "48 8D 0D ? ? ? ? E8 ? ? ? ? 90 48 8D 05 ? ? ? ? 48 89 05 ? ? ?",
+      "sig_type": "RefSig",
+      "disp_off": 3,
+      "matches": 64,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x159F26",
+        "0x159FD6",
+        "0x1C42A1",
+        "0x1C438A",
+        "0x1C4481",
+        "0x1C4571",
+        "0x1C465A",
+        "0x1C474A"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ItemStack_getCustomName",
+      "pattern": "48 89 ? ? ? 57 48 83 EC ? 48 8B ? 48 8B ? E8 ? ? ? ? 84 C0 74 ? 48 8B ? 48 8B ? E8 ? ? ? ? 48 8B",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x5D0A4D0"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ItemStack_fromDescriptor",
+      "pattern": "48 89 ? ? ? 48 89 ? ? ? 48 89 ? ? ? 57 48 83 EC ? 0F 57 ? 48 8B",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 6,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x102E470",
+        "0x10C79B0",
+        "0x1175170",
+        "0x1175360",
+        "0x17F1D60",
+        "0x87754A0"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ItemUseInventoryTransaction_vtable",
+      "pattern": "48 8D ? ? ? ? ? 48 89 ? 8B 46 ? 89 47 ? 0F B6 ? ? 88 47 ? 8B 56",
+      "sig_type": "RefSig",
+      "disp_off": 3,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "ItemUseOnActorInventoryTransaction_vtable",
+      "pattern": "48 8D ? ? ? ? ? 48 89 ? 48 89 ? ? 89 6F ? C7 47 74",
+      "sig_type": "RefSig",
+      "disp_off": 3,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x5BD46F7"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ItemReleaseInventoryTransaction_vtable",
+      "pattern": "48 8D ? ? ? ? ? 48 89 ? ? 40 88 ? ? ? ? ? 89 AF ? ? ? ? 40 88 ? ? ? ? ? 89 AF ? ? ? ? 0F 57 ? 0F 11 ? ? ? ? ? 48 89 ? ? ? ? ? 48 C7 87 C8 00 00 00",
+      "sig_type": "RefSig",
+      "disp_off": 3,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "Keyboard_feed",
+      "pattern": "E8 ? ? ? ? E9 ? ? ? ? 41 0F ? ? ? 45 0F ? ? ? 45 0F",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "MainView_instance",
+      "pattern": "48 8B 05 ? ? ? ? C6 40 ? ? 0F 57 C0",
+      "sig_type": "RefSig",
+      "disp_off": 3,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x19D95A4"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "MinecraftPackets_createPacket",
+      "pattern": "E8 ? ? ? ? 90 48 83 ? ? ? ? ? 00 0F 84 ? ? ? ? E8 ? ? ? ? 48 8B ? E8 ? ? ?",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x1300B32"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "Mob_getJumpControlComponent",
+      "pattern": "E8 ? ? ? ? 48 85 C0 74 ? C6 40 ? ? 48 83 C4 ? C3",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0xE90364"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "Mob_getCurrentSwingDuration",
+      "pattern": "48 89 5C 24 10 57 48 83 EC 50 0F 29 74 24 40 48 8B 05 ? ? ? ? 48 33 C4 48 89 44 24 30 F3 0F 10 35 ? ? ? ? 48 8B F9 E8 ? ? ? ? 48 85 C0 74 04 F3 0F 10",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "MouseDevice_feed",
+      "pattern": "48 8B C4 48 89 58 08 48 89 68 10 48 89 70 18 57 41 54 41 55 41 56 41 57 48 83 EC",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 3,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0xCECF50",
+        "0x346E4B0",
+        "0x85FF8C0"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "NetworkStackItemDescriptor_ctor",
+      "pattern": "48 ? ? ? ? ? ? E8 ? ? ? ? 90 48 8B CF E8 ? ? ? ? 48 ? ? 48 ? ? E8 ? ? ? ? F2 ? ? ?",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "PlayerMovement_clearInputStateInlined",
+      "pattern": "75 ? 48 8B ? ? ? ? ? ? 48 8D ? ? ? ? ? ? 48 89 ? ? ? 4D 8B",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "PlayerMovement_clearInputStateInlined2",
+      "pattern": "0F 84 ? ? ? ? 48 8B ? ? 48 89 ? ? ? ? ? ? 48 89 ? ? ? ? ? ? 4C 89 ? ? ? ? ? ? 0F 10",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "RakNet_RakPeer_runUpdateCycle",
+      "pattern": "48 89 5C 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ? ? ? ? B8 ? ? ? ? E8 ? ? ? ? 48 2B E0 0F 29 B4 24 ? ? ? ? 0F 29 BC 24 ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 ? ? ? ? 4C 8B EA 48 89 54 24 ? 48 8B D9",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "RakNet_RakPeer_sendImmediate",
+      "pattern": "40 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8D 6C 24 ? 48 89 9D ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C5 48 89 85 ? ? ? ? 4C 8B 95 ? ? ? ? 40 32 FF",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x6D31DB0"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ScreenView_setupAndRender",
+      "pattern": "48 8B ? ? E8 ? ? ? ? 90 48 8D ? ? ? E8 ? ? ? ? 48 8B 8C ? ? ? ? ? 48 33 ? E8 ? ? ? ?",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "SimulatedPlayer_simulateJump",
+      "pattern": "40 53 48 83 EC ? 48 8B 01 48 8B D9 48 8B 80 ? ? ? ? FF 15 ? ? ? ? 84 C0 0F 84 ? ? ? ? 4C 8B 53",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "ItemInHandRenderer_render_bytepatch",
+      "pattern": "F3 0F ? ? ? ? ? ? 48 8B ? F3 41 ? ? ? 0F 57",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x58EAAEC"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "SneakMovementSystem_tickSneakMovementSystem",
+      "pattern": "32 C0 41 88 47 ? 84 C9",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0xD9D97A"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ConnectionRequest_create",
+      "pattern": "40 ? 53 56 57 41 ? 41 ? 41 ? 41 ? 48 8D ? ? ? ? ? ? 48 81 EC ? ? ? ? 0F 29 ? ? ? ? ? ? 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? ? ? ? 49 8B ? 48 89 ? ? ? ? ? 48 89 ? ? 48 89",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "CameraDirectLookSystemUtil_handleLookInput",
+      "pattern": "48 89 ? ? ? 57 48 83 EC ? F3 0F ? ? ? 49 8B ? F3 41 ? ? ? ? F3 0F",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x11034DA"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ItemRenderer_render",
+      "pattern": "48 8B ? 48 89 ? ? 55 56 57 41 ? 41 ? 41 ? 41 ? 48 81 EC ? ? ? ? 0F 29 ? ? 0F 29 ? ? 44 0F ? ? ? 44 0F ? ? ? 49 8B",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "ItemPositionConst",
+      "pattern": "F3 0F ? ? ? ? ? ? F3 0F ? ? F3 0F ? ? F3 0F ? ? ? ? ? ? F3 0F ? ? 0F B7",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x7CFE873"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "BlockSource_fireBlockChanged",
+      "pattern": "4C 8B ? 45 89 ? ? 49 89 ? ? 53",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 2,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x5D37620",
+        "0x87A8F60"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ActorAnimationControllerPlayer_applyToPose",
+      "pattern": "48 8B C4 48 89 58 08 48 89 68 10 48 89 70 18 57 41 54 41 56 48 81 EC ? ? ? ? 4C 63 B4 24 ? ? ? ? 45 33 E4 4C 89 A2 ? ? ? ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "JSON_parse",
+      "pattern": "E8 ? ? ? ? 0F B6 D8 48 8D 8D ? ? ? ? E8 ? ? ? ? 90 48 8D 8D ? ? ? ? E8 ? ? ? ? 84 DB 0F 84 ? ? ? ? C6 44 24",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "Actor_getStatusFlag",
+      "pattern": "E8 ? ? ? ? 84 C0 0F 84 ? ? ? ? F3 0F 10 BF",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "Level_getRuntimeActorList",
+      "pattern": "48 89 ? ? ? 55 56 57 48 83 EC ? 48 8B ? 48 89 ? ? ? 33 D2",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x1D995F0"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ConcreteBlockLegacy_getCollisionShapeForCamera",
+      "pattern": "41 ? 48 83 EC ? 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? ? 4C 8B ? 4D 8B ? 49 8B",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x98F1F6"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "WaterBlockLegacy_getCollisionShapeForCamera",
+      "pattern": "0F 10 ? ? ? ? ? 48 8B ? F2 0F ? ? ? ? ? ? 0F 11 ? F2 0F ? ? ? C3 CC",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 5,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x413120",
+        "0x2FC4CD0",
+        "0x322CB80",
+        "0x59F2BF0",
+        "0x6C026C0"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "mce_framebuilder_RenderItemInHandDescription_ctor",
+      "pattern": "48 89 ? ? ? 48 89 ? ? ? 55 56 57 41 ? 41 ? 41 ? 41 ? 48 83 EC ? 4D 8B ? 4D 8B ? 4C 8B ? 48 8B ? 45 33",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "ResourcePackManager_composeFullStackBp",
+      "pattern": "0F 84 ? ? ? ? 48 8B ? E8 ? ? ? ? 84 C0 74 ? 0F 57",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 4,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x1E927AC",
+        "0x21117B4",
+        "0x2361C15",
+        "0x237AC9D"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ClientInstance_isPreGame",
+      "pattern": "48 83 EC ? 48 8B ? 48 8B ? ? ? ? ? FF 15 ? ? ? ? 48 85 ? 0F 94",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x1A3C5C0"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "tickEntity_ItemUseSlowdownModifierComponent",
+      "pattern": "4D 8B ? 4C 8B ? 48 8B ? 33 C9 E9 ? ? ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 4,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x1029710",
+        "0x10FF040",
+        "0x11BC9E0",
+        "0x160FDE0"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "checkBlocks",
+      "pattern": "48 8D 05 ? ? ? ? 4D 8B CE 48 89 44 24 ? 4C 8D 44 24",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "Unknown_renderBlockOverlay",
+      "pattern": "40 ? 53 56 57 41 ? 41 ? 48 8D ? ? ? ? ? ? 48 81 EC ? ? ? ? 49 8B ? 49 8B ? 4C 8B ? 48 8B ? 48 8B",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "FastEat",
+      "pattern": "FF C8 89 87 ? ? ? ? 83 F8",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "Unknown_renderNametag",
+      "pattern": "48 8B ? 55 53 56 57 41 ? 41 ? 41 ? 48 8D ? ? 48 81 EC ? ? ? ? 0F 29 ? ? 0F 29 ? ? 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? 4C 89",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x27FA3B0"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "Reach",
+      "pattern": "74 ? F3 44 ? ? ? ? ? ? ? EB ? F3 0F",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "BlockReach",
+      "pattern": "F3 0F ? ? ? ? ? ? 48 8B ? ? ? 48 83 C4 ? 5F C3 83 F8",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x7B084D0"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "GetSpeedInAirWithSprint",
+      "pattern": "41 C7 40 ? ? ? ? ? F6 02",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "ConnectionRequest_create_DeviceModel",
+      "pattern": "48 8B 11 48 83 C2 ? EB",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "ConnectionRequest_create_DeviceOS",
+      "pattern": "BA ? ? ? ? 0F 44 ? C3 CC CC CC CC CC CC CC CC CC",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x804B909"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ConnectionRequest_create_DefaultInputMode",
+      "pattern": "C6 44 24 58 ? 48 63 ? 48 89 ? ? ? 48 8D ? ? ? ? ? 48 8D ? ? ? ? ? E8 ? ? ? ? 48 8B ? 33 D2 48 8D ? ? ? E8 ? ? ? ? 0F B6 ? ? 0F B6 ? ? ? 88 44 ? ? 48 8B ? 48 8B ? ? ? 48 89 ? ? ? C6 43 08 ? 88 54 ? ? 48 89 ? 48 89 ? ? ? 48 8D ? ? ? E8 ? ? ? ? 90 48 8D ? ? ? E8 ? ? ? ? C6 44 24 58",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "ConnectionRequest_create_CurrentInputMode",
+      "pattern": "48 63 ? ? ? ? ? 48 89 ? ? ? 48 8D ? ? ? ? ? 48 8D ? ? ? ? ? E8 ? ? ? ? 48 8B ? 33 D2 48 8D ? ? ? E8 ? ? ? ? 0F B6 ? ? 0F B6 ? ? ? 88 44 ? ? 48 8B ? 48 8B ? ? ? 48 89 ? ? ? C6 43 08 ? 88 54 ? ? 48 89 ? 48 89 ? ? ? 48 8D ? ? ? E8 ? ? ? ? 90 48 8D ? ? ? E8 ? ? ? ? C6 44 24 58 ? 48 63 ? ? ? ? ? 48 89 ? ? ? 48 8D ? ? ? ? ? 48 8D ? ? ? ? ? E8 ? ? ? ? 48 8B ? 33 D2 48 8D ? ? ? E8 ? ? ? ? 0F B6 ? ? 0F B6 ? ? ? 88 44 ? ? 48 8B ? 48 8B ? ? ? 48 89 ? ? ? C6 43 08 ? 88 54 ? ? 48 89 ? 48 89 ? ? ? 48 8D ? ? ? E8 ? ? ? ? 90 48 8D ? ? ? E8 ? ? ? ? C6 44 24 58",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "InputModeBypass",
+      "pattern": "8b d7 48 8b ce 48 8b 80 ? ? ? ? ff 15 ? ? ? ? 49 8b 07",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "InputModeBypassFix",
+      "pattern": "49 8b 07 8b d7 49 8b cf 48 8b 80 ? ? ? ? ff 15 ? ? ? ? 49 8b 07",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "TapSwingAnim",
+      "pattern": "F3 44 ? ? ? ? ? ? ? 4C 8D ? ? ? 48 8B ? 48 C7 44 24 30 ? ? ? ? c7 44 24 ? ? ? ? ? 8b 08",
+      "sig_type": "RefSig",
+      "disp_off": 5,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "Unknown_updatePlayerFromCamera",
+      "pattern": "4C 8B ? 49 89 ? ? 49 89 ? ? 55 41 ? 41 ? 49 8D",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "FluxSwing",
+      "pattern": "E8 ? ? ? ? 48 8B ? F3 0F ? ? ? ? ? ? F3 0F ? ? ? ? ? ? F3 0F ? ? ? ? ? ? C6 40 38 ? 48 8B ? EB",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "BobHurt",
+      "pattern": "48 89 5C 24 ? 57 48 81 EC ? ? ? ? 0F 29 B4 24 ? ? ? ? 48 81 C1",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "CameraComponent_applyRotation",
+      "pattern": "66 0F ? ? 0F 5B ? 0F 2F ? 76 ? F3 0F ? ? F3",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 3,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x4E9F42",
+        "0x1CD6155",
+        "0x63210E9"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "FireRender",
+      "pattern": "48 8B ? 55 53 56 57 41 ? 41 ? 41 ? 41 ? 48 8D ? ? ? ? ? 48 81 EC ? ? ? ? 0F 29 ? ? 0F 29 ? ? 44 0F ? ? ? 44 0F ? ? ? ? ? ? 44 0F ? ? ? ? ? ? 44 0F ? ? ? ? ? ? 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? ? ? ? 4D 8B ? 4D 8B",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 2,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x1CD2860",
+        "0x2BD52F0"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "Actor_canSee",
+      "pattern": "E8 ? ? ? ? 84 C0 74 ? 48 8B ? ? 48 8B ? 48 8B ? 48 8B ? ? ? ? ? FF 15 ? ? ? ?",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 11,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0xB8FB0D",
+        "0x107A895",
+        "0x593D0B7",
+        "0x593D755",
+        "0x593D94C",
+        "0x593DC97",
+        "0x593DE84",
+        "0x593E0ED"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ItemInHandRenderer_renderItem_bytepatch",
+      "pattern": "F3 0F ? ? ? ? ? ? 0F 57 ? F3 0F ? ? ? ? ? ? F3 0F ? ? 0F 2F ? 73 ? F3 41",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "ItemInHandRenderer_renderItem_bytepatch2",
+      "pattern": "8B 52 ? 48 8B ? 48 8B ? ? FF 15 ? ? ? ? 48 8B ? EB ? 48 8D ? ? ? ? ? 48 8B ? ? ? ? ? 48 8B",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "Actor_getGameMode",
+      "pattern": "E8 ? ? ? ? 48 8B ? 48 8B ? 4C 8B ? 49 8B ? ? ? ? ? E8 ? ? ?",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "Actor_getLevel",
+      "pattern": "E8 ? ? ? ? 48 8B ? 48 8B ? 48 8B ? ? ? ? ? 48 8B ? E8 ? ? ? ? 4C 8B ? 4C 8B ? 48 8B",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "BaseActorRenderContext_ctor",
+      "pattern": "E8 ? ? ? ? 90 33 D2 48 8B ? E8 ? ? ? ? 48 8D ? ? ? E8 ? ? ?",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x1D205C4"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ClientInstance_getCamera",
+      "pattern": "48 8B 01 48 8B ? ? ? ? ? FF 15 ? ? ? ? 83 ? ? ? ? ? 02 0F ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x289C63B"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ClientInstance_getItemRenderer",
+      "pattern": "48 8B ? ? ? ? ? FF 15 ? ? ? ? 48 89 ? ? 48 8B ? 48 8B ? 48 8B ? ? ? ? ? FF 15 ? ? ? ? 48 89 ? ? 48 89 ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x2927A85"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ClientInstance_switchControlMode",
+      "pattern": "48 89 5C 24 10 48 89 6C 24 18 48 89 74 24 20 57 41 54 41 55 41 56 41 57 48 81 EC 80 00 00 00 0F 29 74 24 70 48 8B ? ? ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 19,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x1F71630",
+        "0x2318690",
+        "0x2319710",
+        "0x243D670",
+        "0x2442460",
+        "0x2F535A0",
+        "0x2FF1380",
+        "0x31EF640"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ComplexInventoryTransaction_fromType",
+      "pattern": "48 89 5C 24 10 48 89 6C 24 20 56 57 41 56 48 83 EC 40 49 8B ? 8B F2 48 8B F9 48 89 ? ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x5F6AF80"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ContainerManagerController_handleSwap",
+      "pattern": "E9 ? ? ? ? ? 8B ? ? 01 00 00 48 89 ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 35,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x97ADE4",
+        "0x1D57023",
+        "0x1D6DA1D",
+        "0x1D741A3",
+        "0x27D0C1A",
+        "0x29F1BB6",
+        "0x29F1FD3",
+        "0x2A1C981"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ContainerManagerController_transferItems",
+      "pattern": "40 53 56 57 48 81 EC B0 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 A0 00 00 00 49 8B F0 48 8B DA 48 8B F9 48 83 B9 A0 00 00 00 00 74 7A 48 8D 94 24 90 00 00 00 E8 ? ? ? ? 4C 8B C3 48 8D 94 24 80 00 00 00 48 8B CF E8 ? ? ? ? 48 8B 07 48 8B 98 20 01 00 00 48 8B 8F A0 00 00 00 48 8B 01 4C 8D 8C 24 90 00 00 00 4C 8D 84 24 80 00 00 00 48 8D 54 24 40 48 8B 40",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 2,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x5B926D0",
+        "0x5B92BA0"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ContainerScreenController_handleDropItem",
+      "pattern": "48 89 5C 24 20 55 56 57 48 83 EC 50 48 8B ? ? ? ? ? 48 33 ? 48 89 ? ? ? 49 8B ? 48 8B ? 48 8B ? 0F 57 ? F3 0F ? ? ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x5B8E640"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ContainerScreenController_handlePlaceAll",
+      "pattern": "48 8B ? E8 ? ? ? ? C6 83 ? ? ? ? ? 48 8B ? ? ? ? ? ? 48 33 ? E8 ? ? ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 5,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x1DE3B0F",
+        "0x1DE3DEF",
+        "0x230913C",
+        "0x2309397",
+        "0x65BCDAA"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ContainerScreenController_handleTakeAll",
+      "pattern": "44 8B ? E8 ? ? ? ? 48 8B ? ? 44 8B",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x1DD02B6"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "Dimension_getBrightnessDependentFogColor",
+      "pattern": "41 0F 10 00 48 8B C2 0F 11 02",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x6428500"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "GameRenderer_bobHurt",
+      "pattern": "40 53 48 81 EC D0 00 00 00 0F 29 BC 24 A0 00 00 00 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 90 00 00 00 48 8B DA 0F 28 FA 48 8D 91 80 1A 00",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "GuiData_getOptions",
+      "pattern": "8B ? ? ? ? 48 8B F0 48 8B 08 48 8B 79 ? 48 8B ? ? ? ? ? 48 8B",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x6C4F0F1"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "HIDController_onKeyDown",
+      "pattern": "40 53 48 83 EC ? 80 79 ? ? 8B",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x3471AE0"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "HIDController_onKeyUp",
+      "pattern": "48 83 EC ? 44 8B C2 41 83",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x3471BB0"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "HudScreenController_shouldRenderScoreboardSidebar",
+      "pattern": "48 8B 89 ? ? ? ? E8 ? ? ? ? E9 ? ? ? ? 41 81 F8 ? ? ? ? 75 ? 48 8B",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 2,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x2139A2D",
+        "0x213ACB9"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ItemInHandRenderer_FluxSwingCallsite",
+      "pattern": "E8 ? ? ? ? 48 8B CF E8 ? ? ? ? F3 0F 10 1D ? ? ? ? 48 8B C8 F3 0F 10 15 ? ? ? ? F3 0F 10 0D ? ? ? ?",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 3,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x27C7CF2",
+        "0x27C8A38",
+        "0x2B71AED"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ItemInHandRenderer_TapSwingAngleRadians",
+      "pattern": "F3 44 0F 59 25 ? ? ? ? 4C 8D 4D ? 48 8B D0 48 C7 45 ? ? ? ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x2D4C0E0"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ItemInHandRenderer_applyTransform",
+      "pattern": "40 88 7C 24 30 44 88 6C 24 28 F3 44 0F 11 44 24 20 4C 8D 8D ? ? ? ? 4C 8B C6 49 8B D7 49 8B CC E8 ? ? ? ? 48 8B CE E8 ? ? ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "ItemRenderer_renderGuiItemNew",
+      "pattern": "E8 ? ? ? ? 80 BD ? ? ? ? ? 74 ? 48 8D ? ? ? E8 ? ? ?",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 3,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x1D20641",
+        "0x24E062F",
+        "0x5DAAB69"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ItemStack_ctor_ItemStack",
+      "pattern": "48 89 5C ? ? 48 89 74 ? ? 48 89 4C ? ? 57 48 83 EC 20 48 8B ? 48 8B ? E8 ? ? ? ? 90 48 8D 05 ? ? ? ? 48 89 ? 48 8D 8E ? ? ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x5CE6CC0"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "ItemStack_ctor_void",
+      "pattern": "E8 ? ? ? ? 90 48 8D ? ? ? ? ? 48 ? ? ? ? E8 ? ? ? ? 90 BA ? ? ?",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x844AED"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "LevelRendererCamera_updateCameraTransform",
+      "pattern": "48 8B C8 E8 ? ? ? ? 48 8B CD E8 ? ? ? ? F3 41 0F 10",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "LevelRendererPlayer_renderNametag",
+      "pattern": "40 55 53 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ? ? ? ? 48 81 EC ? ? ? ? 0F 29 B4 24 ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 ? ? ? ? 4D 8B E9 4C 89 44 24 ? 48 8B F2 4C 8B F1 48 89 54",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "LocalPlayer_applyTurnDelta",
+      "pattern": "48 8B CE E8 ? ? ? ? 48 8B ? ? ? ? ? 48 ? ? E8 ? ? ? ? 4C 8D ? ? ? ? ? ? 49 8B ? ? 49 8B ? ? 41 ? ? ? ? 41 ? ? ? ? 45 ? ? ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "MainView_getInstance",
+      "pattern": "40 55 53 56 57 41 56 48 8D ? ? ? ? ? ? 48 81 ? ? ? ? ? 48 8B ? ? ? ? ? 48 33 C4 48 89 ? ? ? ? ? 41 0F ? ? 49 8B ? 48 8B",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x1A8FB10"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "MobEquipmentPacket_ctor_ActorRuntimeID",
+      "pattern": "48 89 5C 24 10 55 56 57 41 56 41 57 48 ? ? ? ? ? ? 41 ? ? 48 ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x1C6D810"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "Mob_getInterpolatedSwingProgress",
+      "pattern": "F3 0F 10 99 ? ? ? ? 0F 57 D2 F3 0F 10 81 ? ? ? ? F3 0F 5C C3 0F 2F C2 73 08 F3 0F 58 05 ? ? ? ? F3 0F 59 C1 F3 0F 58 C3",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x58FA7B0"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "MoveInputComponent_ClearMoveState1",
+      "pattern": "80 B9 ? ? ? ? 00 75 ? F3 0F 10 ? ? ? ? ? F3 0F 11 ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "NoItemRotation_PatchSig",
+      "pattern": "80 BE ? ? ? ? 00 75 ? F3 0F ? ? ? ? 4C ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "OverworldDimension_getBrightnessDependentFogColor",
+      "pattern": "41 0F 10 08 48 8B C2 0F 28 ? F3 0F 59 ? ? ? ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x8C37C0"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "Player_getSupplies",
+      "pattern": "E8 ? ? ? ? 48 8B C8 E8 ? ? ? ? 48 8B D8 48 8B ? E8 ? ? ? ? 48 8D ? ? ? ?",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "PythonRuntime_DeleteThread",
+      "pattern": "48 89 5C 24 ? 57 48 83 EC ? 8B F9 8B ? ? ? ? ? E8 ? ? ? ? 48 8B",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x7E71830"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "PythonRuntime_Execute",
+      "pattern": "48 89 5C 24 ? 57 48 83 EC ? 48 8B F9 48 8B DA 48 ? ? ? ? ? ? E8 ? ? ? ? 48 85 C0 74 ? 48 8B C8 E8 ? ? ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x7EB7580"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "PythonRuntime_NewThread",
+      "pattern": "48 89 5C 24 ? 57 48 83 EC ? 8B ? ? ? ? ? E8 ? ? ? ? 48 8B",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x7E71780"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "PythonRuntime_SetReleaseCheck",
+      "pattern": "8B 05 ? ? ? ? C3 CC CC CC CC CC CC CC CC CC 89 0D ? ? ? ?",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x7EE6230"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "RenderController_getHurtColor",
+      "pattern": "E8 ? ? ? ? 44 ? ? ? ? 4C ? ? ? 4C ? ? 48 ? ? ? ? ? ? 49 ? ? E8 ? ? ?",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 0,
+      "status": "MISSING",
+      "match_rvas": []
+    },
+    {
+      "kind": "sig",
+      "name": "ScoreboardScreenController_getScoreboardSidebarTitle",
+      "pattern": "48 89 5C 24 ? 55 56 57 41 56 41 57 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 45 ? 48 8B FA 4C 8B F1 48 89 55 ? 45 33 FF ? ? ? 48 8B",
+      "sig_type": "Sig",
+      "disp_off": 0,
+      "matches": 1,
+      "status": "OK",
+      "match_rvas": [
+        "0x7CD6500"
+      ]
+    },
+    {
+      "kind": "sig",
+      "name": "Scoreboard_getDisplaySlotEntries",
+      "pattern": "E8 ? ? ? ? 90 0F 57 C9 F3 0F 7F 4D ? 33",
+      "sig_type": "RefSig",
+      "disp_off": 1,
+      "matches": 4,
+      "status": "AMBIGUOUS",
+      "match_rvas": [
+        "0x28A331C",
+        "0x2F52E69",
+        "0x31CD5E7",
+        "0x5D2D4CC"
+      ]
+    }
+  ],
+  "hardcoded": [
+    {
+      "name": "ClientInputHandler_mMappingFactory",
+      "value": "0x28",
+      "disabled": false
+    },
+    {
+      "name": "ContainerScreenController_tryExit",
+      "value": "12",
+      "disabled": false
+    },
+    {
+      "name": "ItemStack_reInit",
+      "value": "3",
+      "disabled": false
+    },
+    {
+      "name": "MinecraftUIRenderContext_drawImage",
+      "value": "7",
+      "disabled": false
+    },
+    {
+      "name": "Actor_mEntityIdentifier",
+      "value": "0x240",
+      "disabled": false
+    },
+    {
+      "name": "Actor_mLocalName",
+      "value": "0xCB0",
+      "disabled": false
+    },
+    {
+      "name": "ClientInstance_mViewMatrix",
+      "value": "0x368",
+      "disabled": false
+    },
+    {
+      "name": "ClientInstance_mFovX",
+      "value": "0x728",
+      "disabled": false
+    },
+    {
+      "name": "ClientInstance_mFovY",
+      "value": "0x73C",
+      "disabled": false
+    },
+    {
+      "name": "Block_mRuntimeId",
+      "value": "0xC0",
+      "disabled": false
+    },
+    {
+      "name": "Block_mLegacy",
+      "value": "0x30",
+      "disabled": false
+    },
+    {
+      "name": "ClientInstance_getScreenName",
+      "value": "266",
+      "disabled": false
+    },
+    {
+      "name": "ClientInstance_mGuiData",
+      "value": "0x590",
+      "disabled": false
+    },
+    {
+      "name": "BlockPalette_mLevel",
+      "value": "0x80",
+      "disabled": false
+    }
+  ]
+}
