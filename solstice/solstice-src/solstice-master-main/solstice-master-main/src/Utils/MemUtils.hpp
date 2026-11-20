@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <type_traits>
 #include <string>
 #include <atomic>
 #define _AMD64_
@@ -93,6 +94,19 @@ public:
     static auto callVirtualFunc(int index, void* _this, Args... args)
     {
         using Fn = Ret(__thiscall*)(void*, Args...);
+        // A vtable index is a small slot number. An implausible value (e.g. the
+        // 3,238,145 that MinecraftGame_playUi resolves to on NetEase 3.9.20)
+        // means the mapping did not resolve for this build -- indexing it would
+        // read far outside the table and jump through garbage. Refuse instead.
+        // Valid indices (all real SDK slots) are below 4096, so normal calls are
+        // unchanged.
+        if (!_this || index < 2 || index >= 4096) {
+            if constexpr (std::is_void_v<Ret>) return;
+            else if constexpr (std::is_reference_v<Ret>) {
+                static std::remove_cv_t<std::remove_reference_t<Ret>> fallback{};
+                return static_cast<Ret>(fallback);
+            } else return Ret{};
+        }
         auto vtable = *reinterpret_cast<uintptr_t**>(_this);
         return reinterpret_cast<Fn>(vtable[index])(_this, args...);
     }
