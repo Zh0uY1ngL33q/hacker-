@@ -1,0 +1,65 @@
+{
+  "image": "unpacked_Minecraft.Windows.exe",
+  "image_base": "0x7ff66b9f0000",
+  "pdata_functions": 410219,
+  "policy": "only verified is safe to migrate; no runtime evidence used",
+  "buckets": {
+    "verified": [
+      {
+        "name": "ClientInstance_vtable_slot308_mPacketSender",
+        "source_class": "A",
+        "rva_old": "0x130a940",
+        "function": {
+          "begin": "0x130a91d",
+          "end": "0x130a948",
+          "kind": "leaf",
+          "size": 43
+        },
+        "confidence": "L0",
+        "verified_at_rva": "0x130a940"
+      },
+      {
+        "name": "ClientInstance_vtable_slot318_p118",
+        "source_class": "A",
+        "rva_old": "0x1a26180",
+        "function": {
+          "begin": "0x1a26178",
+          "end": "0x1a26188",
+          "kind": "leaf",
+          "size": 16
+        },
+        "confidence": "L0",
+        "verified_at_rva": "0x1a26180"
+      }
+    ],
+    "icf_shared": [],
+    "ambiguous": [
+      {
+        "name": "ClientInstance_getLocalPlayer",
+        "source_class": "A",
+        "rva_old": "0x1a3c058",
+        "function": {
+          "begin": "0x1a3bec0",
+          "end": "0x1a3c150",
+          "kind": "pdata",
+          "size": 656
+        },
+        "reason": "no stored old function body for byte comparison"
+      }
+    ],
+    "failed": [
+      {
+        "name": "BlockSource_vtable",
+        "source_class": "A",
+        "rva_old": "0x921b490",
+        "reason": "no function boundary at this RVA"
+      }
+    ]
+  },
+  "counts": {
+    "verified": 2,
+    "icf_shared": 0,
+    "ambiguous": 1,
+    "failed": 1
+  }
+}

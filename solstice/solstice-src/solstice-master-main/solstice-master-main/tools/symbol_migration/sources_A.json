@@ -1,0 +1,28 @@
+[
+  {
+    "name": "ClientInstance_vtable_slot308_mPacketSender",
+    "source_class": "A",
+    "rva": "0x130a940",
+    "bytes": "488b8108010000c3cccccccccccccccc",
+    "note": "batch3_5_3 slot318.json; leaf getter [rcx+0x108]"
+  },
+  {
+    "name": "ClientInstance_vtable_slot318_p118",
+    "source_class": "A",
+    "rva": "0x1a26180",
+    "bytes": "488b8118010000c3cccccccccccccccc",
+    "note": "batch3_5_3 slot318.json; leaf getter [rcx+0x118]; semantic UNVERIFIED"
+  },
+  {
+    "name": "ClientInstance_getLocalPlayer",
+    "source_class": "A",
+    "rva": "0x1A3C058",
+    "note": "verify_sigs OK unique; no stored function body"
+  },
+  {
+    "name": "BlockSource_vtable",
+    "source_class": "A",
+    "rva": "0x921B490",
+    "note": "RTTI COL via batch3_5_3; data address, not a function"
+  }
+]
