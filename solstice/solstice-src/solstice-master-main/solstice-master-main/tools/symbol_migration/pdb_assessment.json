@@ -1,0 +1,37 @@
+{
+  "question": "Is a reconstructed PDB useful for this target?",
+  "verdict": "NO as a symbol source; ONLY as an export container for names recovered by static RE",
+  "is_debug_directory_present": false,
+  "debug_directory_rva": 0,
+  "debug_directory_size": 0,
+  "rsds_records_found_in_raw_bytes": [
+    {
+      "guid": "{DC472E8C-BE80-400C-8FFE-15B4D42C66BE}",
+      "age": 1,
+      "pdb_path": "D:/win/release/minecraftPE/build/win32_x64_netease_haldra_launcher/Minecraft/Minecraft/Windows/Publish/Minecraft.Windows.pdb",
+      "role": "main module CodeView (orphaned: PE DEBUG dir is zeroed)"
+    },
+    {
+      "guid": "{E0358EC5-ADFB-42BD-B8E7-72644E940D18}",
+      "age": 1,
+      "pdb_path": "c:/miniprojects/x86il/il86/x64/release/IL86.pdb",
+      "role": "IL86 module CodeView (orphaned)"
+    }
+  ],
+  "why_reconstructed_pdb_cannot_add_names": [
+    "getLocalPlayer appears 2x only as Lua/script API strings (getLocalPlayerPos/Rot)",
+    "getViewMatrix / playUi appear 0 times in the image",
+    "method names were stripped; a PDB cannot recover names absent from the binary"
+  ],
+  "consumer_side_blocker": {
+    "file": "src/Utils/SysUtils/StackWalker.cpp",
+    "facts": [
+      "SymInitialize(GetCurrentProcess(), nullptr, TRUE) - no _NT_SYMBOL_PATH configured",
+      "SymLoadModuleEx called only for Solstice.dll (Solstice::mModule), not for the game EXE",
+      "log contains \"Failed to load symbols for the main module.\""
+    ],
+    "implication": "even a correct PDB would not be loaded by the current crash handler"
+  },
+  "what_is_actually_useful": "IDA Pro static RE (RTTI/vtable/xref/decompile) to recover names; optionally export those names as a map/PDB for crash-stack symbolication",
+  "evidence": "PE optional header data directory 6 (DEBUG) = (0,0) on both unpacked and img120; RSDS blobs at raw offsets 0xA172F30 / 0xC16C79E"
+}
